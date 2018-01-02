@@ -28,7 +28,6 @@ var (
 
 // Page layout class
 type Page struct {
-	Title  string
 	Theme  string
 	Head   *Head
 	Top    []render.IRender
@@ -37,8 +36,8 @@ type Page struct {
 }
 
 // NewPage func
-func NewPage(title string) *Page {
-	return &Page{Head: NewHead(title)}
+func NewPage() *Page {
+	return &Page{Head: NewHead()}
 }
 
 // AddTop add top render template

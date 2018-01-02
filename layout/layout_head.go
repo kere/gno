@@ -23,8 +23,8 @@ type Head struct {
 }
 
 // NewHead new
-func NewHead(title string) *Head {
-	return &Head{Title: title}
+func NewHead() *Head {
+	return &Head{}
 }
 
 // AddHeadItem func

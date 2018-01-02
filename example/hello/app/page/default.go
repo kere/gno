@@ -1,26 +1,22 @@
 package page
 
 import (
-	"net/http"
-
-	"github.com/julienschmidt/httprouter"
-	"github.com/kere/goo/page"
+	"github.com/kere/goo"
 )
 
 // Default page class
 type Default struct {
-	page.Page
+	goo.Page
 }
 
 // NewDefaultPage func
-func NewDefaultPage() page.IPage {
+func NewDefaultPage() goo.IPage {
 	p := &Default{}
 	return p
 }
 
-// Init page
-func (d *Default) Init(req *http.Request, ps httprouter.Params) {
-	d.Page.Init(req, ps)
+// Build page
+func (d *Default) Build() error {
 	d.Title = "Default Page"
 	d.Name = "default"
 	d.Theme = ""
@@ -30,6 +26,8 @@ func (d *Default) Init(req *http.Request, ps httprouter.Params) {
 
 	d.AddTop("_header.htm", nil)
 	d.AddBottom("_bottom.htm", nil)
+
+	return nil
 }
 
 // Prepare page
