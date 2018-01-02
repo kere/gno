@@ -1,6 +1,8 @@
 package util
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_Func(t *testing.T) {
 	s := append(BaseChars, []byte("-=[];',./'~!@#$%^&*()_+{}:\"<>?")...)

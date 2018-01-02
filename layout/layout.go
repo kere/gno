@@ -3,7 +3,7 @@ package layout
 import (
 	"io"
 
-	"github.com/kere/goo/render"
+	"github.com/kere/gno/render"
 )
 
 var (
@@ -23,7 +23,7 @@ var (
 
 	bRenderS1 = []byte("\n<script>var MYENV='")
 	bRenderS2 = []byte("',THEME='")
-	bRenderS3 = []byte("'</script>")
+	bRenderS3 = []byte("';</script>")
 )
 
 // Page layout class
@@ -73,18 +73,14 @@ func (p *Page) Render(w io.Writer) error {
 	var err error
 	for _, r := range p.Top {
 		if err = r.Render(w); err != nil {
+			// println("top")
 			return err
 		}
 	}
 
 	for _, r := range p.Body {
 		if err = r.Render(w); err != nil {
-			return err
-		}
-	}
-
-	for _, r := range p.Bottom {
-		if err = r.Render(w); err != nil {
+			// println("body")
 			return err
 		}
 	}
@@ -94,6 +90,14 @@ func (p *Page) Render(w io.Writer) error {
 	w.Write(bRenderS2)
 	w.Write([]byte(p.Theme))
 	w.Write(bRenderS3)
+
+	for _, r := range p.Bottom {
+		if err = r.Render(w); err != nil {
+			// println("bottom")
+			return err
+		}
+	}
+
 	p.Head.RenderBottomJS(w)
 
 	w.Write(BytesHTMLBodyEnd)

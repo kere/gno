@@ -3,7 +3,7 @@ package util
 import (
 	"fmt"
 	"math/rand"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -13,14 +13,13 @@ var (
 	DBTimeFormat = time.RFC3339
 )
 
-// URLJoin func
-func URLJoin(elem ...string) string {
-	for i, e := range elem {
-		if e != "" {
-			return path.Clean(strings.Join(elem[i:], "/"))
-		}
+// PathToURL convert path to url
+func PathToURL(items ...string) string {
+	s := filepath.Join(items...)
+	if filepath.Separator == '/' {
+		return s
 	}
-	return ""
+	return strings.Replace(s, "\\", "/", -1)
 }
 
 // RandStr 生成任意长度的字符串

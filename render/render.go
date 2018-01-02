@@ -5,8 +5,6 @@ import (
 )
 
 var (
-	// RunMode dev pro
-	RunMode = ""
 	// AssetsURL url
 	AssetsURL = ""
 	// JSVersion js ?v=001

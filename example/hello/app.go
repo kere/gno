@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/kere/goo"
-	"github.com/kere/goo/example/hello/app/page"
+	"github.com/kere/gno"
+	"github.com/kere/gno/example/hello/app/page"
 )
 
 func main() {
-	site := goo.Init()
+	site := gno.Init()
 
 	site.RegistGet("/", page.NewDefaultPage)
 

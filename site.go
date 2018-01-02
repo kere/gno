@@ -1,4 +1,4 @@
-package goo
+package gno
 
 import (
 	"net/http"
@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/kere/goo/layout"
-	"github.com/kere/goo/libs/conf"
-	"github.com/kere/goo/libs/log"
-	"github.com/kere/goo/render"
+	"github.com/kere/gno/layout"
+	"github.com/kere/gno/libs/conf"
+	"github.com/kere/gno/libs/log"
+	"github.com/kere/gno/render"
 )
 
 var (
@@ -80,13 +80,13 @@ func Init() *Site {
 	CSSVersion = a.DefaultString("css_version", "")
 	render.CSSVersion = CSSVersion
 
+	// Template Delim
 	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
-	render.TemplateLeftDelim = a.DefaultString("template_right_delim", "")
+	render.TemplateRightDelim = a.DefaultString("template_right_delim", "")
 
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
 	layout.RunMode = RunMode
-	render.RunMode = RunMode
 
 	// AssetsURL
 	AssetsURL = a.DefaultString("assets_url", "")
@@ -138,13 +138,13 @@ func doHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.
 		http.Redirect(rw, req, url, http.StatusOK)
 	}
 
-	err := p.Build()
-	if err != nil {
-		doError(rw, err)
-		return
-	}
+	// err := p.Build()
+	// if err != nil {
+	// 	doError(rw, err)
+	// 	return
+	// }
 
-	err = p.Prepare()
+	err := p.Prepare()
 	if err != nil {
 		doError(rw, err)
 		return

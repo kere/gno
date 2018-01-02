@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	site := goo.Init()
+	site := gno.Init()
 
 	site.RegistGet("/", page.NewDefaultPage)
 

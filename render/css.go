@@ -28,9 +28,9 @@ func (t *CSS) Render(w io.Writer) error {
 	}
 
 	if t.Theme == "" {
-		w.Write([]byte(AssetsURL + "/assets/css/" + RunMode + "/" + filename))
+		w.Write([]byte(AssetsURL + "/assets/css/" + filename))
 	} else {
-		w.Write([]byte(AssetsURL + "/assets/css/" + RunMode + "/" + t.Theme + "/" + filename))
+		w.Write([]byte(AssetsURL + "/assets/css/" + t.Theme + "/" + filename))
 	}
 
 	if CSSVersion != "" {

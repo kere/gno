@@ -5,7 +5,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/kere/goo/libs/i18n"
+	"github.com/kere/gno/libs/i18n"
 )
 
 // Template render class
@@ -23,15 +23,15 @@ func NewTemplate(fileName string) *Template {
 
 // Render func
 func (t *Template) Render(w io.Writer) error {
-	filename := filepath.Join("app/view/", t.FileName)
-
-	tmpl, err := template.ParseFiles(filename)
-	if err != nil {
-		return err
-	}
-
+	tmpl := template.New(filepath.Base(t.FileName))
 	if TemplateLeftDelim != "" {
 		tmpl.Delims(TemplateLeftDelim, TemplateRightDelim)
+	}
+
+	filename := filepath.Join("app/view/", t.FileName)
+	tmpl, err := tmpl.ParseFiles(filename)
+	if err != nil {
+		return err
 	}
 
 	if t.Locale != "" && t.loadi18n() == nil {

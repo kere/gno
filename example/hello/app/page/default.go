@@ -1,25 +1,24 @@
 package page
 
-import (
-	"github.com/kere/goo"
-)
+import "github.com/kere/gno"
 
 // Default page class
 type Default struct {
-	goo.Page
+	gno.Page
 }
 
 // NewDefaultPage func
-func NewDefaultPage() goo.IPage {
-	p := &Default{}
-	return p
-}
-
-// Build page
-func (d *Default) Build() error {
+func NewDefaultPage() gno.IPage {
+	d := &Default{}
 	d.Title = "Default Page"
 	d.Name = "default"
+	d.Dir = ""
 	d.Theme = ""
+	return d
+}
+
+// Prepare page
+func (d *Default) Prepare() error {
 	d.AddHead("<meta charset=\"utf-8\">")
 	d.AddJS("default.js")
 	d.AddCSS("default.css")
@@ -27,10 +26,11 @@ func (d *Default) Build() error {
 	d.AddTop("_header.htm", nil)
 	d.AddBottom("_bottom.htm", nil)
 
+	d.Data = DefaultData{Name: "tom"}
 	return nil
 }
 
-// Prepare page
-func (d *Default) Prepare() error {
-	return nil
+// DefaultData is page data
+type DefaultData struct {
+	Name string
 }

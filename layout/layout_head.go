@@ -3,7 +3,7 @@ package layout
 import (
 	"io"
 
-	"github.com/kere/goo/render"
+	"github.com/kere/gno/render"
 )
 
 var (
@@ -67,6 +67,7 @@ func (h *Head) Render(w io.Writer) error {
 	w.Write(bTitleBegin)
 	w.Write([]byte(h.Title))
 	w.Write(bTitleEnd)
+
 	w.Write(bHeadEnd)
 	return nil
 }
