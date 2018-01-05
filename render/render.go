@@ -26,8 +26,6 @@ var (
 	// BytesBreak break
 	BytesBreak = []byte("\n")
 
-	bJsTagBegin  = []byte("<script src=\"")
-	bJsTagEnd    = []byte("></script>\n")
 	bCSSTagBegin = []byte("<link href=\"")
 	bCSSTagEnd   = []byte("\" rel=\"stylesheet\"/>\n")
 )

@@ -1,6 +1,8 @@
 package gno
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -19,16 +21,18 @@ var (
 	RunMode = "dev"
 	// AssetsURL js css img
 	AssetsURL = ""
-	// SiteServer svr
-	SiteServer *Site
+	// Site svr
+	Site *SiteServer
 	// JSVersion js ?v=001
 	JSVersion = ""
 	// CSSVersion css ?v=001
 	CSSVersion = ""
+
+	config conf.Configuration
 )
 
-// Site class
-type Site struct {
+// SiteServer class
+type SiteServer struct {
 	Addr       string
 	EnableGzip bool
 	Location   *time.Location
@@ -37,12 +41,17 @@ type Site struct {
 	Log *log.Logger
 }
 
+// GetConfig return config
+func GetConfig() conf.Configuration {
+	return config
+}
+
 // Init goo
-func Init() *Site {
-	config := conf.Load(ConfigName)
+func Init() *SiteServer {
+	config = conf.Load(ConfigName)
 
 	a := config.GetConf("site")
-	s := &Site{
+	s := &SiteServer{
 		Addr:       a.DefaultString("addr", ":8080"),
 		EnableGzip: a.DefaultBool("gzip", false),
 		Router:     httprouter.New()}
@@ -92,57 +101,61 @@ func Init() *Site {
 	AssetsURL = a.DefaultString("assets_url", "")
 	render.AssetsURL = AssetsURL
 
-	SiteServer = s
+	Site = s
 
 	return s
 }
 
 // Start server listen
-func (s *Site) Start() {
+func (s *SiteServer) Start() {
 	if layout.RunMode == "dev" {
-		s.Router.ServeFiles("/assets/*filepath", http.Dir("webroot/assets"))
+		// s.Router.ServeFiles("/assets/*filepath", http.Dir("webroot/assets"))
+		s.Router.NotFound = http.FileServer(http.Dir("webroot"))
 	}
 
+	fmt.Println("RunMode:", RunMode)
+	fmt.Println("Listen:", s.Addr)
 	http.ListenAndServe(s.Addr, s.Router)
 }
 
 // RegistGet router
-func (s *Site) RegistGet(rule string, factory func() IPage) {
-
+func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
-		p.Init("GET", req, ps)
-		doHandle(p, rw, req, ps)
+		p.Init("GET", rw, req, ps)
+		doPageHandle(p, rw, req, ps)
 	})
 }
 
 // RegistPost router
-func (s *Site) RegistPost(rule string, factory func() IPage) {
-
+func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 	s.Router.POST(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
-		p.Init("POST", req, ps)
-		doHandle(p, rw, req, ps)
+		p.Init("POST", rw, req, ps)
+		doPageHandle(p, rw, req, ps)
 	})
 }
 
-func doHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+// RegistAPI api router
+func (s *SiteServer) RegistAPI(rule string, factory func() IWebAPI) {
+	s.Router.POST(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+		webapi := factory()
+		webapi.Init(rw, req, ps)
+		doAPIHandle(webapi, rw, req, ps)
+	})
+}
+
+func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	if isReq, isOK, url := p.Auth(); isReq && !isOK {
 		if url != "" {
-			http.Redirect(rw, req, url, http.StatusNotAcceptable)
+			http.Redirect(rw, req, url, http.StatusSeeOther)
 		}
 
 		return
 
 	} else if isReq && isOK && url != "" {
-		http.Redirect(rw, req, url, http.StatusOK)
+		http.Redirect(rw, req, url, http.StatusSeeOther)
 	}
-
-	// err := p.Build()
-	// if err != nil {
-	// 	doError(rw, err)
-	// 	return
-	// }
 
 	err := p.Prepare()
 	if err != nil {
@@ -150,11 +163,30 @@ func doHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.
 		return
 	}
 
-	err = p.Render(rw)
+	if p.GetName() == "" {
+		return
+	}
+
+	err = p.Render()
 	if err != nil {
 		doError(rw, err)
 		return
 	}
+}
+
+func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	if isReq, isOK := webapi.Auth(); isReq && !isOK {
+		doError(rw, errors.New("auth failed"))
+		return
+	}
+
+	data, err := webapi.Exec()
+	if err != nil {
+		doError(rw, err)
+		return
+	}
+
+	webapi.Reply(data)
 }
 
 func doError(rw http.ResponseWriter, err error) {

@@ -1,7 +1,6 @@
 package gno
 
 import (
-	"io"
 	"net/http"
 	"path/filepath"
 
@@ -26,11 +25,11 @@ type IPage interface {
 	AddBottom(filename string, data interface{})
 	AddBottomScript(src string, data map[string]string)
 
-	Init(method string, req *http.Request, ps httprouter.Params)
+	Init(method string, w http.ResponseWriter, req *http.Request, ps httprouter.Params)
 	Auth() (require, isok bool, redirectURL string)
 	// Build() error
 	Prepare() error
-	Render(io.Writer) error
+	Render() error
 }
 
 // Page class
@@ -49,18 +48,21 @@ type Page struct {
 
 	Data interface{}
 
-	Method     string
-	Request    *http.Request
-	Params     httprouter.Params
+	Method         string
+	Request        *http.Request
+	Params         httprouter.Params
+	ResponseWriter http.ResponseWriter
+
 	Layout     *layout.Page
 	JSPosition string
 }
 
 // Init page
-func (p *Page) Init(method string, req *http.Request, ps httprouter.Params) {
+func (p *Page) Init(method string, w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	p.Method = method
 	p.Request = req
-	p.Params = ps
+	p.Params = params
+	p.ResponseWriter = w
 
 	p.Layout = layout.NewPage()
 }
@@ -128,15 +130,14 @@ func (p *Page) Auth() (require, isok bool, redirectURL string) {
 	return false, false, ""
 }
 
-// Prepare page css
+// Prepare page
 func (p *Page) Prepare() error {
 	return nil
 }
 
-// Render page css
-func (p *Page) Render(w io.Writer) error {
+// Render page
+func (p *Page) Render() error {
 	lyt := p.Layout
-	p.Layout = nil
 
 	lyt.Head.Title = p.Title
 	lyt.Head.CSSRenders = p.CSS
@@ -150,5 +151,11 @@ func (p *Page) Render(w io.Writer) error {
 	lyt.AddBody(name+".htm", p.Data)
 	lyt.Bottom = p.Bottom
 
-	return lyt.Render(w)
+	p.Layout = nil
+	p.Params = nil
+	p.Request = nil
+
+	err := lyt.Render(p.ResponseWriter)
+	p.ResponseWriter = nil
+	return err
 }

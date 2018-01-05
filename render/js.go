@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+var (
+	bJsTagBegin = []byte("<script src=\"")
+	bJsTagEnd   = []byte("></script>\n")
+)
+
 // JS class
 type JS struct {
 	FileName string
@@ -23,14 +28,20 @@ func (t *JS) Render(w io.Writer) error {
 	w.Write(bJsTagBegin)
 
 	filename := t.FileName
-	if os.PathSeparator == '\\' {
-		filename = strings.Replace(t.FileName, "\\", "/", -1)
-	}
+	if strings.HasPrefix(filename, "http:") || strings.HasPrefix(filename, "https:") {
+		w.Write([]byte(filename))
 
-	w.Write([]byte(AssetsURL + "/assets/js/" + filename))
+	} else {
+		if os.PathSeparator == '\\' {
+			filename = strings.Replace(t.FileName, "\\", "/", -1)
+		}
 
-	if JSVersion != "" {
-		w.Write([]byte(fmt.Sprint("?v=", JSVersion)))
+		w.Write([]byte(AssetsURL + "/assets/js/" + filename))
+
+		if JSVersion != "" {
+			w.Write([]byte(fmt.Sprint("?v=", JSVersion)))
+		}
+
 	}
 
 	w.Write(BytesQuote)
@@ -45,5 +56,6 @@ func (t *JS) Render(w io.Writer) error {
 		}
 	}
 	w.Write(bJsTagEnd)
+
 	return nil
 }

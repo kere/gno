@@ -19,6 +19,8 @@ gos project
 		├── [js]
 		├── [css]
 ```
+##
+go get github.com/youtube/vitess/go/pools
 
 ## quick start
 app.go
