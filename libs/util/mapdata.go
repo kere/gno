@@ -283,6 +283,15 @@ func (dr MapData) Ints(field string) []int {
 
 		return v
 
+	case string:
+		s := dr[field].(string)
+		var v []int
+		if s[0] == '[' {
+			json.Unmarshal([]byte(s), &v)
+		}
+
+		return v
+
 	default:
 		return []int{}
 	}

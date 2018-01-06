@@ -10,7 +10,7 @@ import (
 // IWebAPI interface
 type IWebAPI interface {
 	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params)
-	Auth() (require, isok bool)
+	Auth() (require bool, err error)
 	Exec() (interface{}, error)
 	Reply(data interface{})
 }
@@ -31,8 +31,8 @@ func (w *WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprout
 
 // Auth page auth
 // if require is true then do auth
-func (w *WebAPI) Auth() (require, isok bool) {
-	return false, false
+func (w *WebAPI) Auth() (require bool, err error) {
+	return false, nil
 }
 
 // Exec api

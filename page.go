@@ -3,6 +3,7 @@ package gno
 import (
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/kere/gno/layout"
@@ -18,6 +19,9 @@ type IPage interface {
 	GetName() string
 	GetDir() string
 	GetTheme() string
+	GetResponseWriter() http.ResponseWriter
+	GetRequest() *http.Request
+
 	AddHead(src string)
 	AddJS(filename string)
 	AddCSS(filename string)
@@ -26,10 +30,11 @@ type IPage interface {
 	AddBottomScript(src string, data map[string]string)
 
 	Init(method string, w http.ResponseWriter, req *http.Request, ps httprouter.Params)
-	Auth() (require, isok bool, redirectURL string)
+	Auth() (require, isok bool, redirectURL string, err error)
 	// Build() error
 	Prepare() error
 	Render() error
+	SetCookie(name, value string, age int, path, domain string, httpOnly bool)
 }
 
 // Page class
@@ -82,6 +87,16 @@ func (p *Page) GetTheme() string {
 	return p.Theme
 }
 
+// GetRequest value
+func (p *Page) GetRequest() *http.Request {
+	return p.Request
+}
+
+// GetResponseWriter value
+func (p *Page) GetResponseWriter() http.ResponseWriter {
+	return p.ResponseWriter
+}
+
 // AddHead head
 func (p *Page) AddHead(src string) {
 	r := render.NewHead(src)
@@ -126,13 +141,33 @@ func (p *Page) AddBottomScript(src string, data map[string]string) {
 
 // Auth page auth
 // if require is true then do auth
-func (p *Page) Auth() (require, isok bool, redirectURL string) {
-	return false, false, ""
+func (p *Page) Auth() (require, isok bool, redirectURL string, err error) {
+	return false, false, "", nil
 }
 
 // Prepare page
 func (p *Page) Prepare() error {
 	return nil
+}
+
+// SetCookie cookie
+func (p *Page) SetCookie(name, value string, age int, path, domain string, httpOnly bool) {
+	var expires time.Time
+
+	if age != 0 {
+		expires = time.Unix(time.Now().Unix()+int64(age), 0)
+	}
+
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     path,
+		Domain:   domain,
+		Expires:  expires,
+		HttpOnly: httpOnly,
+	}
+
+	http.SetCookie(p.ResponseWriter, cookie)
 }
 
 // Render page

@@ -3,22 +3,23 @@ package cache
 import (
 	"fmt"
 
-	"github.com/kere/goo/libs/conf"
-	"github.com/kere/goo/libs/redis"
+	"github.com/kere/gno/libs/conf"
+	"github.com/kere/gno/libs/redis"
 )
 
 // ICache interface
 type ICache interface {
 	Init(conf.Conf) error
+	Set(string, string, int) error
+	Get(string) (string, error)
+
 	GetDriver() string
-	Get([]byte) (interface{}, error)
-	GetString([]byte) (string, error)
-	GetInt([]byte) (int, error)
-	GetInt64([]byte) (int64, error)
-	GetFloat([]byte) (float64, error)
-	Set([]byte, interface{}, int) error
-	Exists([]byte) (bool, error)
-	Delete([]byte) error
+	GetString(string) (string, error)
+	GetInt(string) (int, error)
+	GetInt64(string) (int64, error)
+	GetFloat(string) (float64, error)
+	Exists(string) (bool, error)
+	Delete(string) error
 }
 
 var (
@@ -53,43 +54,43 @@ func IsEnable() bool {
 }
 
 // Exists key
-func Exists(bkey []byte) (bool, error) {
-	return cache.Exists(bkey)
+func Exists(key string) (bool, error) {
+	return cache.Exists(key)
 }
 
 // Get key
-func Get(bkey []byte) (interface{}, error) {
-	return cache.Get(bkey)
+func Get(key string) (string, error) {
+	return cache.Get(key)
 }
 
 // GetString key
-func GetString(bkey []byte) (string, error) {
-	return cache.GetString(bkey)
+func GetString(key string) (string, error) {
+	return cache.GetString(key)
 }
 
 // GetInt int
-func GetInt(bkey []byte) (int, error) {
-	return cache.GetInt(bkey)
+func GetInt(key string) (int, error) {
+	return cache.GetInt(key)
 }
 
 // GetInt64 int64
-func GetInt64(bkey []byte) (int64, error) {
-	return cache.GetInt64(bkey)
+func GetInt64(key string) (int64, error) {
+	return cache.GetInt64(key)
 }
 
 // GetFloat float64
-func GetFloat(bkey []byte) (float64, error) {
-	return cache.GetFloat(bkey)
+func GetFloat(key string) (float64, error) {
+	return cache.GetFloat(key)
 }
 
 // Set func
-func Set(bkey []byte, value interface{}, expire int) error {
-	return cache.Set(bkey, value, expire)
+func Set(key string, value string, expire int) error {
+	return cache.Set(key, value, expire)
 }
 
 // Delete key
-func Delete(bkey []byte) error {
-	return cache.Delete(bkey)
+func Delete(key string) error {
+	return cache.Delete(key)
 }
 
 // GetRedis return client

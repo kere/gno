@@ -1,7 +1,6 @@
 package gno
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,24 +18,22 @@ var (
 	ConfigName = "app/app.conf"
 	// RunMode dev pro
 	RunMode = "dev"
-	// AssetsURL js css img
-	AssetsURL = ""
 	// Site svr
 	Site *SiteServer
-	// JSVersion js ?v=001
-	JSVersion = ""
-	// CSSVersion css ?v=001
-	CSSVersion = ""
 
 	config conf.Configuration
 )
 
 // SiteServer class
 type SiteServer struct {
-	Addr       string
-	EnableGzip bool
-	Location   *time.Location
-	Router     *httprouter.Router
+	Addr     string
+	Location *time.Location
+	Router   *httprouter.Router
+
+	ErrorURL   string
+	JSVersion  string
+	CSSVersion string
+	AssetsURL  string
 
 	Log *log.Logger
 }
@@ -52,9 +49,8 @@ func Init() *SiteServer {
 
 	a := config.GetConf("site")
 	s := &SiteServer{
-		Addr:       a.DefaultString("addr", ":8080"),
-		EnableGzip: a.DefaultBool("gzip", false),
-		Router:     httprouter.New()}
+		Addr:   a.DefaultString("addr", ":8080"),
+		Router: httprouter.New()}
 
 	// ----------- log -------------
 	if config.IsSet("log") {
@@ -84,10 +80,10 @@ func Init() *SiteServer {
 	}
 
 	// JsVersion CSSVersion
-	JSVersion = a.DefaultString("js_version", "")
-	render.JSVersion = JSVersion
-	CSSVersion = a.DefaultString("css_version", "")
-	render.CSSVersion = CSSVersion
+	s.JSVersion = a.DefaultString("js_version", "")
+	render.JSVersion = s.JSVersion
+	s.CSSVersion = a.DefaultString("css_version", "")
+	render.CSSVersion = s.CSSVersion
 
 	// Template Delim
 	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
@@ -98,8 +94,11 @@ func Init() *SiteServer {
 	layout.RunMode = RunMode
 
 	// AssetsURL
-	AssetsURL = a.DefaultString("assets_url", "")
-	render.AssetsURL = AssetsURL
+	s.AssetsURL = a.DefaultString("assets_url", "")
+	render.AssetsURL = s.AssetsURL
+
+	// ErrorURL
+	s.ErrorURL = a.DefaultString("error_url", "")
 
 	Site = s
 
@@ -123,7 +122,13 @@ func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
 		p.Init("GET", rw, req, ps)
-		doPageHandle(p, rw, req, ps)
+		err := doPageHandle(p, rw, req, ps)
+		if err == nil {
+			return
+		}
+		// do error
+		log.App.Warn(err)
+		doPageError(s.ErrorURL, err, rw, req)
 	})
 }
 
@@ -132,7 +137,13 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 	s.Router.POST(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
 		p.Init("POST", rw, req, ps)
-		doPageHandle(p, rw, req, ps)
+		err := doPageHandle(p, rw, req, ps)
+		if err == nil {
+			return
+		}
+		// do error
+		log.App.Warn(err)
+		doPageError(s.ErrorURL, err, rw, req)
 	})
 }
 
@@ -145,51 +156,54 @@ func (s *SiteServer) RegistAPI(rule string, factory func() IWebAPI) {
 	})
 }
 
-func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	if isReq, isOK, url := p.Auth(); isReq && !isOK {
+func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
+	isReq, isOK, url, err := p.Auth()
+	if err != nil {
+		return err
+	}
+
+	if isReq && !isOK {
 		if url != "" {
 			http.Redirect(rw, req, url, http.StatusSeeOther)
 		}
-
-		return
-
+		return nil
 	} else if isReq && isOK && url != "" {
 		http.Redirect(rw, req, url, http.StatusSeeOther)
+		return nil
 	}
 
-	err := p.Prepare()
+	err = p.Prepare()
 	if err != nil {
-		doError(rw, err)
-		return
+		return err
 	}
 
 	if p.GetName() == "" {
-		return
+		return nil
 	}
 
-	err = p.Render()
-	if err != nil {
-		doError(rw, err)
-		return
-	}
+	return p.Render()
 }
 
 func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	if isReq, isOK := webapi.Auth(); isReq && !isOK {
-		doError(rw, errors.New("auth failed"))
+	if isReq, err := webapi.Auth(); isReq && err != nil {
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
 	data, err := webapi.Exec()
 	if err != nil {
-		doError(rw, err)
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
 	webapi.Reply(data)
 }
 
-func doError(rw http.ResponseWriter, err error) {
-	log.App.Warn(err)
-	rw.Write([]byte(err.Error()))
+func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
+	if errorURL == "" {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	// ErrorURL redirect to
+	http.Redirect(rw, req, errorURL+"?msg="+err.Error(), http.StatusSeeOther)
 }
