@@ -122,10 +122,7 @@ func (l *Logger) writelogf(prefix string, loglevel int, format string, m []inter
 }
 
 var bBreak = []byte{'\n'}
-var bSearchStrGos = []byte("github.com/kere/gos")
-
-// var bSearchStrGosErr = []byte("/gos/error.go:")
-// var b_searchStrLogger = []byte("/goo/libs/log/logger.go:")
+var bSearchStrGno = []byte("github.com/kere/gno")
 
 // Stack print
 func (l *Logger) Stack() *Logger {
@@ -134,7 +131,7 @@ func (l *Logger) Stack() *Logger {
 	if l.level < LogAll {
 		arr = arr[3:]
 		for i := range arr {
-			if bytes.Index(arr[i], bSearchStrGos) > -1 {
+			if bytes.Index(arr[i], bSearchStrGno) > -1 {
 				count++
 			} else {
 				break
@@ -229,6 +226,7 @@ func (l *Logger) Infof(format string, m ...interface{}) *Logger {
 
 // Debug log
 func (l *Logger) Debug(m ...interface{}) *Logger {
+	m = append(m, "\n")
 	return l.writelog("[debug]", LogDebug, m...)
 }
 

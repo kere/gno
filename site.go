@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kere/gno/db"
 	"github.com/kere/gno/layout"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
@@ -26,7 +27,7 @@ var (
 
 // SiteServer class
 type SiteServer struct {
-	Addr     string
+	Listen   string
 	Location *time.Location
 	Router   *httprouter.Router
 
@@ -34,6 +35,9 @@ type SiteServer struct {
 	JSVersion  string
 	CSSVersion string
 	AssetsURL  string
+
+	Secret string
+	Salt   string
 
 	Log *log.Logger
 }
@@ -49,7 +53,7 @@ func Init() *SiteServer {
 
 	a := config.GetConf("site")
 	s := &SiteServer{
-		Addr:   a.DefaultString("addr", ":8080"),
+		Listen: a.DefaultString("listen", ":8080"),
 		Router: httprouter.New()}
 
 	// ----------- log -------------
@@ -100,8 +104,16 @@ func Init() *SiteServer {
 	// ErrorURL
 	s.ErrorURL = a.DefaultString("error_url", "")
 
+	// Secret
+	s.Secret = a.DefaultString("secret", "")
+	s.Salt = fmt.Sprint(time.Now().Unix())
+
 	Site = s
 
+	// DB
+	if config.IsSet("db") {
+		db.Init("app", config.GetConf("db"))
+	}
 	return s
 }
 
@@ -113,8 +125,8 @@ func (s *SiteServer) Start() {
 	}
 
 	fmt.Println("RunMode:", RunMode)
-	fmt.Println("Listen:", s.Addr)
-	http.ListenAndServe(s.Addr, s.Router)
+	fmt.Println("Listen:", s.Listen)
+	http.ListenAndServe(s.Listen, s.Router)
 }
 
 // RegistGet router
@@ -127,7 +139,6 @@ func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 			return
 		}
 		// do error
-		log.App.Warn(err)
 		doPageError(s.ErrorURL, err, rw, req)
 	})
 }
@@ -142,17 +153,52 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 			return
 		}
 		// do error
-		log.App.Warn(err)
 		doPageError(s.ErrorURL, err, rw, req)
 	})
 }
 
 // RegistAPI api router
 func (s *SiteServer) RegistAPI(rule string, factory func() IWebAPI) {
+	f := func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+		webapi := factory()
+		webapi.Init(rw, req, ps)
+		err := doAPIHandle(webapi, rw, req, ps)
+		if err == nil {
+			return
+		}
+		// do error
+		doAPIError(err, rw)
+	}
+
+	s.Router.POST(rule, f)
+	s.Router.GET(rule, f)
+}
+
+// RegistPostAPI api router
+func (s *SiteServer) RegistPostAPI(rule string, factory func() IWebAPI) {
 	s.Router.POST(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		webapi := factory()
 		webapi.Init(rw, req, ps)
-		doAPIHandle(webapi, rw, req, ps)
+		err := doAPIHandle(webapi, rw, req, ps)
+		if err == nil {
+			return
+		}
+		// do error
+		doAPIError(err, rw)
+	})
+}
+
+// RegistGetAPI api router
+func (s *SiteServer) RegistGetAPI(rule string, factory func() IWebAPI) {
+	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+		webapi := factory()
+		webapi.Init(rw, req, ps)
+		err := doAPIHandle(webapi, rw, req, ps)
+		if err == nil {
+			return
+		}
+		// do error
+		doAPIError(err, rw)
 	})
 }
 
@@ -184,26 +230,31 @@ func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprou
 	return p.Render()
 }
 
-func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
 	if isReq, err := webapi.Auth(); isReq && err != nil {
-		rw.Write([]byte(err.Error()))
-		return
+		return err
 	}
 
 	data, err := webapi.Exec()
 	if err != nil {
-		rw.Write([]byte(err.Error()))
-		return
+		return err
 	}
 
-	webapi.Reply(data)
+	return webapi.Reply(data)
 }
 
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
+	log.App.Warn(err)
 	if errorURL == "" {
 		rw.Write([]byte(err.Error()))
 		return
 	}
 	// ErrorURL redirect to
 	http.Redirect(rw, req, errorURL+"?msg="+err.Error(), http.StatusSeeOther)
+}
+
+func doAPIError(err error, rw http.ResponseWriter) {
+	log.App.Warn(err)
+	rw.Write([]byte(err.Error()))
+	rw.WriteHeader(http.StatusInternalServerError)
 }

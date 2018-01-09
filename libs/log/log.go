@@ -2,6 +2,8 @@ package log
 
 import (
 	"fmt"
+	golog "log"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -66,6 +68,8 @@ func IntLevel(s string) int {
 var (
 	// PrintStackLevel int
 	// PrintStackLevel = 4
+
+	// App default log
 	App      *Logger
 	Location *time.Location
 	pool     loggers
@@ -75,13 +79,18 @@ type loggers map[string]*Logger
 
 func init() {
 	pool = make(map[string]*Logger)
+
+	App = &Logger{}
+	App.SetLevel("all")
+	App.Logger = golog.New(os.Stdout, "", 0)
+	App.Logger.SetFlags(golog.Ldate | golog.Ltime)
 }
 
 // Init func
 func Init(folder, names, storeType, levelStr string) {
 	level := IntLevel(levelStr)
 	if storeType == ConstNone || level < 0 {
-		App = New("", "", ConstNone, ConstNone)
+		// App = New("", "", ConstNone, ConstNone)
 		return
 	}
 
@@ -105,10 +114,10 @@ func Get(name string) *Logger {
 }
 
 func New(folder, name, storeType, levelStr string) *Logger {
-	if _, isOK := pool[name]; isOK {
-		return pool[name]
-	}
-
+	// if _, isOK := pool[name]; isOK {
+	// 	return pool[name]
+	// }
+	//
 	var l *Logger
 	if storeType == "" {
 		storeType = "stdout"

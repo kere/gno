@@ -299,7 +299,7 @@ func (c Conf) Get(key string) string {
 	return ""
 }
 
-// GetRunMode return gos framwork run mode
+// GetRunMode return framwork run mode
 func (c Configuration) GetRunMode() string {
 	var m string
 

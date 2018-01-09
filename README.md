@@ -1,12 +1,12 @@
 ## Installation
 Make sure you have the a working Go environment. See the [install instructions](http://golang.org/doc/install.html).
 
-And install gos:
+And install gno:
 
-	go get github.com/kere/gos
+	go get github.com/kere/gno
 
 
-gos project
+gno project
 ```
 |- [app]
 	└── app.conf

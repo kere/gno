@@ -1,4 +1,4 @@
-# Gos lib
+# Gno lib
 ## i18n package useage
 ```go
 i18n.SetSourceRoot("./source")

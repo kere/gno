@@ -2,9 +2,19 @@ package gno
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+)
+
+const (
+	// ReplyTypeJSON reply json
+	ReplyTypeJSON = iota
+	// ReplyTypeXML reply xml
+	ReplyTypeXML
+	// ReplyTypeText reply text
+	ReplyTypeText
 )
 
 // IWebAPI interface
@@ -12,7 +22,7 @@ type IWebAPI interface {
 	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params)
 	Auth() (require bool, err error)
 	Exec() (interface{}, error)
-	Reply(data interface{})
+	Reply(data interface{}) error
 }
 
 // WebAPI class
@@ -20,6 +30,7 @@ type WebAPI struct {
 	Request        *http.Request
 	Params         httprouter.Params
 	ResponseWriter http.ResponseWriter
+	ReplyType      int //json, xml, text
 }
 
 // Init api
@@ -32,7 +43,7 @@ func (w *WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprout
 // Auth page auth
 // if require is true then do auth
 func (w *WebAPI) Auth() (require bool, err error) {
-	return false, nil
+	return require, nil
 }
 
 // Exec api
@@ -41,15 +52,24 @@ func (w *WebAPI) Exec() (interface{}, error) {
 }
 
 // Reply response
-func (w *WebAPI) Reply(data interface{}) {
+func (w *WebAPI) Reply(data interface{}) error {
 	if data == nil {
-		return
+		return nil
 	}
 
-	src, err := json.Marshal(data)
+	var src []byte
+	var err error
+	switch w.ReplyType {
+	case ReplyTypeJSON:
+		src, err = json.Marshal(data)
+	case ReplyTypeText:
+		src = []byte(fmt.Sprint(data))
+	case ReplyTypeXML:
+
+	}
 	if err != nil {
 		Site.Log.Warn(err)
-		return
+		return err
 	}
 
 	w.ResponseWriter.Write(src)
@@ -57,4 +77,5 @@ func (w *WebAPI) Reply(data interface{}) {
 	w.Request = nil
 	w.Params = nil
 	w.ResponseWriter = nil
+	return nil
 }

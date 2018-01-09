@@ -282,6 +282,14 @@ func (dr MapData) Ints(field string) []int {
 		}
 
 		return v
+	case []byte:
+		s := dr[field].([]byte)
+		var v []int
+		if s[0] == '[' {
+			json.Unmarshal(s, &v)
+		}
+
+		return v
 
 	case string:
 		s := dr[field].(string)
@@ -429,6 +437,15 @@ func (dr MapData) JSONParse(field string, v interface{}) error {
 		return err
 	}
 	return nil
+}
+
+// CopyTo vo
+func (dr MapData) CopyTo(v interface{}) error {
+	src, err := json.Marshal(dr)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(src, v)
 }
 
 // Time time
