@@ -20,6 +20,40 @@ func Test_Func(t *testing.T) {
 		t.Fatal("IntZipBase", str)
 	}
 
+	num2 := 1.712774821
+	val := Round(num2, 2)
+	if val != 1.71 {
+		t.Fatal("round failed", val)
+	}
+	val = Round(num2, 3)
+	if val != 1.713 {
+		t.Fatal("round failed", val)
+	}
+	val = Round(num2, 0)
+	if val != 2.0 {
+		t.Fatal("round failed", val)
+	}
+	val = Round(num2, 4)
+	if val != 1.7128 {
+		t.Fatal("round failed", val)
+	}
+	num2 = -1.712774821
+	val = Round(num2, 2)
+	if val != -1.71 {
+		t.Fatal("round failed", val)
+	}
+	val = Round(num2, 3)
+	if val != -1.713 {
+		t.Fatal("round failed", val)
+	}
+	val = Round(num2, 0)
+	if val != -2.0 {
+		t.Fatal("round failed", val)
+	}
+	val = Round(num2, 4)
+	if val != -1.7128 {
+		t.Fatal("round failed", val)
+	}
 }
 
 func Test_MapData(t *testing.T) {

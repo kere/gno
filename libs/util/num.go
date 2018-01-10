@@ -40,13 +40,16 @@ func IntZipBaseStr(num uint64, s []byte) []byte {
 }
 
 // Round func
-func Round(f float64, n int) float64 {
-	pow10n := math.Pow10(n)
-	if f-float64(int(f)) == 0 {
-		return f
+func Round(val float64, n int) float64 {
+	v := 1.0
+	if n > 0 {
+		v = math.Pow10(n)
+	}
+	if val < 0 {
+		return math.Ceil(val*v-0.5) / v
 	}
 
-	return math.Trunc((f+0.5/pow10n)*pow10n) / pow10n
+	return math.Floor(val*v+0.5) / v
 }
 
 // RandInt 随机整数
