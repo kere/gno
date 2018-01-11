@@ -47,22 +47,12 @@ func (m *Map) CheckValue(v interface{}) bool {
 	return true
 }
 
-// isExpired value is expired
-func (m *Map) isExpired(e *ExpiresVal) bool {
-	return e != nil && e.Expires > 0 && e.ExpiresAt.Before(time.Now())
-}
-
-// isNotExpired value is expired
-func (m *Map) isNotExpired(e *ExpiresVal) bool {
-	return e != nil && e.Expires > 0 && e.ExpiresAt.After(time.Now())
-}
-
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
 	key := m.Key(args)
 	m.Lock.RLock()
 	// key = market+code:dtype
-	if v, isok := m.Data[key]; isok && m.isNotExpired(v) {
+	if v, isok := m.Data[key]; isok && isNotExpired(v) {
 		m.Lock.RUnlock()
 		return v.Value
 	}
@@ -70,7 +60,7 @@ func (m *Map) Get(args ...interface{}) interface{} {
 
 	// not found ---------------------
 	m.Lock.Lock()
-	if v, isok := m.Data[key]; isok && m.isNotExpired(v) {
+	if v, isok := m.Data[key]; isok && isNotExpired(v) {
 		m.Lock.RUnlock()
 		return v.Value
 	}
@@ -133,4 +123,14 @@ func (m *Map) Print() {
 		count++
 		fmt.Println(count, ":", k)
 	}
+}
+
+// isExpired value is expired
+func isExpired(e *ExpiresVal) bool {
+	return e != nil && e.Expires > 0 && e.ExpiresAt.Before(time.Now())
+}
+
+// isNotExpired value is expired
+func isNotExpired(e *ExpiresVal) bool {
+	return e != nil && e.Expires > 0 && e.ExpiresAt.After(time.Now())
 }
