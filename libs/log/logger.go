@@ -95,6 +95,7 @@ func (l *Logger) writelog(prefix string, loglevel int, m ...interface{}) *Logger
 	}
 
 	l.Logger.SetPrefix(prefix)
+	m = append(m, "\n")
 	l.Logger.Println(m...)
 
 	return l
@@ -111,7 +112,7 @@ func (l *Logger) writelogf(prefix string, loglevel int, format string, m []inter
 	}
 
 	l.Logger.SetPrefix(prefix)
-	l.Logger.Printf(format+"\n", m...)
+	l.Logger.Printf(format+"\n\n", m...)
 
 	return l
 	// if PrintStackLevel < loglevel {
@@ -226,7 +227,6 @@ func (l *Logger) Infof(format string, m ...interface{}) *Logger {
 
 // Debug log
 func (l *Logger) Debug(m ...interface{}) *Logger {
-	m = append(m, "\n")
 	return l.writelog("[debug]", LogDebug, m...)
 }
 

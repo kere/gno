@@ -36,6 +36,9 @@ type SiteServer struct {
 	CSSVersion string
 	AssetsURL  string
 
+	Lang  string
+	Theme string
+
 	Secret string
 	Salt   string
 
@@ -108,12 +111,18 @@ func Init() *SiteServer {
 	s.Secret = a.DefaultString("secret", "")
 	s.Salt = fmt.Sprint(time.Now().Unix())
 
+	// Lang
+	s.Lang = a.DefaultString("lang", "en")
+	// Theme
+	s.Theme = a.DefaultString("theme", "")
+
 	Site = s
 
 	// DB
 	if config.IsSet("db") {
 		db.Init("app", config.GetConf("db"))
 	}
+
 	return s
 }
 

@@ -44,9 +44,11 @@ type Page struct {
 	Dir   string
 
 	Theme string
-	Head  []render.IRender
-	JS    []render.IRender
-	CSS   []render.IRender
+	Lang  string
+
+	Head []render.IRender
+	JS   []render.IRender
+	CSS  []render.IRender
 
 	Top    []render.IRender
 	Bottom []render.IRender
@@ -58,7 +60,7 @@ type Page struct {
 	Params         httprouter.Params
 	ResponseWriter http.ResponseWriter
 
-	Layout     *layout.Page
+	// Layout     *layout.Page
 	JSPosition string
 }
 
@@ -68,8 +70,8 @@ func (p *Page) Init(method string, w http.ResponseWriter, req *http.Request, par
 	p.Request = req
 	p.Params = params
 	p.ResponseWriter = w
-
-	p.Layout = layout.NewPage()
+	p.Lang = Site.Lang
+	p.Theme = Site.Theme
 }
 
 // GetName value
@@ -172,7 +174,10 @@ func (p *Page) SetCookie(name, value string, age int, path, domain string, httpO
 
 // Render page
 func (p *Page) Render() error {
-	lyt := p.Layout
+	lyt := layout.NewPage()
+	// lyt := p.Layout
+	lyt.Theme = p.Theme
+	lyt.Lang = p.Lang
 
 	lyt.Head.Title = p.Title
 	lyt.Head.CSSRenders = p.CSS
@@ -186,7 +191,7 @@ func (p *Page) Render() error {
 	lyt.AddBody(name+".htm", p.Data)
 	lyt.Bottom = p.Bottom
 
-	p.Layout = nil
+	// p.Layout = nil
 	p.Params = nil
 	p.Request = nil
 

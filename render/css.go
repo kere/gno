@@ -23,6 +23,12 @@ func (t *CSS) Render(w io.Writer) error {
 	w.Write(bCSSTagBegin)
 
 	filename := t.FileName
+	if strings.HasPrefix(filename, "http") {
+		w.Write([]byte(filename))
+		w.Write(bCSSTagEnd)
+		return nil
+	}
+
 	if os.PathSeparator == '\\' {
 		filename = strings.Replace(t.FileName, "\\", "/", -1)
 	}

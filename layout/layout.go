@@ -12,14 +12,13 @@ var (
 )
 
 var (
-	// BytesHTMLBegin bytes
-	BytesHTMLBegin = []byte("<!DOCTYPE HTML>\n<html>\n")
-	// BytesHTMLEnd bytes
-	BytesHTMLEnd = []byte("</html>\n")
+	bytesHTMLBegin  = []byte("<!DOCTYPE HTML>\n<html lang=\"")
+	bytesHTMLBegin2 = []byte("\">\n")
+	bytesHTMLEnd    = []byte("</html>\n")
 	// BytesHTMLBodyBegin bytes
-	BytesHTMLBodyBegin = []byte("\n<body>\n")
+	bytesHTMLBodyBegin = []byte("\n<body>\n")
 	// BytesHTMLBodyEnd bytes
-	BytesHTMLBodyEnd = []byte("\n</body>\n")
+	bytesHTMLBodyEnd = []byte("\n</body>\n")
 
 	bRenderS1 = []byte("\n<script>var MYENV='")
 	bRenderS2 = []byte("',THEME='")
@@ -29,6 +28,7 @@ var (
 // Page layout class
 type Page struct {
 	Theme  string
+	Lang   string
 	Head   *Head
 	Top    []render.IRender
 	Body   []render.IRender
@@ -64,11 +64,13 @@ func (p *Page) AddBottom(filename string, data interface{}) {
 // Render func
 func (p *Page) Render(w io.Writer) error {
 	// <html>
-	w.Write(BytesHTMLBegin)
+	w.Write(bytesHTMLBegin)
+	w.Write([]byte(p.Lang))
+	w.Write(bytesHTMLBegin2)
 	p.Head.Render(w)
 
 	// <body>
-	w.Write(BytesHTMLBodyBegin)
+	w.Write(bytesHTMLBodyBegin)
 
 	var err error
 	for _, r := range p.Top {
@@ -100,8 +102,8 @@ func (p *Page) Render(w io.Writer) error {
 
 	p.Head.RenderBottomJS(w)
 
-	w.Write(BytesHTMLBodyEnd)
-	w.Write(BytesHTMLEnd)
+	w.Write(bytesHTMLBodyEnd)
+	w.Write(bytesHTMLEnd)
 
 	return nil
 }
