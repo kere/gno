@@ -21,6 +21,7 @@ type IPage interface {
 	GetTheme() string
 	GetResponseWriter() http.ResponseWriter
 	GetRequest() *http.Request
+	GetParams() httprouter.Params
 
 	AddHead(src string)
 	AddJS(filename string)
@@ -99,6 +100,11 @@ func (p *Page) GetResponseWriter() http.ResponseWriter {
 	return p.ResponseWriter
 }
 
+// GetParams value
+func (p *Page) GetParams() httprouter.Params {
+	return p.Params
+}
+
 // AddHead head
 func (p *Page) AddHead(src string) {
 	r := render.NewHead(src)
@@ -133,11 +139,17 @@ func (p *Page) AddBottom(filename string, data interface{}) {
 
 // AddBottomScript add a bottom render
 func (p *Page) AddBottomScript(src string, data map[string]string) {
-	str := "<script "
-	for k, v := range data {
-		str += k + "=\"" + v + "\" "
+	str := "<script"
+
+	var s string
+	if len(data) > 0 {
+		s = " "
+		for k, v := range data {
+			s += k + "=\"" + v + "\" "
+		}
 	}
-	str += ">" + src + "</script>"
+
+	str += s + ">" + src + "</script>"
 	p.Bottom = append(p.Bottom, render.NewString(str))
 }
 

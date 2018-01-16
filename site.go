@@ -3,6 +3,7 @@ package gno
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -212,18 +213,18 @@ func (s *SiteServer) RegistGetAPI(rule string, factory func() IWebAPI) {
 }
 
 func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
-	isReq, isOK, url, err := p.Auth()
-	if err != nil {
-		return err
-	}
-
+	isReq, isOK, urlstr, err := p.Auth()
 	if isReq && !isOK {
-		if url != "" {
-			http.Redirect(rw, req, url, http.StatusSeeOther)
+		if urlstr != "" {
+			u, _ := url.Parse(urlstr)
+			if u.RawQuery == "" {
+				u.RawQuery = "msg=" + url.QueryEscape(err.Error())
+			} else {
+				u.RawQuery += "&msg=" + url.QueryEscape(err.Error())
+			}
+
+			http.Redirect(rw, req, u.String(), http.StatusSeeOther)
 		}
-		return nil
-	} else if isReq && isOK && url != "" {
-		http.Redirect(rw, req, url, http.StatusSeeOther)
 		return nil
 	}
 
@@ -255,6 +256,7 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
 	log.App.Warn(err)
 	if errorURL == "" {
+		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write([]byte(err.Error()))
 		return
 	}
@@ -264,6 +266,6 @@ func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.R
 
 func doAPIError(err error, rw http.ResponseWriter) {
 	log.App.Warn(err)
-	rw.Write([]byte(err.Error()))
 	rw.WriteHeader(http.StatusInternalServerError)
+	rw.Write([]byte(err.Error()))
 }

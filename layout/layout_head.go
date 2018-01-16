@@ -11,6 +11,7 @@ var (
 	bHeadEnd    = []byte("</head>\n")
 	bTitleBegin = []byte("<title>")
 	bTitleEnd   = []byte("</title>\n")
+	metaCharset = []byte("<meta charset=\"UTF-8\">\n")
 )
 
 // Head for page
@@ -45,6 +46,7 @@ func (h *Head) AddCSS(r render.IRender) {
 // Render func
 func (h *Head) Render(w io.Writer) error {
 	w.Write(bHeadBegin)
+	w.Write(metaCharset)
 	var err error
 	for _, r := range h.HeadItems {
 		if err = r.Render(w); err != nil {

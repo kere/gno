@@ -54,6 +54,7 @@ func (w *WebAPI) Exec() (interface{}, error) {
 // Reply response
 func (w *WebAPI) Reply(data interface{}) error {
 	if data == nil {
+		w.ResponseWriter.WriteHeader(http.StatusOK)
 		return nil
 	}
 
@@ -72,6 +73,7 @@ func (w *WebAPI) Reply(data interface{}) error {
 		return err
 	}
 
+	w.ResponseWriter.WriteHeader(http.StatusOK)
 	w.ResponseWriter.Write(src)
 
 	w.Request = nil
