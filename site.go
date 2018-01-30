@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -24,6 +26,8 @@ var (
 	Site *SiteServer
 
 	config conf.Configuration
+
+	quitChan = make(chan os.Signal)
 )
 
 // SiteServer class
@@ -136,7 +140,24 @@ func (s *SiteServer) Start() {
 
 	fmt.Println("RunMode:", RunMode)
 	fmt.Println("Listen:", s.Listen)
-	http.ListenAndServe(s.Listen, s.Router)
+	// go http.ListenAndServe(s.Listen, s.Router)
+	server := &http.Server{Addr: s.Listen, Handler: s.Router}
+
+	signal.Notify(quitChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	go func() {
+		<-quitChan
+
+		if err := server.Close(); err != nil {
+			fmt.Println(err)
+			os.Exit(0)
+		}
+	}()
+
+	if err := server.ListenAndServe(); err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
 }
 
 // RegistGet router
@@ -218,9 +239,9 @@ func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprou
 		if urlstr != "" {
 			u, _ := url.Parse(urlstr)
 			if u.RawQuery == "" {
-				u.RawQuery = "msg=" + url.QueryEscape(err.Error())
+				u.RawQuery = "msg=" + url.PathEscape(err.Error())
 			} else {
-				u.RawQuery += "&msg=" + url.QueryEscape(err.Error())
+				u.RawQuery += "&msg=" + url.PathEscape(err.Error())
 			}
 
 			http.Redirect(rw, req, u.String(), http.StatusSeeOther)
