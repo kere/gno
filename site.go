@@ -48,6 +48,7 @@ type SiteServer struct {
 	Salt   string
 
 	Log *log.Logger
+	PID string
 }
 
 // GetConfig return config
@@ -120,6 +121,7 @@ func Init() *SiteServer {
 	s.Lang = a.DefaultString("lang", "en")
 	// Theme
 	s.Theme = a.DefaultString("theme", "")
+	s.PID = a.DefaultString("pid", "")
 
 	Site = s
 
@@ -138,6 +140,16 @@ func (s *SiteServer) Start() {
 		s.Router.NotFound = http.FileServer(http.Dir("webroot"))
 	}
 
+	if s.PID != "" {
+		f, err := os.OpenFile(s.PID, os.O_CREATE|os.O_TRUNC, 0755)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(0)
+		}
+		f.WriteString(fmt.Sprint(os.Getpid()))
+		f.Close()
+	}
+
 	fmt.Println("RunMode:", RunMode)
 	fmt.Println("Listen:", s.Listen)
 	// go http.ListenAndServe(s.Listen, s.Router)
@@ -147,6 +159,9 @@ func (s *SiteServer) Start() {
 
 	go func() {
 		<-quitChan
+		if s.PID != "" {
+			os.Remove(s.PID)
+		}
 
 		if err := server.Close(); err != nil {
 			fmt.Println(err)
