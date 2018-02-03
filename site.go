@@ -17,6 +17,11 @@ import (
 	"github.com/kere/gno/render"
 )
 
+const (
+	// WEBROOT string
+	WEBROOT = "webroot"
+)
+
 var (
 	// ConfigName config file name
 	ConfigName = "app/app.conf"
@@ -32,7 +37,8 @@ var (
 
 // SiteServer class
 type SiteServer struct {
-	Listen   string
+	Listen string
+
 	Location *time.Location
 	Router   *httprouter.Router
 
@@ -121,6 +127,7 @@ func Init() *SiteServer {
 	s.Lang = a.DefaultString("lang", "en")
 	// Theme
 	s.Theme = a.DefaultString("theme", "")
+	// PID
 	s.PID = a.DefaultString("pid", "")
 
 	Site = s
@@ -137,7 +144,7 @@ func Init() *SiteServer {
 func (s *SiteServer) Start() {
 	if layout.RunMode == "dev" {
 		// s.Router.ServeFiles("/assets/*filepath", http.Dir("webroot/assets"))
-		s.Router.NotFound = http.FileServer(http.Dir("webroot"))
+		s.Router.NotFound = http.FileServer(http.Dir(WEBROOT))
 	}
 
 	if s.PID != "" {

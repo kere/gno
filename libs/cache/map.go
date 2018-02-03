@@ -49,7 +49,7 @@ func (m *Map) CheckValue(v interface{}) bool {
 
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
-	key := m.Key(args)
+	key := m.Key(args...)
 	m.Lock.RLock()
 	// key = market+code:dtype
 	if v, isok := m.Data[key]; isok && isNotExpired(v) {
@@ -77,17 +77,18 @@ func (m *Map) Get(args ...interface{}) interface{} {
 		return nil
 	}
 
-	ext := time.Now().Add(time.Duration(expires))
-	v := &ExpiresVal{Value: obj, Expires: expires, ExpiresAt: ext}
+	ex := time.Now().Add(time.Duration(expires) * time.Second)
+	v := &ExpiresVal{Value: obj, Expires: expires, ExpiresAt: ex}
 
 	m.Data[key] = v
+
 	m.Lock.Unlock()
 	return v.Value
 }
 
 // Release 释放缓存
 func (m *Map) Release(args ...interface{}) {
-	key := m.Key(args)
+	key := m.Key(args...)
 	m.Lock.RLock()
 	// key = market+code:dtype
 	if _, isok := m.Data[key]; !isok {
@@ -108,7 +109,7 @@ func (m *Map) Release(args ...interface{}) {
 
 // IsCached bool
 func (m *Map) IsCached(args ...interface{}) bool {
-	key := m.Key(args)
+	key := m.Key(args...)
 	m.Lock.RLock()
 	// key = market+code:dtype
 	_, isok := m.Data[key]

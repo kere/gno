@@ -10,6 +10,10 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+const (
+	methodFieldName = "_method"
+)
+
 // IOpenAPI interface
 type IOpenAPI interface {
 	Auth(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (require bool, err error)
@@ -76,26 +80,21 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 			continue
 		}
 		f := v.Method(i).Interface().(func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error))
-		openapiMap[rule+name] = openapiItem{Exec: f, API: openapi}
-		fmt.Println("regist openapi:", name)
+		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
+		fmt.Println("regist openapi:", rule+"/"+name)
 	}
 
 	// s.Router.GET(rule, doOpenAPIHandle)
-	s.Router.POST(rule, doOpenAPIHandle)
+	s.Router.POST(rule+"/:"+methodFieldName, doOpenAPIHandle)
 }
-
-const (
-	methodFieldName = "method"
-)
 
 func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	uri := req.URL.RequestURI()
-	method := ps.ByName(methodFieldName)
-	field := uri[0:len(uri)-len(method)] + ":" + methodFieldName + method
+	// method := ps.ByName(methodFieldName)
 
 	var item openapiItem
 	var isok bool
-	if item, isok = openapiMap[field]; !isok {
+	if item, isok = openapiMap[uri]; !isok {
 		doAPIError(errors.New(uri+" openapi not found"), rw)
 		return
 	}
