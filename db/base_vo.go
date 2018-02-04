@@ -5,6 +5,10 @@ import (
 	"reflect"
 )
 
+// autotime:"true"
+// skip: all / update /insert
+// skipempty: all / update / insert
+
 // IVO interface
 type IVO interface {
 	Init(IVO) error

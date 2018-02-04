@@ -150,6 +150,9 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return sc.val.Field(n).Int() == 0
 
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return sc.val.Field(n).Uint() == 0
+
 	case reflect.Float32, reflect.Float64:
 		return sc.val.Field(n).Float() == 0
 
