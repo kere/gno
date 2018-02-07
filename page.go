@@ -28,7 +28,7 @@ type IPage interface {
 	AddCSS(filename string)
 	AddTop(filename string, data interface{})
 	AddBottom(filename string, data interface{})
-	AddBottomScript(src string, data map[string]string)
+	AddScript(position, src string, data map[string]string)
 
 	Init(method string, w http.ResponseWriter, req *http.Request, ps httprouter.Params)
 	Auth() (require, isok bool, redirectURL string, err error)
@@ -137,8 +137,9 @@ func (p *Page) AddBottom(filename string, data interface{}) {
 	p.Bottom = append(p.Bottom, r)
 }
 
-// AddBottomScript add a bottom render
-func (p *Page) AddBottomScript(src string, data map[string]string) {
+// AddScript add a bottom render
+// position: top, bottom
+func (p *Page) AddScript(position, src string, data map[string]string) {
 	str := "<script"
 
 	var s string
@@ -150,7 +151,14 @@ func (p *Page) AddBottomScript(src string, data map[string]string) {
 	}
 
 	str += s + ">" + src + "</script>"
-	p.Bottom = append(p.Bottom, render.NewString(str))
+	switch position {
+	case "bottom":
+		p.Bottom = append(p.Bottom, render.NewString(str))
+	case "top":
+		p.Top = append(p.Top, render.NewString(str))
+	default:
+		p.Head = append(p.Head, render.NewString(str))
+	}
 }
 
 // Auth page auth
@@ -188,9 +196,9 @@ func (p *Page) SetCookie(name, value string, age int, path, domain string, httpO
 func (p *Page) Render() error {
 	lyt := layout.NewPage()
 	// lyt := p.Layout
-	lyt.Theme = p.Theme
 	lyt.Lang = p.Lang
 
+	lyt.Head.Theme = p.Theme
 	lyt.Head.Title = p.Title
 	lyt.Head.CSSRenders = p.CSS
 	lyt.Head.JSRenders = p.JS

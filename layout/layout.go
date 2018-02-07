@@ -27,7 +27,6 @@ var (
 
 // Page layout class
 type Page struct {
-	Theme  string
 	Lang   string
 	Head   *Head
 	Top    []render.IRender
@@ -86,12 +85,6 @@ func (p *Page) Render(w io.Writer) error {
 			return err
 		}
 	}
-
-	w.Write(bRenderS1)
-	w.Write([]byte(RunMode))
-	w.Write(bRenderS2)
-	w.Write([]byte(p.Theme))
-	w.Write(bRenderS3)
 
 	for _, r := range p.Bottom {
 		if err = r.Render(w); err != nil {

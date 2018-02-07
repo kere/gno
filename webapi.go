@@ -10,11 +10,11 @@ import (
 
 const (
 	// ReplyTypeJSON reply json
-	ReplyTypeJSON = iota
-	// ReplyTypeXML reply xml
-	ReplyTypeXML
+	ReplyTypeJSON = 0
 	// ReplyTypeText reply text
-	ReplyTypeText
+	ReplyTypeText = 1
+	// ReplyTypeXML reply xml
+	ReplyTypeXML = 2
 )
 
 // IWebAPI interface
@@ -61,10 +61,10 @@ func (w *WebAPI) Reply(data interface{}) error {
 	var src []byte
 	var err error
 	switch w.ReplyType {
-	case ReplyTypeJSON:
-		src, err = json.Marshal(data)
 	case ReplyTypeText:
 		src = []byte(fmt.Sprint(data))
+	case ReplyTypeJSON:
+		src, err = json.Marshal(data)
 	case ReplyTypeXML:
 
 	}

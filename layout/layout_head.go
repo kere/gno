@@ -18,6 +18,7 @@ var (
 type Head struct {
 	JSPosition string
 	Title      string
+	Theme      string
 	HeadItems  []render.IRender
 	CSSRenders []render.IRender
 	JSRenders  []render.IRender
@@ -48,6 +49,13 @@ func (h *Head) Render(w io.Writer) error {
 	w.Write(bHeadBegin)
 	w.Write(metaCharset)
 	var err error
+
+	w.Write(bRenderS1)
+	w.Write([]byte(RunMode))
+	w.Write(bRenderS2)
+	w.Write([]byte(h.Theme))
+	w.Write(bRenderS3)
+
 	for _, r := range h.HeadItems {
 		if err = r.Render(w); err != nil {
 			return err
