@@ -72,6 +72,10 @@ func (q *QueryBuilder) UnSelect(s ...string) *QueryBuilder {
 }
 
 func (q *QueryBuilder) Where(s string, args ...interface{}) *QueryBuilder {
+	if s == "" {
+		return q
+	}
+
 	q.where = &CondParams{s, args}
 	return q
 }
@@ -253,46 +257,46 @@ func (q *QueryBuilder) QueryOne() (DataRow, error) {
 	return nil, nil
 }
 
-// Find return VODataSet
-func (q *QueryBuilder) Find() (VODataSet, error) {
-	database := q.getDatabase()
+// // Find return VODataSet
+// func (q *QueryBuilder) Find() (VODataSet, error) {
+// 	database := q.getDatabase()
+//
+// 	var key string
+// 	if q.cache {
+// 		key = q.cachekey()
+// 		if exi, _ := cacheIns.Exists(key); exi {
+// 			return cacheGetX(key, q.cls)
+// 		}
+// 	}
+// 	var r VODataSet
+// 	var err error
+// 	if q.isPrepare {
+// 		r, err = database.FindPrepare(q.cls, NewSqlState(q.parse()))
+// 	} else {
+// 		r, err = database.Find(q.cls, NewSqlState(q.parse()))
+// 	}
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if q.cache {
+// 		cacheSet(key, r, q.expire)
+// 	}
+// 	return r, nil
+// }
 
-	var key string
-	if q.cache {
-		key = q.cachekey()
-		if exi, _ := cacheIns.Exists(key); exi {
-			return cacheGetX(key, q.cls)
-		}
-	}
-	var r VODataSet
-	var err error
-	if q.isPrepare {
-		r, err = database.FindPrepare(q.cls, NewSqlState(q.parse()))
-	} else {
-		r, err = database.Find(q.cls, NewSqlState(q.parse()))
-	}
-	if err != nil {
-		return nil, err
-	}
-	if q.cache {
-		cacheSet(key, r, q.expire)
-	}
-	return r, nil
-}
-
-func (q *QueryBuilder) FindOne() (IVO, error) {
-	q.isQueryOne = true
-	r, err := q.Find()
-	q.isQueryOne = false
-	if err != nil {
-		return nil, err
-	}
-
-	if len(r) > 0 {
-		return r[0], nil
-	}
-	return nil, nil
-}
+// func (q *QueryBuilder) FindOne() (IVO, error) {
+// 	q.isQueryOne = true
+// 	r, err := q.Find()
+// 	q.isQueryOne = false
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	if len(r) > 0 {
+// 		return r[0], nil
+// 	}
+// 	return nil, nil
+// }
 
 func (q *QueryBuilder) writeField(s *bytes.Buffer) {
 	field := B_StarKey

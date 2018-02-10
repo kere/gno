@@ -49,6 +49,9 @@ func (u *UpdateBuilder) parse(data interface{}) ([]byte, []interface{}) {
 }
 
 func (u *UpdateBuilder) Where(cond string, args ...interface{}) *UpdateBuilder {
+	if cond == "" {
+		return u
+	}
 	u.where = &CondParams{cond, args}
 	return u
 }

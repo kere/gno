@@ -199,24 +199,24 @@ func QueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, er
 	return dataset, nil
 }
 
-func Find(conn *sql.DB, cls IVO, sqlstr []byte, args ...interface{}) (VODataSet, error) {
-	dataset, err := Query(conn, sqlstr, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewStructConvert(cls).DataSet2Struct(dataset)
-	// return Current().Find(cls, NewSqlState([]byte(sqlstr), args))
-}
-func FindPrepare(conn *sql.DB, cls IVO, sqlstr []byte, args ...interface{}) (VODataSet, error) {
-	dataset, err := QueryPrepare(conn, sqlstr, args...)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return NewStructConvert(cls).DataSet2Struct(dataset)
-}
+// func Find(conn *sql.DB, cls IVO, sqlstr []byte, args ...interface{}) (VODataSet, error) {
+// 	dataset, err := Query(conn, sqlstr, args...)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return NewStructConvert(cls).DataSet2Struct(dataset)
+// 	// return Current().Find(cls, NewSqlState([]byte(sqlstr), args))
+// }
+// func FindPrepare(conn *sql.DB, cls IVO, sqlstr []byte, args ...interface{}) (VODataSet, error) {
+// 	dataset, err := QueryPrepare(conn, sqlstr, args...)
+//
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return NewStructConvert(cls).DataSet2Struct(dataset)
+// }
 
 // Excute sql from a file
 // This function run sql under not transaction mode and use the current database from database bool

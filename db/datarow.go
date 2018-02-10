@@ -21,6 +21,12 @@ func (dr DataRow) Insert(table string) error {
 	return err
 }
 
+// Update datarow item
+func (dr DataRow) Update(table string, where string, params ...interface{}) error {
+	_, err := NewUpdateBuilder(table).Where(where, params...).Update(dr)
+	return err
+}
+
 // Save datarow item
 // If exists then update
 // If not found then insert

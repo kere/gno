@@ -38,6 +38,9 @@ func (d *DeleteBuilder) parse() ([]byte, []interface{}) {
 }
 
 func (d *DeleteBuilder) Where(cond string, args ...interface{}) *DeleteBuilder {
+	if cond == "" {
+		return d
+	}
 	d.where = &CondParams{cond, args}
 	return d
 }

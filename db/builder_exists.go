@@ -31,6 +31,9 @@ func (e *ExistsBuilder) GetIsPrepare(v bool) bool {
 }
 
 func (e *ExistsBuilder) Where(s string, args ...interface{}) *ExistsBuilder {
+	if s == "" {
+		return e
+	}
 	e.where = &CondParams{s, args}
 	return e
 }

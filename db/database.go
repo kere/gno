@@ -124,17 +124,17 @@ func (this *Database) QueryPrepare(s *SqlState) (DataSet, error) {
 	return QueryPrepare(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
 }
 
-func (this *Database) FindPrepare(cls IVO, s *SqlState) (VODataSet, error) {
-	return FindPrepare(this.Connection.Conn(), cls, s.GetSql(), s.GetArgs()...)
-}
+// func (this *Database) FindPrepare(cls IVO, s *SqlState) (VODataSet, error) {
+// 	return FindPrepare(this.Connection.Conn(), cls, s.GetSql(), s.GetArgs()...)
+// }
 
 func (this *Database) Query(s *SqlState) (DataSet, error) {
 	return Query(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
 }
 
-func (this *Database) Find(cls IVO, s *SqlState) (VODataSet, error) {
-	return Find(this.Connection.Conn(), cls, s.GetSql(), s.GetArgs()...)
-}
+// func (this *Database) Find(cls IVO, s *SqlState) (VODataSet, error) {
+// 	return Find(this.Connection.Conn(), cls, s.GetSql(), s.GetArgs()...)
+// }
 
 func (this *Database) ExecPrepare(s *SqlState) (sql.Result, error) {
 	return ExecPrepare(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
