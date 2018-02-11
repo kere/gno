@@ -8,15 +8,17 @@ import (
 	"reflect"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kere/gno/libs/util"
 )
 
 const (
 	methodFieldName = "_method"
+	srcField        = "_src"
 )
 
 // IOpenAPI interface
 type IOpenAPI interface {
-	Auth(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (require bool, err error)
+	Auth(req *http.Request, ps httprouter.Params) (require bool, err error)
 	Reply(rw http.ResponseWriter, data interface{}) error
 }
 
@@ -27,7 +29,7 @@ type OpenAPI struct {
 
 // Auth page auth
 // if require is true then do auth
-func (w *OpenAPI) Auth(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (require bool, err error) {
+func (w *OpenAPI) Auth(req *http.Request, ps httprouter.Params) (require bool, err error) {
 	return require, nil
 }
 
@@ -59,7 +61,7 @@ func (w *OpenAPI) Reply(rw http.ResponseWriter, data interface{}) error {
 	return nil
 }
 
-type openAPIExec func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error)
+type openAPIExec func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error)
 
 type openapiItem struct {
 	Exec openAPIExec
@@ -79,8 +81,9 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		if name == "Auth" || name == "Reply" {
 			continue
 		}
-		f := v.Method(i).Interface().(func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error))
+		f := v.Method(i).Interface().(func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error))
 		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
+
 		fmt.Println("regist openapi:", rule+"/"+name)
 	}
 
@@ -99,12 +102,22 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 		return
 	}
 
-	if isReq, err := item.API.Auth(rw, req, ps); isReq && err != nil {
+	if isReq, err := item.API.Auth(req, ps); isReq && err != nil {
 		doAPIError(err, rw)
 		return
 	}
 
-	data, err := item.Exec(rw, req, ps)
+	var args util.MapData
+	src := req.PostFormValue(srcField)
+	if src != "" {
+		err := json.Unmarshal([]byte(src), &args)
+		if err != nil {
+			doAPIError(err, rw)
+			return
+		}
+	}
+
+	data, err := item.Exec(req, ps, args)
 	if err != nil {
 		doAPIError(err, rw)
 		return

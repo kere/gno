@@ -116,6 +116,8 @@ func (dr MapData) String(field string) string {
 	case []byte:
 		return string(dr[field].([]byte))
 
+	case nil:
+		return ""
 	default:
 		return fmt.Sprint(dr[field])
 	}

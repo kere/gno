@@ -1,6 +1,7 @@
 package gno
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -14,6 +15,7 @@ import (
 	"github.com/kere/gno/layout"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
+	"github.com/kere/gno/libs/util"
 	"github.com/kere/gno/render"
 )
 
@@ -288,7 +290,16 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 		return err
 	}
 
-	data, err := webapi.Exec()
+	var args util.MapData
+	src := req.PostFormValue(srcField)
+	if src != "" {
+		err := json.Unmarshal([]byte(src), &args)
+		if err != nil {
+			return err
+		}
+	}
+
+	data, err := webapi.Exec(args)
 	if err != nil {
 		return err
 	}

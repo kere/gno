@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kere/gno/libs/util"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 type IWebAPI interface {
 	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params)
 	Auth() (require bool, err error)
-	Exec() (interface{}, error)
+	Exec(args util.MapData) (interface{}, error)
 	Reply(data interface{}) error
 }
 
@@ -47,7 +48,7 @@ func (w *WebAPI) Auth() (require bool, err error) {
 }
 
 // Exec api
-func (w *WebAPI) Exec() (interface{}, error) {
+func (w *WebAPI) Exec(args util.MapData) (interface{}, error) {
 	return nil, nil
 }
 
