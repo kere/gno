@@ -10,20 +10,10 @@ type UpdateBuilder struct {
 	table string
 	where *CondParams
 	builder
-	excludeFields []string
 }
 
 func NewUpdateBuilder(t string) *UpdateBuilder {
 	return (&UpdateBuilder{}).Table(t)
-}
-
-func (u *UpdateBuilder) AddExcludeFields(fields ...string) *UpdateBuilder {
-	if u.excludeFields == nil {
-		u.excludeFields = make([]string, 0)
-	}
-
-	u.excludeFields = append(u.excludeFields, fields...)
-	return u
 }
 
 func (u *UpdateBuilder) Table(t string) *UpdateBuilder {
@@ -32,14 +22,14 @@ func (u *UpdateBuilder) Table(t string) *UpdateBuilder {
 }
 
 func (u *UpdateBuilder) parse(data interface{}) ([]byte, []interface{}) {
-	keys, values, _ := keyValueList("update", data, u.excludeFields)
+	keys, values, _ := keyValueList("update", data)
 
 	s := bytes.Buffer{}
 	driver := u.getDatabase().Driver
 	s.Write(bSQLUpdate)
 	s.WriteString(driver.QuoteField(u.table))
 	s.Write(bSQLSet)
-	s.Write(bytes.Join(keys, B_CommaSplit))
+	s.Write(bytes.Join(keys, BCommaSplit))
 	if u.where != nil {
 		s.Write(bSQLWhere)
 		s.WriteString(u.where.Cond)

@@ -108,14 +108,9 @@ func (this *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
 
 }
 
-func (this *Postgres) FlatData(v interface{}) interface{} {
+func (this *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
 	if v == nil {
 		return nil
-	}
-
-	typ := reflect.TypeOf(v)
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
 	}
 
 	switch typ.Kind() {
@@ -239,8 +234,6 @@ func (this *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 	if len(src) == 0 {
 		return nil
 	}
-
-	fmt.Println("==a==")
 
 	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
 	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)

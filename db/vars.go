@@ -17,7 +17,7 @@ var (
 	B_QuestionMark = []byte("?")
 	B_Equal        = []byte("=")
 
-	B_CommaSplit  = []byte(",")
+	BCommaSplit  = []byte(",")
 	B_EmptyString = []byte("")
 	B_StarKey     = []byte("*")
 	B_Space       = []byte(" ")

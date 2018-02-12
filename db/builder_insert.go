@@ -66,13 +66,13 @@ func (ins *InsertBuilder) parseM(rows DataSet) []byte {
 		return nil
 	}
 
-	keys, _, _ := keyValueList("insert", rows[0], ins.excludeFields)
+	keys, _, _ := keyValueList("insert", rows[0])
 	s := bytes.Buffer{}
 	driver := ins.getDatabase().Driver
 	s.WriteString("insert into ")
 	s.WriteString(driver.QuoteField(ins.table))
 	s.WriteString(" (")
-	s.Write(bytes.Join(keys, B_CommaSplit))
+	s.Write(bytes.Join(keys, BCommaSplit))
 	s.WriteString(") values ")
 
 	// length := len(keys)
@@ -85,7 +85,7 @@ func (ins *InsertBuilder) parseM(rows DataSet) []byte {
 
 	for i := 0; i < size; i++ {
 		s.WriteString("(")
-		keys2, values2, _ = keyValueList("insert", rows[i], ins.excludeFields)
+		keys2, values2, _ = keyValueList("insert", rows[i])
 		// 顺序原因，需要重新定位
 		values = make([]string, 0)
 		for _, key = range keys {
@@ -114,16 +114,16 @@ func (ins *InsertBuilder) parseM(rows DataSet) []byte {
 }
 
 func (ins *InsertBuilder) parse(data interface{}) ([]byte, []interface{}) {
-	keys, values, stmts := keyValueList("insert", data, ins.excludeFields)
+	keys, values, stmts := keyValueList("insert", data)
 
 	s := bytes.Buffer{}
 	driver := ins.getDatabase().Driver
 	s.WriteString("insert into ")
 	s.WriteString(driver.QuoteField(ins.table))
 	s.WriteString(" (")
-	s.Write(bytes.Join(keys, B_CommaSplit))
+	s.Write(bytes.Join(keys, BCommaSplit))
 	s.WriteString(") values (")
-	s.Write(bytes.Join(stmts, B_CommaSplit))
+	s.Write(bytes.Join(stmts, BCommaSplit))
 	s.WriteString(")")
 
 	return s.Bytes(), values

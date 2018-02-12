@@ -1,5 +1,7 @@
 package drivers
 
+import "reflect"
+
 var (
 	b_BRACE_LEFT    = []byte("{")
 	b_BRACE_RIGHT   = []byte("}")
@@ -46,7 +48,7 @@ func (c *Common) ParseStringSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-func (this *Common) FlatData(v interface{}) interface{} {
+func (this *Common) FlatData(typ reflect.Type, v interface{}) interface{} {
 	return nil
 }
 

@@ -62,14 +62,9 @@ func (this *Mysql) toJson(v interface{}) []byte {
 	return b
 }
 
-func (this *Mysql) FlatData(v interface{}) interface{} {
+func (this *Mysql) FlatData(typ reflect.Type, v interface{}) interface{} {
 	if v == nil {
 		return nil
-	}
-
-	typ := reflect.TypeOf(v)
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
 	}
 
 	switch typ.Kind() {

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -12,7 +13,8 @@ import (
 type IVO interface {
 	Init(string, IVO)
 	GetTable() string
-	// SetTaget(IVO) error
+	ToDataRow(ctype string) DataRow
+	ToJSON(ctype string) string
 	Create() error
 	CreateIfNotFound(where string, params ...interface{}) (bool, error)
 	Update(where string, params ...interface{}) error
@@ -37,6 +39,14 @@ func (b *BaseVO) ToDataRow(ctype string) DataRow {
 	return b.converter.Struct2DataRow(ctype)
 }
 
+// ToJSON convert to DataRow
+// ctype = insert | update |
+func (b *BaseVO) ToJSON(ctype string) string {
+	row := b.ToDataRow(ctype)
+	src, _ := json.Marshal(row)
+	return string(src)
+}
+
 // Init func
 func (b *BaseVO) Init(table string, target IVO) {
 	if target == nil {
@@ -51,20 +61,6 @@ func (b *BaseVO) Init(table string, target IVO) {
 func (b *BaseVO) GetTable() string {
 	return b.Table
 }
-
-// SetTaget func
-// func (b *BaseVO) SetTaget(t IVO) error {
-// 	b.target = t
-// b.converter = NewStructConvert(t)
-// b.val = b.converter.val
-// if !b.val.IsValid() {
-// 	return fmt.Errorf("value object is invalid")
-// }
-// if b.val.Kind() == reflect.Ptr {
-// 	b.val = b.val.Elem()
-// }
-// 	return nil
-// }
 
 // Create func
 func (b *BaseVO) Create() error {

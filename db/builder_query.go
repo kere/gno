@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 var (
@@ -19,7 +18,6 @@ type QueryBuilder struct {
 	table      string
 	field      string
 	leftJoin   string
-	unselect   []string
 	where      *CondParams
 	order      string
 	limit      int
@@ -63,11 +61,6 @@ func (q *QueryBuilder) Select(s string) *QueryBuilder {
 
 func (q *QueryBuilder) LeftJoin(s string) *QueryBuilder {
 	q.leftJoin = s
-	return q
-}
-
-func (q *QueryBuilder) UnSelect(s ...string) *QueryBuilder {
-	q.unselect = s
 	return q
 }
 
@@ -301,26 +294,10 @@ func (q *QueryBuilder) QueryOne() (DataRow, error) {
 func (q *QueryBuilder) writeField(s *bytes.Buffer) {
 	field := B_StarKey
 	if q.field != "" {
-		if len(q.unselect) == 0 {
-			field = []byte(q.field)
-
-		} else {
-			arr := strings.Split(q.field, ",")
-			tmp := make([]string, 0)
-			for _, item := range arr {
-				if InStrings(q.unselect, item) {
-					continue
-				}
-				tmp = append(tmp, item)
-			}
-			field = []byte(strings.Join(tmp, ","))
-		}
-
+		field = []byte(q.field)
 	} else if q.cls != nil {
 		sm := NewStructConvert(q.cls)
-		sm.SetExcludes(q.unselect)
-		field = bytes.Join(sm.DBFields(), B_CommaSplit)
-
+		field = bytes.Join(sm.DBFields(), BCommaSplit)
 	}
 
 	s.Write(field)

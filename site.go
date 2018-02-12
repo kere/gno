@@ -291,7 +291,7 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 	}
 
 	var args util.MapData
-	src := req.PostFormValue(srcField)
+	src := req.PostFormValue(APISrcField)
 	if src != "" {
 		err := json.Unmarshal([]byte(src), &args)
 		if err != nil {

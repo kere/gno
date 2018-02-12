@@ -19,7 +19,6 @@ type StructConverter struct {
 	typ      reflect.Type
 	val      reflect.Value
 	target   interface{}
-	excludes []string
 	fields   []*StructField
 	dbfields [][]byte
 }
@@ -30,18 +29,18 @@ func NewStructConvert(cls interface{}) *StructConverter {
 	return s
 }
 
-func (sc *StructConverter) SetExcludes(s []string) {
-	sc.excludes = s
-}
+// func (sc *StructConverter) SetExcludes(s []string) {
+// 	sc.excludes = s
+// }
 
 func (sc *StructConverter) SetTarget(cls interface{}) {
 	sc.target = cls
 	sc.typ = reflect.TypeOf(cls)
 
 	sc.val = reflect.ValueOf(cls)
-	if sc.val.Kind() == reflect.Ptr {
-		sc.val = sc.val.Elem()
-	}
+	// if sc.val.Kind() == reflect.Ptr {
+	// 	sc.val = sc.val.Elem()
+	// }
 }
 
 func (sc *StructConverter) GetTypeElem() reflect.Type {
@@ -52,10 +51,12 @@ func (sc *StructConverter) GetTypeElem() reflect.Type {
 	}
 }
 
+// GetType reflect.Type
 func (sc *StructConverter) GetType() reflect.Type {
 	return sc.typ
 }
 
+// GetType reflect.Value
 func (sc *StructConverter) GetValue() reflect.Value {
 	return sc.val
 }
@@ -83,9 +84,9 @@ func (sc *StructConverter) buildFieldInfo() {
 			field = f.Name
 		}
 
-		if InStrings(sc.excludes, field) {
-			continue
-		}
+		// if InStrings(sc.excludes, field) {
+		// 	continue
+		// }
 
 		sc.fields = append(sc.fields, &StructField{Name: f.Name, Field: field})
 		sc.dbfields = append(sc.dbfields, []byte(field))
@@ -107,7 +108,7 @@ func (sc *StructConverter) Fields() []*StructField {
 }
 
 func (sc *StructConverter) KeyValueList(stype string) ([][]byte, []interface{}, [][]byte) {
-	return keyValueList(stype, sc.target, sc.excludes)
+	return keyValueList(stype, sc.target)
 }
 
 func (sc *StructConverter) DataRow2Struct(datarow DataRow) (IVO, error) {
@@ -168,6 +169,7 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 	return false
 }
 
+// Struct2DataRow to datarow
 func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 	typ := sc.GetTypeElem()
 
@@ -176,10 +178,9 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 	var field reflect.StructField
 	var dbField string
 
-	skipTag := ""
-	skipEmpty := ""
-	autotime := ""
-	// isJSONType := false
+	var skipTag string
+	var skipEmpty string
+	var autotime string
 	var value interface{}
 
 	datarow := DataRow{}
@@ -202,11 +203,15 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			continue
 		}
 
-		if InStrings(sc.excludes, dbField) || skipTag == "all" {
+		if skipTag == "all" {
 			continue
 		}
 
-		value = sc.val.Field(n).Interface()
+		if sc.val.Kind() == reflect.Ptr {
+			value = sc.val.Elem().Field(n).Interface()
+		} else {
+			value = sc.val.Field(n).Interface()
+		}
 
 		skipEmpty = field.Tag.Get("skipempty")
 		autotime = field.Tag.Get("autotime")
@@ -223,22 +228,21 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			continue
 		}
 
+		if exec, isok := field.Tag.Lookup("exec"); isok {
+			call := sc.val.MethodByName(exec)
+
+			if call.IsValid() {
+				result := call.Call([]reflect.Value{reflect.ValueOf(actionType)})
+
+				if result[1].IsNil() && result[0].CanInterface() {
+					datarow[dbField] = result[0].Interface()
+				}
+				continue
+			}
+		}
+
 		datarow[dbField] = value
 
-		// else if isJSONType {
-		// 	b, err := json.Marshal(value)
-		// 	if err != nil {
-		// 		Current().Log.Fatalln("Json Marshal ", err)
-		// 		b = []byte("")
-		// 	}
-		//
-		// 	if Current().Driver.DriverName() == "pgsql" {
-		// 		datarow[dbField] = b
-		// 	} else {
-		// 		datarow[dbField] = string(b)
-		// 	}
-		//
-		// }
 	}
 
 	return datarow

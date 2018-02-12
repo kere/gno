@@ -1,6 +1,10 @@
 package db
 
-import "reflect"
+import (
+	"bytes"
+	"encoding/json"
+	"reflect"
+)
 
 // DataSet datarow list
 type DataSet []DataRow
@@ -167,8 +171,36 @@ func (ds DataSet) Encode() [][]interface{} {
 	return values
 }
 
+// VODataSet class
 type VODataSet []IVO
 
+// ToJSON []byte
+func (ds VODataSet) ToJSON(action string) []byte {
+	l := len(ds)
+	buf := bytes.NewBuffer([]byte("["))
+
+	for i := 0; i < l; i++ {
+		if ds[i] == nil {
+			continue
+		}
+
+		row := ds[i].ToDataRow(action)
+		src, err := json.Marshal(row)
+		if err != nil {
+			continue
+		}
+		if i > 0 {
+			buf.Write(BCommaSplit)
+		}
+		buf.Write(src)
+	}
+
+	buf.WriteString("]")
+
+	return buf.Bytes()
+}
+
+// Encode to
 func (ds VODataSet) Encode() [][]interface{} {
 	count := len(ds)
 	if count < 1 {

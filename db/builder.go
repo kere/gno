@@ -1,6 +1,11 @@
 package db
 
-import "database/sql"
+import (
+	"database/sql"
+	"reflect"
+)
+
+var ivotype reflect.Type = reflect.TypeOf((*IVO)(nil)).Elem()
 
 type builder struct {
 	conn *sql.DB
@@ -17,7 +22,7 @@ type CondParams struct {
 
 // keyValueList
 // stype:insert,update
-func keyValueList(stype string, data interface{}, excludes []string) (keys [][]byte, values []interface{}, stmts [][]byte) {
+func keyValueList(actionType string, data interface{}) (keys [][]byte, values []interface{}, stmts [][]byte) {
 	var d map[string]interface{}
 	switch data.(type) {
 	case DataRow:
@@ -28,23 +33,18 @@ func keyValueList(stype string, data interface{}, excludes []string) (keys [][]b
 
 	default:
 		sm := NewStructConvert(data)
-		sm.SetExcludes(excludes)
-		d = map[string]interface{}(sm.Struct2DataRow(stype))
+		d = map[string]interface{}(sm.Struct2DataRow(actionType))
 
 	}
 
-	l := len(d) - len(excludes)
-	isUpdate := stype == "update"
+	l := len(d)
+	isUpdate := actionType == "update"
 	keys = make([][]byte, l)
 	values = make([]interface{}, l)
 	stmts = make([][]byte, l)
 	database := Current()
 	i := 0
 	for k, v := range d {
-		if InStrings(excludes, k) {
-			continue
-		}
-
 		keys[i] = []byte(database.Driver.QuoteField(k))
 
 		if isUpdate {
@@ -52,7 +52,17 @@ func keyValueList(stype string, data interface{}, excludes []string) (keys [][]b
 		}
 		stmts[i] = B_QuestionMark
 
-		values[i] = database.Driver.FlatData(v)
+		typ := reflect.TypeOf(v)
+		if typ.Kind() == reflect.Ptr {
+			typ = typ.Elem()
+		}
+
+		if typ.Implements(ivotype) {
+			sm := NewStructConvert(v)
+			values[i] = sm.Struct2DataRow(actionType)
+		} else {
+			values[i] = database.Driver.FlatData(typ, v)
+		}
 
 		i++
 	}

@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"reflect"
 	"time"
 
 	"github.com/kere/gno/libs/log"
@@ -40,7 +41,7 @@ type IDriver interface {
 	SetConnectString(string)
 	QuoteField(string) string
 	LastInsertID(string, string) string
-	FlatData(interface{}) interface{}
+	FlatData(reflect.Type, interface{}) interface{}
 	StringSlice([]byte) ([]string, error)
 	Int64Slice([]byte) ([]int64, error)
 	ParseNumberSlice([]byte, interface{}) error

@@ -12,8 +12,9 @@ import (
 )
 
 const (
+	// APISrcField post field
+	APISrcField     = "_src"
 	methodFieldName = "_method"
-	srcField        = "_src"
 )
 
 // IOpenAPI interface
@@ -108,7 +109,7 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	}
 
 	var args util.MapData
-	src := req.PostFormValue(srcField)
+	src := req.PostFormValue(APISrcField)
 	if src != "" {
 		err := json.Unmarshal([]byte(src), &args)
 		if err != nil {
