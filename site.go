@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -55,8 +56,9 @@ type SiteServer struct {
 	Secret string
 	Salt   string
 
-	Log *log.Logger
-	PID string
+	Log     *log.Logger
+	PID     string
+	HomeDir string
 }
 
 // GetConfig return config
@@ -131,6 +133,8 @@ func Init() *SiteServer {
 	s.Theme = a.DefaultString("theme", "")
 	// PID
 	s.PID = a.DefaultString("pid", "")
+
+	s.HomeDir = filepath.Dir(os.Args[0])
 
 	Site = s
 

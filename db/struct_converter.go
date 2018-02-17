@@ -137,31 +137,35 @@ func (sc *StructConverter) DataSet2Struct(dataset DataSet) (VODataSet, error) {
 }
 
 func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
+	val := sc.val
+	if sc.val.Kind() == reflect.Ptr {
+		val = sc.val.Elem()
+	}
 	switch fieldTyp.Type.Kind() {
 	case reflect.Map, reflect.Slice, reflect.Array:
-		if sc.val.Field(n).Len() == 0 {
+		if val.Field(n).Len() == 0 {
 			return true
 		}
 	case reflect.Struct:
-		return !sc.val.Field(n).IsValid()
+		return !val.Field(n).IsValid()
 
 	case reflect.Interface:
-		return sc.val.Field(n).IsNil()
+		return val.Field(n).IsNil()
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return sc.val.Field(n).Int() == 0
+		return val.Field(n).Int() == 0
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return sc.val.Field(n).Uint() == 0
+		return val.Field(n).Uint() == 0
 
 	case reflect.Float32, reflect.Float64:
-		return sc.val.Field(n).Float() == 0
+		return val.Field(n).Float() == 0
 
 	case reflect.String:
-		return sc.val.Field(n).String() == ""
+		return val.Field(n).String() == ""
 
 	default:
-		s := fmt.Sprint(sc.val.Field(n).Interface())
+		s := fmt.Sprint(val.Field(n).Interface())
 		if s == "" || s == "0" {
 			return true
 		}

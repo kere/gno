@@ -19,6 +19,8 @@ type IVO interface {
 	CreateIfNotFound(where string, params ...interface{}) (bool, error)
 	Update(where string, params ...interface{}) error
 	Delete(where string, params ...interface{}) error
+	QueryOne(params ...interface{}) (DataRow, error)
+	Query(params ...interface{}) (DataSet, error)
 }
 
 // BaseVO class

@@ -47,6 +47,13 @@ func (m *Map) CheckValue(v interface{}) bool {
 	return true
 }
 
+// ClearAll release all
+func (m *Map) ClearAll() {
+	m.Lock.Lock()
+	m.Data = make(map[string]*ExpiresVal, 0)
+	m.Lock.Unlock()
+}
+
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
 	key := m.Key(args...)

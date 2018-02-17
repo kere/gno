@@ -152,7 +152,7 @@ func (dr DataRow) Bool(field string) bool {
 
 // BoolDefault bool
 func (dr DataRow) BoolDefault(field string, v bool) bool {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Bool(field)
@@ -206,7 +206,7 @@ func (dr DataRow) String(field string) string {
 
 // StringDefault bool
 func (dr DataRow) StringDefault(field string, v string) string {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.String(field)
@@ -257,6 +257,12 @@ func (dr DataRow) Int64(field string) int64 {
 	case float64, float32:
 		return int64(dr.Float(field))
 
+	case bool:
+		if dr[field].(bool) {
+			return 1
+		}
+		return 0
+
 	case int:
 		return int64(dr[field].(int))
 
@@ -290,7 +296,7 @@ func (dr DataRow) Int64(field string) int64 {
 
 // Int64Default bool
 func (dr DataRow) Int64Default(field string, v int64) int64 {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Int64(field)
@@ -303,7 +309,7 @@ func (dr DataRow) Int(field string) int {
 
 // IntDefault bool
 func (dr DataRow) IntDefault(field string, v int) int {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Int(field)
@@ -341,7 +347,7 @@ func (dr DataRow) Float(field string) float64 {
 
 // FloatDefault bool
 func (dr DataRow) FloatDefault(field string, v float64) float64 {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Float(field)
@@ -368,7 +374,7 @@ func (dr DataRow) Int64s(field string) []int64 {
 
 // Int64sDefault bool
 func (dr DataRow) Int64sDefault(field string, v []int64) []int64 {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Int64s(field)
@@ -395,7 +401,7 @@ func (dr DataRow) Ints(field string) []int {
 
 // IntsDefault bool
 func (dr DataRow) IntsDefault(field string, v []int) []int {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Ints(field)
@@ -455,7 +461,7 @@ func (dr DataRow) Strings(field string) []string {
 
 // StringsDefault bool
 func (dr DataRow) StringsDefault(field string, v []string) []string {
-	if dr.IsSet(field) || dr.IsNull(field) {
+	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Strings(field)

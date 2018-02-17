@@ -208,7 +208,11 @@ func (p *Page) Render() error {
 	name := filepath.Join(p.Dir, p.Name)
 
 	lyt.Top = p.Top
-	lyt.AddBody(name+".htm", p.Data)
+
+	if name != "" {
+		lyt.AddBody(name+".htm", p.Data)
+	}
+
 	lyt.Bottom = p.Bottom
 
 	// p.Layout = nil
