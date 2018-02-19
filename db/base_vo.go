@@ -19,6 +19,7 @@ type IVO interface {
 	CreateIfNotFound(where string, params ...interface{}) (bool, error)
 	Update(where string, params ...interface{}) error
 	Delete(where string, params ...interface{}) error
+	Order(string) *QueryBuilder
 	QueryOne(params ...interface{}) (DataRow, error)
 	Query(params ...interface{}) (DataSet, error)
 }
@@ -28,8 +29,9 @@ type BaseVO struct {
 	target    IVO
 	converter *StructConverter
 
-	Fields string
-	Table  string
+	Fields     string
+	Table      string
+	querybuild *QueryBuilder
 }
 
 // ToDataRow convert to DataRow
@@ -101,9 +103,24 @@ func (b *BaseVO) Delete(where string, params ...interface{}) error {
 	return err
 }
 
+// getQueryBuilder func
+func (b *BaseVO) getQueryBuilder() *QueryBuilder {
+	if b.querybuild != nil {
+		return b.querybuild
+	}
+	b.querybuild = NewQueryBuilder(b.Table)
+	return b.querybuild
+}
+
+// Order func
+func (b *BaseVO) Order(s string) *QueryBuilder {
+	b.getQueryBuilder().Order(s)
+	return b.querybuild
+}
+
 // Query func
 func (b *BaseVO) Query(params ...interface{}) (DataSet, error) {
-	q := NewQueryBuilder(b.Table)
+	q := b.getQueryBuilder()
 	if len(params) == 1 {
 		q.Where(fmt.Sprint(params[0]))
 	} else if len(params) > 1 {
@@ -118,7 +135,7 @@ func (b *BaseVO) Query(params ...interface{}) (DataSet, error) {
 
 // QueryOne func
 func (b *BaseVO) QueryOne(params ...interface{}) (DataRow, error) {
-	q := NewQueryBuilder(b.Table)
+	q := b.getQueryBuilder()
 	if len(params) == 1 {
 		q.Where(fmt.Sprint(params[0]))
 	} else if len(params) > 1 {

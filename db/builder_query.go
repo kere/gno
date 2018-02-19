@@ -161,14 +161,14 @@ func (q *QueryBuilder) parse() ([]byte, []interface{}) {
 	if q.getDatabase() == nil {
 		panic("database is nil, check db Configuration!")
 	}
-	driver := q.getDatabase().Driver
+	// driver := q.getDatabase().Driver
 
 	s.Write(bSQLSelect)
 
 	q.writeField(&s)
 
 	s.Write(bSQLFrom)
-	s.WriteString(driver.QuoteField(q.table))
+	s.WriteString(q.table)
 
 	if len(q.leftJoin) > 0 {
 		s.WriteString(" left join ")
