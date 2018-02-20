@@ -23,6 +23,10 @@ import (
 const (
 	// WEBROOT string
 	WEBROOT = "webroot"
+	// ModePro pro
+	ModePro = "pro"
+	// ModeDev dev
+	ModeDev = "dev"
 )
 
 var (

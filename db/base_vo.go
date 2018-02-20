@@ -3,6 +3,9 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
+	"github.com/kere/gno/libs/util"
 )
 
 // autotime:"true"
@@ -94,6 +97,26 @@ func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, er
 // Update func
 func (b *BaseVO) Update(where string, params ...interface{}) error {
 	_, err := NewUpdateBuilder(b.Table).Where(where, params...).Update(b.target)
+	return err
+}
+
+// UpdateFields func
+func (b *BaseVO) UpdateFields(fields []string, where string, params ...interface{}) error {
+	typ := reflect.TypeOf(b.target)
+	val := reflect.ValueOf(b.target)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	l := typ.NumField()
+	dat := DataRow{}
+	for i := 0; i < l; i++ {
+		name := typ.Field(i).Tag.Get("json")
+		if name != "" || util.InStrings(fields, name) {
+			dat[name] = val.Field(i).Interface()
+		}
+	}
+
+	_, err := NewUpdateBuilder(b.Table).Where(where, params...).Update(dat)
 	return err
 }
 
