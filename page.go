@@ -174,6 +174,11 @@ func (p *Page) Prepare() error {
 
 // SetCookie cookie
 func (p *Page) SetCookie(name, value string, age int, path, domain string, httpOnly bool) {
+	SetCookie(p.ResponseWriter, name, value, age, path, domain, httpOnly)
+}
+
+// SetCookie f
+func SetCookie(w http.ResponseWriter, name, value string, age int, path, domain string, httpOnly bool) {
 	var expires time.Time
 
 	if age != 0 {
@@ -189,7 +194,7 @@ func (p *Page) SetCookie(name, value string, age int, path, domain string, httpO
 		HttpOnly: httpOnly,
 	}
 
-	http.SetCookie(p.ResponseWriter, cookie)
+	http.SetCookie(w, cookie)
 }
 
 // Render page
