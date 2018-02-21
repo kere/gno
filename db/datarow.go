@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kere/gno/db/drivers"
 )
 
 // DataRow row struct
@@ -19,6 +21,65 @@ type DataRow map[string]interface{}
 func (dr DataRow) Insert(table string) error {
 	_, err := NewInsertBuilder(table).Insert(dr)
 	return err
+}
+
+// ChangedData item
+func (dr DataRow) ChangedData(newRow DataRow) DataRow {
+	var dat = DataRow{}
+	var val interface{}
+	var isok bool
+	for k, v := range dr {
+		if val, isok = newRow[k]; !isok {
+			continue
+		}
+
+		typ := reflect.TypeOf(v)
+		switch typ.Kind() {
+		default:
+			if v == val {
+				continue
+			}
+		case reflect.Struct:
+		case reflect.Map:
+
+		case reflect.Uint8:
+			if dr.String(k) == newRow.String(k) {
+				continue
+			}
+		case reflect.Int, reflect.Int64, reflect.Int16, reflect.Int8:
+			if dr.Int64(k) == newRow.Int64(k) {
+				continue
+			}
+		case reflect.Float32, reflect.Float64:
+			if dr.Float(k) == newRow.Float(k) {
+				continue
+			}
+		case reflect.Slice:
+			vv := reflect.ValueOf(v)
+			vvNew := reflect.ValueOf(newRow[k])
+			if vv.Kind() == reflect.Ptr {
+				vv = vv.Elem()
+			}
+			l := vv.Len()
+			if l > 0 && l == vvNew.Len() {
+				isEq := true
+				for i := 0; i < l; i++ {
+					if vv.Index(i).Interface() != vvNew.Index(i).Interface() {
+						isEq = false
+						break
+					}
+				}
+				if isEq {
+					continue
+				}
+			}
+
+		}
+
+		dat[k] = newRow[k]
+	}
+
+	return dat
 }
 
 // Update datarow item
@@ -438,6 +499,35 @@ func (dr DataRow) Floats(field string) []float64 {
 
 }
 
+// func (dr DataRow) StringSlice(field string) []string {
+// 	switch dr[field].(type) {
+// 	case []string:
+// 		return dr[field].([]string)
+//
+// 	case string, []byte:
+// 		b := dr.Bytes(field)
+// 		if len(b) > 0 {
+// 			if s, err := Current().Driver.StringSlice(b); err != nil {
+// 				panic(err)
+// 			} else {
+// 				return s
+// 			}
+// 		}
+// 		return []string{}
+//
+// 	case []interface{}:
+// 		v := dr[field].([]interface{})
+// 		s := make([]string, len(v))
+// 		for i, _ := range v {
+// 			s[i] = fmt.Sprint(v[i])
+// 		}
+// 		return s
+// 	default:
+// 		panic("StringSlice unknow data type")
+// 	}
+//
+// }
+
 // Strings []string
 func (dr DataRow) Strings(field string) []string {
 	switch dr[field].(type) {
@@ -453,6 +543,15 @@ func (dr DataRow) Strings(field string) []string {
 		return v
 	case string, []byte:
 		s := dr.String(field)
+		if Current().Driver.DriverName() == drivers.DriverPSQL {
+			l := len(s)
+			if s[:1] == "{" && s[l-1:l] == "}" {
+				if arr, err := Current().Driver.StringSlice([]byte(s)); err != nil {
+					return arr
+				}
+				return []string{}
+			}
+		}
 		return strings.Split(s, ",")
 	default:
 		return []string{}
@@ -514,35 +613,6 @@ func (dr DataRow) Hstore(field string) map[string]string {
 
 	default:
 		panic("Hstore unknow data type")
-	}
-
-}
-
-func (dr DataRow) StringSlice(field string) []string {
-	switch dr[field].(type) {
-	case []string:
-		return dr[field].([]string)
-
-	case string, []byte:
-		b := dr.Bytes(field)
-		if len(b) > 0 {
-			if s, err := Current().Driver.StringSlice(b); err != nil {
-				panic(err)
-			} else {
-				return s
-			}
-		}
-		return []string{}
-
-	case []interface{}:
-		v := dr[field].([]interface{})
-		s := make([]string, len(v))
-		for i, _ := range v {
-			s[i] = fmt.Sprint(v[i])
-		}
-		return s
-	default:
-		panic("StringSlice unknow data type")
 	}
 
 }

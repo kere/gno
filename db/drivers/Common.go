@@ -2,6 +2,12 @@ package drivers
 
 import "reflect"
 
+const (
+	DriverPSQL   = "postgres"
+	DriverMySQL  = "mysql"
+	DriverSqlite = "sqlite"
+)
+
 var (
 	b_BRACE_LEFT    = []byte("{")
 	b_BRACE_RIGHT   = []byte("}")

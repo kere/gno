@@ -18,5 +18,5 @@ func (this *Sqlite3) LastInsertId(table, id string) string {
 }
 
 func (this *Sqlite3) DriverName() string {
-	return "sqlite3"
+	return DriverSqlite
 }

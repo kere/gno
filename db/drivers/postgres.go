@@ -25,7 +25,7 @@ type Postgres struct {
 }
 
 func (this *Postgres) DriverName() string {
-	return "postgres"
+	return DriverPSQL
 }
 
 func (this *Postgres) AdaptSql(bSQL []byte) []byte {

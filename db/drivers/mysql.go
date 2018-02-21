@@ -51,7 +51,7 @@ func (this *Mysql) LastInsertId(table, id string) string {
 }
 
 func (this *Mysql) DriverName() string {
-	return "mysql"
+	return DriverMySQL
 }
 
 func (this *Mysql) toJson(v interface{}) []byte {
