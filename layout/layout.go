@@ -20,7 +20,7 @@ var (
 	// BytesHTMLBodyEnd bytes
 	bytesHTMLBodyEnd = []byte("\n</body>\n")
 
-	bRenderS1 = []byte("\n<script>var MYENV='")
+	bRenderS1 = []byte("\n<script type=\"text/javascript\">var MYENV='")
 	bRenderS2 = []byte("',THEME='")
 	bRenderS3 = []byte("';</script>")
 )

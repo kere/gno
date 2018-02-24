@@ -148,6 +148,8 @@ func (p *Page) AddScript(position, src string, data map[string]string) {
 		for k, v := range data {
 			s += k + "=\"" + v + "\" "
 		}
+	} else {
+		s = " type=\"text/javascript\""
 	}
 
 	str += s + ">" + src + "</script>"

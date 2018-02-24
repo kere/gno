@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	bJsTagBegin = []byte("<script src=\"")
+	bJsTagBegin = []byte("<script text=\"text/javascript\" src=\"")
 	bJsTagEnd   = []byte("></script>\n")
 )
 

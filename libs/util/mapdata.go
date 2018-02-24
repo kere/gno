@@ -241,10 +241,17 @@ func (dr MapData) Int64s(field string) []int64 {
 			switch val.(type) {
 			case int64:
 				v[i] = val.(int64)
+			case int:
+				v[i] = int64(val.(int))
 			case float64:
 				v[i] = int64(val.(float64))
+			case string:
+				n, err := strconv.ParseInt(val.(string), 10, 64)
+				if err == nil {
+					v[i] = n
+				}
 			default:
-				panic("unknow type in function Int64Slice")
+				panic("unknow type in function Ints:" + reflect.TypeOf(val).String())
 			}
 		}
 
@@ -275,11 +282,18 @@ func (dr MapData) Ints(field string) []int {
 		for i, val := range vals {
 			switch val.(type) {
 			case int64:
+				v[i] = int(val.(int64))
+			case int:
 				v[i] = val.(int)
 			case float64:
 				v[i] = int(val.(float64))
+			case string:
+				n, err := strconv.ParseInt(val.(string), 10, 64)
+				if err == nil {
+					v[i] = int(n)
+				}
 			default:
-				panic("unknow type in function Int64Slice")
+				panic("unknow type in function Ints:" + reflect.TypeOf(val).String())
 			}
 		}
 

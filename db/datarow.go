@@ -443,6 +443,10 @@ func (dr DataRow) Int64sDefault(field string, v []int64) []int64 {
 
 // Ints return []int
 func (dr DataRow) Ints(field string) []int {
+	if dr.IsNull(field) {
+		return []int{}
+	}
+
 	switch dr[field].(type) {
 	case []int:
 		return dr[field].([]int)
@@ -499,37 +503,12 @@ func (dr DataRow) Floats(field string) []float64 {
 
 }
 
-// func (dr DataRow) StringSlice(field string) []string {
-// 	switch dr[field].(type) {
-// 	case []string:
-// 		return dr[field].([]string)
-//
-// 	case string, []byte:
-// 		b := dr.Bytes(field)
-// 		if len(b) > 0 {
-// 			if s, err := Current().Driver.StringSlice(b); err != nil {
-// 				panic(err)
-// 			} else {
-// 				return s
-// 			}
-// 		}
-// 		return []string{}
-//
-// 	case []interface{}:
-// 		v := dr[field].([]interface{})
-// 		s := make([]string, len(v))
-// 		for i, _ := range v {
-// 			s[i] = fmt.Sprint(v[i])
-// 		}
-// 		return s
-// 	default:
-// 		panic("StringSlice unknow data type")
-// 	}
-//
-// }
-
 // Strings []string
 func (dr DataRow) Strings(field string) []string {
+	if dr.IsNull(field) {
+		return []string{}
+	}
+
 	switch dr[field].(type) {
 	case []string:
 		return dr[field].([]string)
