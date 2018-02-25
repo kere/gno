@@ -46,7 +46,8 @@ func (d *DeleteBuilder) Where(cond string, args ...interface{}) *DeleteBuilder {
 }
 
 func (d *DeleteBuilder) SqlState() *SqlState {
-	return NewSqlState(d.parse())
+	sql, args := d.parse()
+	return NewSqlState(sql, args...)
 }
 
 func (d *DeleteBuilder) Delete() (sql.Result, error) {

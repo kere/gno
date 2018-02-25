@@ -30,9 +30,9 @@ func (this *CounterBuilder) Count(cond string, args ...interface{}) (int64, erro
 	if cond != "" {
 		s.Write(bSQLWhere)
 		s.WriteString(cond)
-		r, err = database.QueryPrepare(NewSqlState(s.Bytes(), args))
+		r, err = database.QueryPrepare(NewSqlState(s.Bytes(), args...))
 	} else {
-		r, err = database.Query(NewSqlState(s.Bytes(), nil))
+		r, err = database.Query(NewSqlState(s.Bytes()))
 	}
 
 	if err != nil {

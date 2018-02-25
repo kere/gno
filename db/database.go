@@ -13,7 +13,7 @@ type SqlState struct {
 	args []interface{}
 }
 
-func NewSqlState(sql []byte, args []interface{}) *SqlState {
+func NewSqlState(sql []byte, args ...interface{}) *SqlState {
 	ss := &SqlState{}
 	ss.sql = Current().Driver.AdaptSql(sql)
 	// for i, _ := range args {
@@ -148,5 +148,5 @@ func (this *Database) Exec(s *SqlState) (sql.Result, error) {
 // ExecStr
 // Exec by string
 func (this *Database) ExecStr(sqlstr string, args ...interface{}) (sql.Result, error) {
-	return this.Exec(NewSqlState([]byte(sqlstr), args))
+	return this.Exec(NewSqlState([]byte(sqlstr), args...))
 }

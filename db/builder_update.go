@@ -47,7 +47,8 @@ func (u *UpdateBuilder) Where(cond string, args ...interface{}) *UpdateBuilder {
 }
 
 func (u *UpdateBuilder) SqlState(data interface{}) *SqlState {
-	return NewSqlState(u.parse(data))
+	sql, args := u.parse(data)
+	return NewSqlState(sql, args...)
 }
 
 func (u *UpdateBuilder) Update(data interface{}) (sql.Result, error) {
@@ -68,7 +69,7 @@ func (u *UpdateBuilder) UpdateByString(str string) (sql.Result, error) {
 		values = u.where.Args
 	}
 
-	return u.getDatabase().ExecPrepare(NewSqlState(s.Bytes(), values))
+	return u.getDatabase().ExecPrepare(NewSqlState(s.Bytes(), values...))
 }
 
 func (u *UpdateBuilder) TxUpdate(tx *Tx, data interface{}) (sql.Result, error) {

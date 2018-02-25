@@ -205,3 +205,7 @@ func (t *Tx) DoError(err error) bool {
 	}
 	return false
 }
+
+func (t *Tx) Rollback() error {
+	return t.tx.Rollback()
+}

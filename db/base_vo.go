@@ -84,6 +84,21 @@ func (b *BaseVO) Create() error {
 	return nil
 }
 
+// CreateTx func
+func (b *BaseVO) TxCreate(tx *Tx) error {
+	if b.target == nil {
+		panic("vo.target is nil")
+	}
+	ins := NewInsertBuilder(b.Table)
+	_, err := ins.TxInsert(tx, b.target)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CreateIfNotFound insert data if not found
 // return true if insert
 func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, error) {
@@ -97,6 +112,12 @@ func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, er
 // Update func
 func (b *BaseVO) Update(where string, params ...interface{}) error {
 	_, err := NewUpdateBuilder(b.Table).Where(where, params...).Update(b.target)
+	return err
+}
+
+// TxUpdate func
+func (b *BaseVO) TxUpdate(tx *Tx, where string, params ...interface{}) error {
+	_, err := NewUpdateBuilder(b.Table).Where(where, params...).TxUpdate(tx, b.target)
 	return err
 }
 
@@ -123,6 +144,12 @@ func (b *BaseVO) UpdateFields(fields []string, where string, params ...interface
 // Delete func
 func (b *BaseVO) Delete(where string, params ...interface{}) error {
 	_, err := NewDeleteBuilder(b.Table).Where(where, params...).Delete()
+	return err
+}
+
+// TxDelete func
+func (b *BaseVO) TxDelete(tx *Tx, where string, params ...interface{}) error {
+	_, err := NewDeleteBuilder(b.Table).Where(where, params...).TxDelete(tx)
 	return err
 }
 

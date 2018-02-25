@@ -130,7 +130,8 @@ func (ins *InsertBuilder) parse(data interface{}) ([]byte, []interface{}) {
 }
 
 func (ins *InsertBuilder) SqlState(data interface{}) *SqlState {
-	return NewSqlState(ins.parse(data))
+	sql, args := ins.parse(data)
+	return NewSqlState(sql, args...)
 }
 
 func (ins *InsertBuilder) Insert(data interface{}) (sql.Result, error) {
@@ -149,7 +150,7 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 	size := 500
 	n := len(rows)
 	if n <= size {
-		ss := NewSqlState(ins.parseM(rows), nil)
+		ss := NewSqlState(ins.parseM(rows))
 		return ins.getDatabase().Exec(ss)
 	}
 
@@ -167,7 +168,7 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 				tmp = append(tmp, rows[k])
 			}
 
-			sqlR, err = ins.getDatabase().Exec(NewSqlState(ins.parseM(tmp), nil))
+			sqlR, err = ins.getDatabase().Exec(NewSqlState(ins.parseM(tmp)))
 			if err != nil {
 				return sqlR, err
 			}
@@ -175,7 +176,7 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 			for k = 0; k < size; k++ {
 				tmp = append(tmp, rows[size*i+k])
 			}
-			sqlR, err = ins.getDatabase().Exec(NewSqlState(ins.parseM(tmp), nil))
+			sqlR, err = ins.getDatabase().Exec(NewSqlState(ins.parseM(tmp)))
 			if err != nil {
 				return sqlR, err
 			}
@@ -188,16 +189,16 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 // TxInsert return sql.Result transation
 func (ins *InsertBuilder) TxInsert(tx *Tx, data interface{}) (sql.Result, error) {
 	s := ins.SqlState(data)
-	cdb := ins.getDatabase()
-	if cdb.Driver.DriverName() == "postgres" {
-		s.SetSql(append(s.GetSql(), b_PG_RETURNING...))
-
-		r, err := tx.Query(s)
-		if err != nil {
-			return nil, err
-		}
-		return &insResult{r[0].Int64("id"), 1}, nil
-	}
+	// cdb := ins.getDatabase()
+	// if cdb.Driver.DriverName() == "postgres" {
+	// 	s.SetSql(append(s.GetSql(), b_PG_RETURNING...))
+	//
+	// 	r, err := tx.Query(s)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	return &insResult{r[0].Int64("id"), 1}, nil
+	// }
 	if ins.isPrepare {
 		return tx.ExecPrepare(s)
 	}

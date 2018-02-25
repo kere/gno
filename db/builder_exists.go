@@ -39,7 +39,8 @@ func (e *ExistsBuilder) Where(s string, args ...interface{}) *ExistsBuilder {
 }
 
 func (e *ExistsBuilder) SqlState() *SqlState {
-	return NewSqlState(e.parse())
+	sql, args := e.parse()
+	return NewSqlState(sql, args...)
 }
 
 func (e *ExistsBuilder) parse() ([]byte, []interface{}) {

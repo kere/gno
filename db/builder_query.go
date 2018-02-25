@@ -218,10 +218,11 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 	}
 	var r DataSet
 	var err error
+	sql, args := q.parse()
 	if q.isPrepare {
-		r, err = database.QueryPrepare(NewSqlState(q.parse()))
+		r, err = database.QueryPrepare(NewSqlState(sql, args...))
 	} else {
-		r, err = database.Query(NewSqlState(q.parse()))
+		r, err = database.Query(NewSqlState(sql, args...))
 	}
 
 	if err != nil {
@@ -304,10 +305,11 @@ func (q *QueryBuilder) writeField(s *bytes.Buffer) {
 }
 
 func (q *QueryBuilder) TxQuery(tx *Tx) (DataSet, error) {
-	return tx.Query(NewSqlState(q.parse()))
+	sql, args := q.parse()
+	return tx.Query(NewSqlState(sql, args...))
 }
 
 func (q *QueryBuilder) TxQueryOne(tx *Tx) (DataRow, error) {
-	q.limit = 1
-	return tx.QueryOne(NewSqlState(q.parse()))
+	sql, args := q.parse()
+	return tx.QueryOne(NewSqlState(sql, args...))
 }
