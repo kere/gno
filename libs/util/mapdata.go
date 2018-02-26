@@ -118,6 +118,7 @@ func (dr MapData) String(field string) string {
 
 	case nil:
 		return ""
+
 	default:
 		return fmt.Sprint(dr[field])
 	}

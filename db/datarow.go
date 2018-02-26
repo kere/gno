@@ -521,11 +521,12 @@ func (dr DataRow) Strings(field string) []string {
 		}
 		return v
 	case string, []byte:
+
 		s := dr.String(field)
-		if Current().Driver.DriverName() == drivers.DriverPSQL {
-			l := len(s)
+		l := len(s)
+		if l > 0 && Current().Driver.DriverName() == drivers.DriverPSQL {
 			if s[:1] == "{" && s[l-1:l] == "}" {
-				if arr, err := Current().Driver.StringSlice([]byte(s)); err != nil {
+				if arr, err := Current().Driver.StringSlice([]byte(s)); err == nil {
 					return arr
 				}
 				return []string{}

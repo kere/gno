@@ -186,10 +186,11 @@ func (this *Postgres) StringSlice(src []byte) ([]string, error) {
 		return []string{}, nil
 	}
 
-	l := bytes.Split(src, b_COMMA)
-	v := make([]string, len(l))
-	for i, _ := range l {
-		v[i] = string(bytes.Trim(l[i], "'"))
+	arr := bytes.Split(src, b_COMMA)
+	l := len(arr)
+	v := make([]string, len(arr))
+	for i := 0; i < l; i++ {
+		v[i] = string(bytes.Trim(arr[i], "'"))
 	}
 
 	return v, nil
