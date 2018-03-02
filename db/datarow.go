@@ -23,6 +23,12 @@ func (dr DataRow) Insert(table string) error {
 	return err
 }
 
+// TxInsert datarow item
+func (dr DataRow) TxInsert(tx *Tx, table string) error {
+	_, err := NewInsertBuilder(table).TxInsert(tx, dr)
+	return err
+}
+
 // ChangedData item
 func (dr DataRow) ChangedData(newRow DataRow) DataRow {
 	var dat = DataRow{}

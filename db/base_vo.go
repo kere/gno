@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -84,7 +85,7 @@ func (b *BaseVO) Create() error {
 	return nil
 }
 
-// CreateTx func
+// TxCreate func
 func (b *BaseVO) TxCreate(tx *Tx) error {
 	if b.target == nil {
 		panic("vo.target is nil")
@@ -97,6 +98,15 @@ func (b *BaseVO) TxCreate(tx *Tx) error {
 	}
 
 	return nil
+}
+
+// TxCreateAndReturnID func
+func (b *BaseVO) TxCreateAndReturnID(tx *Tx) (sql.Result, error) {
+	if b.target == nil {
+		panic("vo.target is nil")
+	}
+	ins := NewInsertBuilder(b.Table).ReturnID()
+	return ins.TxInsert(tx, b.target)
 }
 
 // CreateIfNotFound insert data if not found

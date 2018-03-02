@@ -27,6 +27,7 @@ type InsertBuilder struct {
 	builder
 	excludeFields []string
 	isPrepare     bool
+	isReturnID    bool
 }
 
 // NewInsertBuilder func
@@ -37,6 +38,12 @@ func NewInsertBuilder(t string) *InsertBuilder {
 // IsPrepare func
 func (q *InsertBuilder) IsPrepare(v bool) *InsertBuilder {
 	q.isPrepare = v
+	return q
+}
+
+// ReturnID func
+func (q *InsertBuilder) ReturnID() *InsertBuilder {
+	q.isReturnID = true
 	return q
 }
 
@@ -189,16 +196,16 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 // TxInsert return sql.Result transation
 func (ins *InsertBuilder) TxInsert(tx *Tx, data interface{}) (sql.Result, error) {
 	s := ins.SqlState(data)
-	// cdb := ins.getDatabase()
-	// if cdb.Driver.DriverName() == "postgres" {
-	// 	s.SetSql(append(s.GetSql(), b_PG_RETURNING...))
-	//
-	// 	r, err := tx.Query(s)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return &insResult{r[0].Int64("id"), 1}, nil
-	// }
+	cdb := ins.getDatabase()
+	if ins.isReturnID && cdb.Driver.DriverName() == "postgres" {
+		s.SetSql(append(s.GetSql(), b_PG_RETURNING...))
+
+		r, err := tx.Query(s)
+		if err != nil {
+			return nil, err
+		}
+		return &insResult{r[0].Int64("id"), 1}, nil
+	}
 	if ins.isPrepare {
 		return tx.ExecPrepare(s)
 	}
