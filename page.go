@@ -44,6 +44,8 @@ type Page struct {
 	Name  string
 	Dir   string
 
+	HTML string
+
 	Theme string
 	Lang  string
 
@@ -212,12 +214,15 @@ func (p *Page) Render() error {
 	lyt.Head.HeadItems = p.Head
 	lyt.Head.JSPosition = p.JSPosition
 
-	name := filepath.Join(p.Dir, p.Name)
-
 	lyt.Top = p.Top
 
-	if name != "" {
-		lyt.AddBody(name+".htm", p.Data)
+	if p.HTML != "" {
+		lyt.AddBodyRender(render.NewString(p.HTML))
+	} else {
+		name := filepath.Join(p.Dir, p.Name)
+		if name != "" {
+			lyt.AddBody(name+".htm", p.Data)
+		}
 	}
 
 	lyt.Bottom = p.Bottom

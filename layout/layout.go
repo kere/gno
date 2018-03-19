@@ -60,6 +60,11 @@ func (p *Page) AddBottom(filename string, data interface{}) {
 	p.Bottom = append(p.Bottom, r)
 }
 
+// AddBodyRender add body render template
+func (p *Page) AddBodyRender(r render.IRender) {
+	p.Body = append(p.Body, r)
+}
+
 // Render func
 func (p *Page) Render(w io.Writer) error {
 	// <html>

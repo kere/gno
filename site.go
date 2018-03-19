@@ -286,10 +286,6 @@ func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprou
 		return err
 	}
 
-	if p.GetName() == "" {
-		return nil
-	}
-
 	return p.Render()
 }
 
