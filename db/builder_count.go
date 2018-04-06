@@ -20,9 +20,9 @@ func (this *CounterBuilder) Table(t string) *CounterBuilder {
 func (this *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) {
 	s := bytes.Buffer{}
 	database := this.getDatabase()
-	driver := database.Driver
+	// driver := database.Driver
 	s.WriteString("SELECT count(1) as count FROM ")
-	s.WriteString(driver.QuoteField(this.table))
+	s.WriteString(this.table)
 
 	var r DataSet
 	var err error
