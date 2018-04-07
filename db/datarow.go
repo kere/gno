@@ -614,13 +614,14 @@ func (dr DataRow) Time(field string) time.Time {
 	if dr.IsNull(field) {
 		return time.Unix(0, 0)
 	}
+	loc, _ := time.LoadLocation("Local")
 	switch dr[field].(type) {
 	case string:
 		format := DBTimeFormat
 		if len(dr[field].(string)) == 10 {
 			format = "2006-01-02"
 		}
-		t, err := time.Parse(format, dr[field].(string))
+		t, err := time.ParseInLocation(format, dr[field].(string), loc)
 		if err != nil {
 			panic(err)
 		}
@@ -635,7 +636,7 @@ func (dr DataRow) Time(field string) time.Time {
 		if len(str) == 10 {
 			format = "2006-01-02"
 		}
-		t, err := time.Parse(format, str)
+		t, err := time.ParseInLocation(format, str, loc)
 		if err != nil {
 			panic(err)
 		}
