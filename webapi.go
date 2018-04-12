@@ -20,7 +20,7 @@ const (
 
 // IWebAPI interface
 type IWebAPI interface {
-	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params)
+	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) error
 	Auth() (require bool, err error)
 	Exec(args util.MapData) (interface{}, error)
 	Reply(data interface{}) error
@@ -35,10 +35,11 @@ type WebAPI struct {
 }
 
 // Init api
-func (w *WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (w *WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) error {
 	w.ResponseWriter = rw
 	w.Request = req
 	w.Params = params
+	return nil
 }
 
 // Auth page auth
