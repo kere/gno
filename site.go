@@ -317,6 +317,7 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 }
 
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
+	fmt.Println("doPageErr", err)
 	log.App.Warn(err)
 	if errorURL == "" {
 		rw.WriteHeader(http.StatusInternalServerError)
