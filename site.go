@@ -1,10 +1,8 @@
 package gno
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,7 +14,6 @@ import (
 	"github.com/kere/gno/layout"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
-	"github.com/kere/gno/libs/util"
 	"github.com/kere/gno/render"
 )
 
@@ -263,73 +260,4 @@ func (s *SiteServer) RegistGetAPI(rule string, factory func() IWebAPI) {
 		// do error
 		doAPIError(err, rw)
 	})
-}
-
-func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
-	isReq, isOK, urlstr, err := p.Auth()
-	if isReq && !isOK {
-		if urlstr != "" {
-			u, _ := url.Parse(urlstr)
-			if u.RawQuery == "" {
-				u.RawQuery = "msg=" + url.PathEscape(err.Error())
-			} else {
-				u.RawQuery += "&msg=" + url.PathEscape(err.Error())
-			}
-
-			http.Redirect(rw, req, u.String(), http.StatusSeeOther)
-		}
-		return nil
-	}
-
-	err = p.Prepare()
-	if err != nil {
-		return err
-	}
-
-	return p.Render()
-}
-
-func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
-	if isReq, err := webapi.Auth(); isReq && err != nil {
-		return err
-	}
-
-	var args util.MapData
-	src := req.PostFormValue(APISrcField)
-	// if src == "" {
-	// 	req.ParseForm()
-	// 	src = req.PostFormValue(APISrcField)
-	// }
-
-	if src != "" {
-		err := json.Unmarshal([]byte(src), &args)
-		if err != nil {
-			return err
-		}
-	}
-
-	data, err := webapi.Exec(args)
-	if err != nil {
-		return err
-	}
-
-	return webapi.Reply(data)
-}
-
-func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("doPageErr", err)
-	log.App.Warn(err)
-	if errorURL == "" {
-		rw.WriteHeader(http.StatusInternalServerError)
-		rw.Write([]byte(err.Error()))
-		return
-	}
-	// ErrorURL redirect to
-	http.Redirect(rw, req, errorURL+"?msg="+err.Error(), http.StatusSeeOther)
-}
-
-func doAPIError(err error, rw http.ResponseWriter) {
-	log.App.Warn(err)
-	rw.WriteHeader(http.StatusInternalServerError)
-	rw.Write([]byte(err.Error()))
 }

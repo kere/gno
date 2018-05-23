@@ -2,7 +2,6 @@ package gno
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -12,8 +11,6 @@ import (
 )
 
 const (
-	// APISrcField post field
-	APISrcField     = "_src"
 	methodFieldName = "_method"
 )
 
@@ -90,43 +87,4 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 
 	// s.Router.GET(rule, doOpenAPIHandle)
 	s.Router.POST(rule+"/:"+methodFieldName, doOpenAPIHandle)
-}
-
-func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	uri := req.URL.RequestURI()
-	// method := ps.ByName(methodFieldName)
-
-	var item openapiItem
-	var isok bool
-	if item, isok = openapiMap[uri]; !isok {
-		doAPIError(errors.New(uri+" openapi not found"), rw)
-		return
-	}
-
-	if isReq, err := item.API.Auth(req, ps); isReq && err != nil {
-		doAPIError(err, rw)
-		return
-	}
-
-	var args util.MapData
-	src := req.PostFormValue(APISrcField)
-	if src != "" {
-		err := json.Unmarshal([]byte(src), &args)
-		if err != nil {
-			doAPIError(err, rw)
-			return
-		}
-	}
-
-	data, err := item.Exec(req, ps, args)
-	if err != nil {
-		doAPIError(err, rw)
-		return
-	}
-
-	err = item.API.Reply(rw, data)
-	if err != nil {
-		doAPIError(err, rw)
-		return
-	}
 }
