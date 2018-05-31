@@ -402,13 +402,16 @@ func (dr DataRow) Float(field string) float64 {
 		return dr[field].(float64)
 
 	case float32:
+
 		return float64(dr[field].(float32))
 	case int, int64, int32, int16, int8:
+
 		return float64(dr.Int64(field))
 	case uint, uint64, uint32, uint16, uint8:
 		return float64(dr.Uint64(field))
+
 	default:
-		panic("unkonw float type to convert")
+		panic("unkonw float type to convert, maybe is nil[" + field + "]")
 	}
 }
 

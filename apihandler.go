@@ -62,14 +62,16 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 		}
 	}
 
-	ts := req.PostFormValue(APIFieldTS)
-	token := req.PostFormValue(APIFieldToken)
-	method := req.PostFormValue(APIFieldMethod)
+	if !webapi.IsSkipToken(req.Method) {
+		// method+now+jsonStr+now
+		ts := req.PostFormValue(APIFieldTS)
+		token := req.PostFormValue(APIFieldToken)
+		method := req.PostFormValue(APIFieldMethod)
 
-	// method+now+jsonStr+now
-	hex := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
-	if hex != token {
-		return errors.New("token failed")
+		u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
+		if u32 != token {
+			return errors.New("token failed")
+		}
 	}
 
 	data, err := webapi.Exec(args)
@@ -111,9 +113,12 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	method := req.PostFormValue(APIFieldMethod)
 
 	// method+now+jsonStr+now
-	hex := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
-	if hex != token {
-		doAPIError(errors.New("token failed"), rw)
+	u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
+	if u32 != token {
+		fmt.Println(u32, token)
+		fmt.Println(ts, method)
+		fmt.Println(src)
+		doAPIError(errors.New("open api token failed"), rw)
 		return
 	}
 

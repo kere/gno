@@ -70,6 +70,22 @@ func Int64sUnique(arr []int64) []int64 {
 	return u
 }
 
+// IntsUnique 获取稀有的整数序列
+func IntsUnique(arr []int) []int {
+	m := make(map[int]int)
+	for _, i := range arr {
+		m[i] = 1
+	}
+
+	u := make([]int, len(m))
+	i := 0
+	for k := range m {
+		u[i] = k
+		i++
+	}
+	return u
+}
+
 // StringsUnique 获取稀有的字符串序列
 func StringsUnique(arr []string) []string {
 	m := make(map[string]int)

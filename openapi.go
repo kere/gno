@@ -82,7 +82,7 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		f := v.Method(i).Interface().(func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error))
 		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
 
-		fmt.Println("regist openapi:", rule+"/"+name)
+		// fmt.Println("regist openapi:", rule+"/"+name)
 	}
 
 	// s.Router.GET(rule, doOpenAPIHandle)

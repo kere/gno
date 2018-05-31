@@ -24,6 +24,7 @@ type IWebAPI interface {
 	Auth() (require bool, err error)
 	Exec(args util.MapData) (interface{}, error)
 	Reply(data interface{}) error
+	IsSkipToken(string) bool
 }
 
 // WebAPI class
@@ -32,6 +33,9 @@ type WebAPI struct {
 	Params         httprouter.Params
 	ResponseWriter http.ResponseWriter
 	ReplyType      int //json, xml, text
+
+	IsSkipTokenMethodGet  bool // 忽略token检查
+	IsSkipTokenMethodPost bool
 }
 
 // Init api
@@ -40,6 +44,14 @@ func (w *WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprout
 	w.Request = req
 	w.Params = params
 	return nil
+}
+
+// IsSkipToken 是否忽略token 检查
+func (w *WebAPI) IsSkipToken(method string) bool {
+	if method == http.MethodGet {
+		return w.IsSkipTokenMethodGet
+	}
+	return w.IsSkipTokenMethodPost
 }
 
 // Auth page auth
