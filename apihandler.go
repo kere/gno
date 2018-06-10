@@ -83,7 +83,7 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 }
 
 func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	uri := req.URL.RequestURI()
+	uri := req.URL.Path
 	// method := ps.ByName(methodFieldName)
 
 	var item openapiItem
@@ -115,9 +115,6 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	// method+now+jsonStr+now
 	u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
 	if u32 != token {
-		fmt.Println(u32, token)
-		fmt.Println(ts, method)
-		fmt.Println(src)
 		doAPIError(errors.New("open api token failed"), rw)
 		return
 	}

@@ -15,6 +15,7 @@ var (
 	// DBTimeFormat = time.RFC3339
 	DBTimeFormat   = "2006-01-02 15:04:05"
 	B_QuestionMark = []byte("?")
+	BNull          = []byte("NULL")
 	B_Equal        = []byte("=")
 
 	BCommaSplit   = []byte(",")

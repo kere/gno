@@ -15,6 +15,7 @@ func (b *builder) getDatabase() *Database {
 	return Current()
 }
 
+// CondParams condition params
 type CondParams struct {
 	Cond string
 	Args []interface{}
@@ -40,28 +41,41 @@ func keyValueList(actionType string, data interface{}) (keys [][]byte, values []
 	l := len(d)
 	isUpdate := actionType == "update"
 	keys = make([][]byte, l)
-	values = make([]interface{}, l)
+	values = make([]interface{}, 0)
 	stmts = make([][]byte, l)
 	database := Current()
 	i := 0
 	for k, v := range d {
+		typ := reflect.TypeOf(v)
+
 		keys[i] = []byte(database.Driver.QuoteField(k))
 
 		if isUpdate {
-			keys[i] = append(keys[i], B_Equal[0], B_QuestionMark[0])
+			if v == nil {
+				keys[i] = append(keys[i], B_Equal[0])
+				keys[i] = append(keys[i], BNull...)
+				i++
+				continue
+			} else {
+				keys[i] = append(keys[i], B_Equal[0], B_QuestionMark[0])
+			}
 		}
-		stmts[i] = B_QuestionMark
 
-		typ := reflect.TypeOf(v)
-		if typ.Kind() == reflect.Ptr {
+		if !isUpdate && v == nil {
+			stmts[i] = BNull //insert 时为null
+		} else {
+			stmts[i] = B_QuestionMark
+		}
+
+		if v != nil && typ.Kind() == reflect.Ptr {
 			typ = typ.Elem()
 		}
 
-		if typ.Implements(ivotype) {
+		if v != nil && typ.Implements(ivotype) {
 			sm := NewStructConvert(v)
-			values[i] = sm.Struct2DataRow(actionType)
+			values = append(values, sm.Struct2DataRow(actionType))
 		} else {
-			values[i] = database.Driver.FlatData(typ, v)
+			values = append(values, database.Driver.FlatData(typ, v))
 		}
 
 		i++
