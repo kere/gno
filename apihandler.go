@@ -70,7 +70,7 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 
 		u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
 		if u32 != token {
-			return errors.New("token failed")
+			return errors.New("api token failed")
 		}
 	}
 
