@@ -1,12 +1,13 @@
 package util
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 )
 
-// SplitStr2FloatSlice split string to []float64
-func SplitStr2FloatSlice(s, sep string) ([]float64, error) {
+// SplitStr2Floats split string to []float64
+func SplitStr2Floats(s, sep string) ([]float64, error) {
 	arr := strings.Split(s, sep)
 	var err error
 	var v float64
@@ -24,31 +25,110 @@ func SplitStr2FloatSlice(s, sep string) ([]float64, error) {
 }
 
 // InStrings 是否在数组中出现
-func InStrings(arr []string, val string) bool {
-	for _, v := range arr {
-		if v == val {
-			return true
+func InStrings(val string, arr []string) bool {
+	l := len(arr)
+	if l < 500 {
+		for _, v := range arr {
+			if v == val {
+				return true
+			}
 		}
+		return false
 	}
-	return false
+
+	tmp := make([]string, l)
+	copy(tmp, arr)
+	sort.Strings(tmp)
+	index := sort.SearchStrings(tmp, val)
+	return index > -1
 }
 
-// InInt64s 是否在数组中出现
-func InInt64s(arr []int64, val int64) bool {
-	for _, v := range arr {
-		if v == val {
-			return true
-		}
-	}
-	return false
-}
+// // InInt64s 是否在数组中出现
+// func InInt64s(val int64, arr []int64) bool {
+// 	for _, v := range arr {
+// 		if v == val {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 // InInts 是否在数组中出现
-func InInts(arr []int, val int) bool {
-	for _, v := range arr {
-		if v == val {
-			return true
+func InInts(val int, arr []int) bool {
+	l := len(arr)
+	if l < 500 {
+		for _, v := range arr {
+			if v == val {
+				return true
+			}
+		}
+		return false
+	}
+	tmp := make([]int, l)
+	copy(tmp, arr)
+	sort.Ints(tmp)
+	index := sort.SearchInts(tmp, val)
+	return index > -1
+}
+
+// InFloats 是否在数组中出现
+func InFloats(val float64, arr []float64) bool {
+	l := len(arr)
+	if l < 500 {
+		for _, v := range arr {
+			if v == val {
+				return true
+			}
+		}
+		return false
+	}
+	tmp := make([]float64, l)
+	copy(tmp, arr)
+	sort.Float64s(tmp)
+	index := sort.SearchFloat64s(tmp, val)
+	return index > -1
+}
+
+// SameStrings 是否数组相同
+func SameStrings(arr1, arr2 []string) bool {
+	l := len(arr1)
+	if l != len(arr2) {
+		return false
+	}
+	tmp1 := make([]string, l)
+	tmp2 := make([]string, l)
+	copy(tmp1, arr1)
+	copy(tmp2, arr2)
+	sort.Strings(tmp1)
+	sort.Strings(tmp2)
+
+	for i := 0; i < l; i++ {
+		if tmp1[i] != tmp2[i] {
+			return false
 		}
 	}
-	return false
+
+	return true
+}
+
+// SameInts 是否数组相同
+func SameInts(arr1, arr2 []int) bool {
+	l := len(arr1)
+	if l != len(arr2) {
+		return false
+	}
+	tmp1 := make([]int, l)
+	tmp2 := make([]int, l)
+	copy(tmp1, arr1)
+	copy(tmp2, arr2)
+	sort.Ints(tmp1)
+	sort.Ints(tmp2)
+
+	for i := 0; i < l; i++ {
+		if tmp1[i] != tmp2[i] {
+			return false
+		}
+	}
+
+	return true
 }

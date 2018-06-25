@@ -57,6 +57,7 @@ func init() {
 
 // Init it
 func Init(name string, config map[string]string) {
+	fmt.Println("Init Database", config)
 	dbConf = conf.Conf(config)
 
 	dbpool.SetCurrent(New(name, config))

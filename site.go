@@ -261,3 +261,9 @@ func (s *SiteServer) RegistGetAPI(rule string, factory func() IWebAPI) {
 		doAPIError(err, rw)
 	})
 }
+
+// DoError report error
+func DoError(err error) error {
+	Site.Log.Error(err).Stack()
+	return err
+}

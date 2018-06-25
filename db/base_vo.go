@@ -142,7 +142,7 @@ func (b *BaseVO) UpdateFields(fields []string, where string, params ...interface
 	dat := DataRow{}
 	for i := 0; i < l; i++ {
 		name := typ.Field(i).Tag.Get("json")
-		if name != "" || util.InStrings(fields, name) {
+		if name != "" || util.InStrings(name, fields) {
 			dat[name] = val.Field(i).Interface()
 		}
 	}
