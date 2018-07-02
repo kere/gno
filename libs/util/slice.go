@@ -40,7 +40,7 @@ func InStrings(val string, arr []string) bool {
 	copy(tmp, arr)
 	sort.Strings(tmp)
 	index := sort.SearchStrings(tmp, val)
-	return index > -1
+	return index != l
 }
 
 // // InInt64s 是否在数组中出现
@@ -68,7 +68,7 @@ func InInts(val int, arr []int) bool {
 	copy(tmp, arr)
 	sort.Ints(tmp)
 	index := sort.SearchInts(tmp, val)
-	return index > -1
+	return index != l
 }
 
 // InFloats 是否在数组中出现
@@ -86,7 +86,7 @@ func InFloats(val float64, arr []float64) bool {
 	copy(tmp, arr)
 	sort.Float64s(tmp)
 	index := sort.SearchFloat64s(tmp, val)
-	return index > -1
+	return index != l
 }
 
 // SameStrings 是否数组相同
