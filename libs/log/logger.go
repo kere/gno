@@ -129,19 +129,17 @@ var bSearchStrGno = []byte("github.com/kere/gno")
 func (l *Logger) Stack() *Logger {
 	count := 0
 	arr := bytes.Split(debug.Stack(), bBreak)
-	if l.level < LogAll {
-		arr = arr[3:]
-		for i := range arr {
-			if bytes.Index(arr[i], bSearchStrGno) > -1 {
-				count++
-			} else {
-				break
-			}
+	arr = arr[3:]
+	for i := range arr {
+		if bytes.Index(arr[i], bSearchStrGno) > -1 {
+			count++
+		} else {
+			break
 		}
+	}
 
-		if count > 0 {
-			arr = arr[count:]
-		}
+	if count > 0 {
+		arr = arr[count:]
 	}
 
 	l.Write("\n", string(bytes.Join(arr, bBreak)))

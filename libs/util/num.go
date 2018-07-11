@@ -5,7 +5,15 @@ import (
 	"math/rand"
 	"strconv"
 	"time"
+
+	humanize "github.com/dustin/go-humanize"
 )
+
+// Money string
+func Money(val float64) string {
+	val = Round(val, 2)
+	return humanize.Commaf(val)
+}
 
 // Round func
 func Round(val float64, n int) float64 {

@@ -133,7 +133,6 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 }
 
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("doPageErr", err)
 	log.App.Warn(err)
 	if errorURL == "" {
 		rw.WriteHeader(http.StatusInternalServerError)
