@@ -91,14 +91,14 @@ func (p *Page) Render(w io.Writer) error {
 		}
 	}
 
+	p.Head.RenderBottomJS(w)
+
 	for _, r := range p.Bottom {
 		if err = r.Render(w); err != nil {
 			// println("bottom")
 			return err
 		}
 	}
-
-	p.Head.RenderBottomJS(w)
 
 	w.Write(bytesHTMLBodyEnd)
 	w.Write(bytesHTMLEnd)

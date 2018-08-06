@@ -25,6 +25,7 @@ type IPage interface {
 
 	AddHead(src string)
 	AddJS(filename string)
+	SetJSPosition(pos string)
 	AddCSS(filename string)
 	AddTop(filename string, data interface{})
 	AddBottom(filename string, data interface{})
@@ -75,6 +76,11 @@ func (p *Page) Init(method string, w http.ResponseWriter, req *http.Request, par
 	p.ResponseWriter = w
 	p.Lang = Site.Lang
 	p.Theme = Site.Theme
+}
+
+// SetJSPosition set
+func (p *Page) SetJSPosition(pos string) {
+	p.JSPosition = pos
 }
 
 // GetName value
