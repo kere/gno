@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"time"
 )
 
 // Computation 并行计算
@@ -20,19 +21,29 @@ func NewComputation(num int) *Computation {
 }
 
 // Run f
-func (c *Computation) Run(l int, execFunc func(i int, c *Computation), resultFunc func(dat interface{}, c *Computation)) {
+func (c *Computation) Run(l int, execFunc func(i int, c *Computation) (interface{}, error), resultFunc func(dat interface{}, c *Computation)) {
 	if l == 0 {
 		return
 	}
+
 	if c.ErrHandler == nil {
 		c.ErrHandler = func(err error) {
 			fmt.Println(err)
 		}
 	}
-
+	startTime := time.Now()
+	chanA := make(chan int, c.NumProcess)
 	go func() {
 		for i := 0; i < l; i++ {
-			go execFunc(i, c)
+			chanA <- 1
+			go func(i int) {
+				dat, err := execFunc(i, c)
+				if err != nil {
+					c.errChan <- err
+					return
+				}
+				c.dataChan <- dat
+			}(i)
 		}
 	}()
 
@@ -41,21 +52,30 @@ func (c *Computation) Run(l int, execFunc func(i int, c *Computation), resultFun
 		case dat := <-c.dataChan:
 			resultFunc(dat, c)
 			c.counter++
+			<-chanA
 
 		case err := <-c.errChan:
 			c.ErrHandler(err)
 			c.counter++
+			<-chanA
 
 		}
 	}
+
+	fmt.Println("Finished:", time.Now().Sub(startTime))
 }
 
-// Done f
-func (c *Computation) Done(dat interface{}) {
-	c.dataChan <- dat
+// GetCounter f
+func (c *Computation) GetCounter() int {
+	return c.counter
 }
 
-// DoError err
-func (c *Computation) DoError(err error) {
-	c.errChan <- err
-}
+// // Done f
+// func (c *Computation) Done(dat interface{}) {
+// 	c.dataChan <- dat
+// }
+
+// // DoError err
+// func (c *Computation) DoError(err error) {
+// 	c.errChan <- err
+// }

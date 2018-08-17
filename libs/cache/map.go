@@ -47,13 +47,6 @@ func (m *Map) CheckValue(v interface{}) bool {
 	return true
 }
 
-// ClearAll release all
-func (m *Map) ClearAll() {
-	m.Lock.Lock()
-	m.Data = make(map[string]*ExpiresVal, 0)
-	m.Lock.Unlock()
-}
-
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
 	key := m.Key(args...)
@@ -91,6 +84,17 @@ func (m *Map) Get(args ...interface{}) interface{} {
 
 	m.Lock.Unlock()
 	return v.Value
+}
+
+// ClearAll release all
+func (m *Map) ClearAll() {
+	m.Lock.Lock()
+	for k, v := range m.Data {
+		v.Value = nil
+		m.Data[k] = nil
+	}
+	m.Data = make(map[string]*ExpiresVal, 0)
+	m.Lock.Unlock()
 }
 
 // Release 释放缓存
