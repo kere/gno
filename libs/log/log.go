@@ -30,8 +30,9 @@ const (
 	LogNotice  = 6  //* normal but significant condition */
 	LogInfo    = 7  //* informational */
 	LogDebug   = 8  //* debug-level messages */
-	LogSQL     = 8  //* debug-level messages */
-	LogAll     = 10 //* debug-level messages */
+	LogSQL     = 8  //* SQL messages */
+	LogFmt     = 9  //* Fmt messages */
+	LogAll     = 10 //* all messages */
 	ConstNone  = "none"
 )
 
@@ -54,6 +55,8 @@ func IntLevel(s string) int {
 		return LogInfo
 	case "debug":
 		return LogDebug
+	case "fmt":
+		return LogFmt
 	case "all":
 		return LogAll
 	case "close":

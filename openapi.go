@@ -43,11 +43,14 @@ func (w *OpenAPI) Reply(rw http.ResponseWriter, data interface{}) error {
 	switch w.ReplyType {
 	case ReplyTypeJSON:
 		src, err = json.Marshal(data)
+
 	case ReplyTypeText:
 		src = []byte(fmt.Sprint(data))
+
 	case ReplyTypeXML:
 
 	}
+
 	if err != nil {
 		Site.Log.Warn(err)
 		return err

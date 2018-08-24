@@ -12,6 +12,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/kere/gno/db"
 	"github.com/kere/gno/layout"
+	"github.com/kere/gno/libs/cache"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/render"
@@ -142,6 +143,10 @@ func Init() *SiteServer {
 	// DB
 	if config.IsSet("db") {
 		db.Init("app", config.GetConf("db"))
+	}
+
+	if config.IsSet("cache") {
+		cache.Init(config.GetConf("cache"))
 	}
 
 	return s
