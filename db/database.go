@@ -122,7 +122,7 @@ func (this *Database) isError(err error) bool {
 }
 
 func (this *Database) QueryPrepare(s *SqlState) (DataSet, error) {
-	return QueryPrepare(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
+	return CQueryPrepare(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
 }
 
 // func (this *Database) FindPrepare(cls IVO, s *SqlState) (VODataSet, error) {
@@ -130,7 +130,7 @@ func (this *Database) QueryPrepare(s *SqlState) (DataSet, error) {
 // }
 
 func (this *Database) Query(s *SqlState) (DataSet, error) {
-	return Query(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
+	return CQuery(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
 }
 
 // func (this *Database) Find(cls IVO, s *SqlState) (VODataSet, error) {

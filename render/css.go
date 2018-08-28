@@ -25,6 +25,9 @@ func (t *CSS) Render(w io.Writer) error {
 	filename := t.FileName
 	if strings.HasPrefix(filename, "http") {
 		w.Write([]byte(filename))
+		if CSSVersion != "" {
+			w.Write([]byte("?v=" + CSSVersion))
+		}
 		w.Write(bCSSTagEnd)
 		return nil
 	}

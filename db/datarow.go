@@ -678,6 +678,12 @@ func (dr DataRow) ConvertTo(vo interface{}) error {
 		return errors.New("copy to struct failed, vo is invalid")
 	}
 
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("DataRow ConvertTo failed ")
+		}
+	}()
+
 	var field string
 	var sf reflect.StructField
 
@@ -814,12 +820,6 @@ func (dr DataRow) ConvertTo(vo interface{}) error {
 		case reflect.Float64, reflect.Float32:
 			val.Field(i).SetFloat(dr.Float(field))
 		}
-
-		defer func() {
-			if err := recover(); err != nil {
-				panic(fmt.Sprint("Field(", i, ") ", field))
-			}
-		}()
 	}
 	return nil
 }

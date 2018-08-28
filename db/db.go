@@ -138,10 +138,10 @@ func New(name string, conf map[string]string) *Database {
 	return d
 }
 
-// Query from database on prepare mode
+// CQuery from database on prepare mode
 // This function use the current database from database bool
 // You can set another database use Use(i) or create an new database use New(name, conf)
-func Query(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
+func CQuery(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
 	sqlstring := string(sqlstr)
 	Current().Log.Sql(sqlstr, args)
 
@@ -165,11 +165,11 @@ func Query(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
 	// return Current().Query(NewSqlState([]byte(sqlstr), args))
 }
 
-// Query from database on prepare mode
+// CQueryPrepare from database on prepare mode
 // In prepare mode, the sql command will be cached by database
 // This function use the current database from database bool
 // You can set another database by Use(i) or New(name, conf) an new database
-func QueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
+func CQueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
 	sqlstring := string(sqlstr)
 	Current().Log.Sql(sqlstr, args)
 
