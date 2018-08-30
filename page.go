@@ -31,6 +31,9 @@ type IPage interface {
 	AddBottom(filename string, data interface{})
 	AddScript(position, src string, data map[string]string)
 
+	AddTopRender(r render.IRender)
+	AddBottomRender(r render.IRender)
+
 	Init(method string, w http.ResponseWriter, req *http.Request, ps httprouter.Params)
 	Auth() (require, isok bool, redirectURL string, err error)
 	// Build() error
@@ -142,6 +145,16 @@ func (p *Page) AddTop(filename string, data interface{}) {
 func (p *Page) AddBottom(filename string, data interface{}) {
 	r := render.NewTemplate(filename)
 	r.Data = data
+	p.Bottom = append(p.Bottom, r)
+}
+
+// AddTopRender add body render template
+func (p *Page) AddTopRender(r render.IRender) {
+	p.Top = append(p.Top, r)
+}
+
+// AddBottomRender add body render template
+func (p *Page) AddBottomRender(r render.IRender) {
 	p.Bottom = append(p.Bottom, r)
 }
 

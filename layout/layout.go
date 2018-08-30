@@ -65,6 +65,16 @@ func (p *Page) AddBodyRender(r render.IRender) {
 	p.Body = append(p.Body, r)
 }
 
+// AddTopRender add body render template
+func (p *Page) AddTopRender(r render.IRender) {
+	p.Top = append(p.Top, r)
+}
+
+// AddBottomRender add body render template
+func (p *Page) AddBottomRender(r render.IRender) {
+	p.Bottom = append(p.Bottom, r)
+}
+
 // Render func
 func (p *Page) Render(w io.Writer) error {
 	// <html>
