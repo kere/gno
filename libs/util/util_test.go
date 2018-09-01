@@ -6,7 +6,7 @@ import (
 
 func Test_Func(t *testing.T) {
 	s := append(BaseChars, []byte("-=[];',./'~!@#$%^&*()_+{}:\"<>?")...)
-	score := 11706300000
+	score := int64(11706300000)
 	num := uint64(score)
 	v := IntZipTo62(num)
 	str := string(v)

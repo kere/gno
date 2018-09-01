@@ -237,11 +237,9 @@ func (p *Page) Render() error {
 
 	if p.HTML != "" {
 		lyt.AddBodyRender(render.NewString(p.HTML))
-	} else {
+	} else if p.Name != "" {
 		name := filepath.Join(p.Dir, p.Name)
-		if name != "" {
-			lyt.AddBody(name+".htm", p.Data)
-		}
+		lyt.AddBody(name+".htm", p.Data)
 	}
 
 	lyt.Bottom = p.Bottom

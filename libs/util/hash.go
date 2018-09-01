@@ -2,6 +2,8 @@ package util
 
 import (
 	"fmt"
+	"hash/crc32"
+	"io"
 	"time"
 
 	"github.com/spaolacci/murmur3"
@@ -11,6 +13,14 @@ var (
 	// BaseChars 基础字符
 	BaseChars = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
+
+//CRC32Token crc校验
+func CRC32Token(str string) string {
+	ieee := crc32.NewIEEE()
+	io.WriteString(ieee, str)
+	v64 := uint64(ieee.Sum32())
+	return string(IntZipTo62(v64))
+}
 
 // Unique 获得一个稀有字符
 func Unique() string {
