@@ -824,8 +824,8 @@ func (dr DataRow) ConvertTo(vo interface{}) error {
 	return nil
 }
 
-// Split2Slice split map data
-func (dr DataRow) Split2Slice() ([]string, []interface{}) {
+// SplitData split map data
+func (dr DataRow) SplitData() ([]string, []interface{}) {
 	l := len(dr)
 	keys := make([]string, l)
 	vals := make([]interface{}, l)
