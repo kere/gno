@@ -14,12 +14,12 @@ type CSS struct {
 }
 
 // NewCSS new
-func NewCSS(fileName, theme string) *CSS {
-	return &CSS{FileName: fileName, Theme: theme}
+func NewCSS(fileName, theme string) CSS {
+	return CSS{FileName: fileName, Theme: theme}
 }
 
 // Render func
-func (t *CSS) Render(w io.Writer) error {
+func (t CSS) Render(w io.Writer) error {
 	w.Write(bCSSTagBegin)
 
 	filename := t.FileName

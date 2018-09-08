@@ -17,12 +17,12 @@ type Template struct {
 }
 
 // NewTemplate new
-func NewTemplate(fileName string) *Template {
-	return &Template{FileName: fileName}
+func NewTemplate(fileName string) Template {
+	return Template{FileName: fileName}
 }
 
 // Render func
-func (t *Template) Render(w io.Writer) error {
+func (t Template) Render(w io.Writer) error {
 	tmpl := template.New(filepath.Base(t.FileName))
 	if TemplateLeftDelim != "" {
 		tmpl.Delims(TemplateLeftDelim, TemplateRightDelim)
@@ -43,7 +43,7 @@ func (t *Template) Render(w io.Writer) error {
 	return tmpl.Execute(w, t.Data)
 }
 
-func (t *Template) loadi18n() error {
+func (t Template) loadi18n() error {
 	dir, name := filepath.Split(t.FileName)
 
 	d, err := i18n.Load(t.Locale, filepath.Join(dir, "lang", t.Locale, name+".json"))

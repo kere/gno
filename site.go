@@ -226,8 +226,13 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 func (s *SiteServer) RegistAPI(rule string, factory func() IWebAPI) {
 	f := func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		webapi := factory()
-		webapi.Init(rw, req, ps)
-		err := doAPIHandle(webapi, rw, req, ps)
+		var err error
+		webapi, err = webapi.Init(rw, req, ps)
+		if err != nil {
+			Site.Log.Error(err)
+			return
+		}
+		err = doAPIHandle(webapi, rw, req, ps)
 		if err == nil {
 			return
 		}
@@ -243,8 +248,13 @@ func (s *SiteServer) RegistAPI(rule string, factory func() IWebAPI) {
 func (s *SiteServer) RegistPostAPI(rule string, factory func() IWebAPI) {
 	s.Router.POST(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		webapi := factory()
-		webapi.Init(rw, req, ps)
-		err := doAPIHandle(webapi, rw, req, ps)
+		var err error
+		webapi, err = webapi.Init(rw, req, ps)
+		if err != nil {
+			Site.Log.Error(err)
+			return
+		}
+		err = doAPIHandle(webapi, rw, req, ps)
 		if err == nil {
 			return
 		}
@@ -257,8 +267,13 @@ func (s *SiteServer) RegistPostAPI(rule string, factory func() IWebAPI) {
 func (s *SiteServer) RegistGetAPI(rule string, factory func() IWebAPI) {
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		webapi := factory()
-		webapi.Init(rw, req, ps)
-		err := doAPIHandle(webapi, rw, req, ps)
+		var err error
+		webapi, err = webapi.Init(rw, req, ps)
+		if err != nil {
+			Site.Log.Error(err)
+			return
+		}
+		err = doAPIHandle(webapi, rw, req, ps)
 		if err == nil {
 			return
 		}

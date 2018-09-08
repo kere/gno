@@ -20,7 +20,7 @@ const (
 
 // IWebAPI interface
 type IWebAPI interface {
-	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) error
+	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error)
 	Auth() (require bool, err error)
 	Exec(args util.MapData) (interface{}, error)
 	Reply(data interface{}) error
@@ -39,15 +39,15 @@ type WebAPI struct {
 }
 
 // Init api
-func (w *WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) error {
+func (w WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error) {
 	w.ResponseWriter = rw
 	w.Request = req
 	w.Params = params
-	return nil
+	return w, nil
 }
 
 // IsSkipToken 是否忽略token 检查
-func (w *WebAPI) IsSkipToken(method string) bool {
+func (w WebAPI) IsSkipToken(method string) bool {
 	if method == http.MethodGet {
 		return w.IsSkipTokenMethodGet
 	}
@@ -56,17 +56,17 @@ func (w *WebAPI) IsSkipToken(method string) bool {
 
 // Auth page auth
 // if require is true then do auth
-func (w *WebAPI) Auth() (require bool, err error) {
+func (w WebAPI) Auth() (require bool, err error) {
 	return require, nil
 }
 
 // Exec api
-func (w *WebAPI) Exec(args util.MapData) (interface{}, error) {
+func (w WebAPI) Exec(args util.MapData) (interface{}, error) {
 	return nil, nil
 }
 
 // Reply response
-func (w *WebAPI) Reply(data interface{}) error {
+func (w WebAPI) Reply(data interface{}) error {
 	if data == nil {
 		w.ResponseWriter.WriteHeader(http.StatusOK)
 		return nil
@@ -90,8 +90,8 @@ func (w *WebAPI) Reply(data interface{}) error {
 	w.ResponseWriter.WriteHeader(http.StatusOK)
 	w.ResponseWriter.Write(src)
 
-	w.Request = nil
-	w.Params = nil
-	w.ResponseWriter = nil
+	// w.Request = nil
+	// w.Params = nil
+	// w.ResponseWriter = nil
 	return nil
 }

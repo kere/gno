@@ -19,12 +19,12 @@ type JS struct {
 }
 
 // NewJS new
-func NewJS(fileName string) *JS {
-	return &JS{FileName: fileName}
+func NewJS(fileName string) JS {
+	return JS{FileName: fileName}
 }
 
 // Render f
-func (t *JS) Render(w io.Writer) error {
+func (t JS) Render(w io.Writer) error {
 	w.Write(bJsTagBegin)
 
 	filename := t.FileName

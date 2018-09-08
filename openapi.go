@@ -27,12 +27,12 @@ type OpenAPI struct {
 
 // Auth page auth
 // if require is true then do auth
-func (w *OpenAPI) Auth(req *http.Request, ps httprouter.Params) (require bool, err error) {
+func (w OpenAPI) Auth(req *http.Request, ps httprouter.Params) (require bool, err error) {
 	return require, nil
 }
 
 // Reply response
-func (w *OpenAPI) Reply(rw http.ResponseWriter, data interface{}) error {
+func (w OpenAPI) Reply(rw http.ResponseWriter, data interface{}) error {
 	if data == nil {
 		rw.WriteHeader(http.StatusOK)
 		return nil
