@@ -21,7 +21,7 @@ const (
 // IWebAPI interface
 type IWebAPI interface {
 	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error)
-	Auth() (require bool, err error)
+	Auth(req *http.Request, params httprouter.Params) (require bool, err error)
 	Exec(args util.MapData) (interface{}, error)
 	Reply(data interface{}) error
 	IsSkipToken(string) bool
@@ -56,7 +56,7 @@ func (w WebAPI) IsSkipToken(method string) bool {
 
 // Auth page auth
 // if require is true then do auth
-func (w WebAPI) Auth() (require bool, err error) {
+func (w WebAPI) Auth(req *http.Request, params httprouter.Params) (require bool, err error) {
 	return require, nil
 }
 

@@ -49,7 +49,7 @@ func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprou
 }
 
 func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
-	if isReq, err := webapi.Auth(); isReq && err != nil {
+	if isReq, err := webapi.Auth(req, ps); isReq && err != nil {
 		return err
 	}
 
