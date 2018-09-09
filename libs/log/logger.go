@@ -73,6 +73,9 @@ func (l *Logger) Init(file, levelStr string) *Logger {
 
 // SetLevel func
 func (l *Logger) SetLevel(s string) *Logger {
+	if l == nil {
+		return l
+	}
 	l.LevelName = s
 	l.level = IntLevel(s)
 	return l
