@@ -11,16 +11,13 @@ import (
 // IWebSock interface
 type IWebSock interface {
 	Auth(r *http.Request) error
-	ClientID() int
 	Listen(conn *websocket.Conn)
 	Exec(conn *websocket.Conn, args util.MapData) (interface{}, error)
 }
 
 // WebSock class
 type WebSock struct {
-	ID     int
 	Target IWebSock
-	Conn   *websocket.Conn
 }
 
 // Auth a
@@ -28,9 +25,10 @@ func (c WebSock) Auth(r *http.Request) error {
 	return nil
 }
 
-// ClientID a
-func (c WebSock) ClientID() int {
-	return c.ID
+// CurrentClientID genrate id
+func CurrentClientID() int {
+	counter++
+	return counter
 }
 
 // Listen a

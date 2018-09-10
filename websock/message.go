@@ -10,16 +10,12 @@ import (
 // IMessageSock interface
 type IMessageSock interface {
 	Auth(r *http.Request) error
-	ClientID() int
-	// Init(conn *websocket.Conn) IMessageSock
 	Listen(conn *websocket.Conn)
 	Exec(conn *websocket.Conn, msg []byte) ([]byte, error)
 }
 
 // MessageSock class
 type MessageSock struct {
-	ID     int
-	Conn   *websocket.Conn
 	Target IMessageSock
 }
 
@@ -42,17 +38,10 @@ func (c MessageSock) Exec(conn *websocket.Conn, msg []byte) ([]byte, error) {
 	return nil, nil
 }
 
-// ClientID a
-func (c MessageSock) ClientID() int {
-	return c.ID
-}
-
 var counter int
 
 // Listen a
 func (c MessageSock) Listen(conn *websocket.Conn) {
-	counter++
-	c.ID = counter
 	for {
 		mt, message, err := conn.ReadMessage()
 		if err != nil {

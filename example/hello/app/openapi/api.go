@@ -7,6 +7,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/kere/gno"
 	"github.com/kere/gno/libs/util"
+	"github.com/kere/gno/websock"
 )
 
 // App class
@@ -33,8 +34,11 @@ func (a App) PageData(req *http.Request, ps httprouter.Params, args util.MapData
 	return util.MapData{"isok": true}, nil
 }
 
-// // ServerSend func
-// func (a App) ServerSend(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error) {
-//
-// 	return util.MapData{"isok": true}, nil
-// }
+// ServerSend func
+func (a App) ServerSend(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error) {
+	connMap := websock.GetConnMap("/ws")
+	for id, conn := range connMap {
+		conn.WriteJSON(util.MapData{"isserver": true, "clientid": id})
+	}
+	return util.MapData{"isok": true}, nil
+}

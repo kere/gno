@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kere/gno/websock"
 )
 
 // RegistGet router
@@ -85,4 +86,14 @@ func (s *SiteServer) RegistGetAPI(rule string, webapi IWebAPI) {
 		// do error
 		doAPIError(err, rw)
 	})
+}
+
+// RegistWebSocket router
+func (s *SiteServer) RegistWebSocket(rule string, ctl websock.IWebSock) {
+	websock.RegistWebSocket(s.Router, rule, ctl)
+}
+
+// RegistMessageSocket router
+func (s *SiteServer) RegistMessageSocket(rule string, ctl websock.IMessageSock) {
+	websock.RegistMessageSocket(s.Router, rule, ctl)
 }
