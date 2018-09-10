@@ -1,7 +1,9 @@
 package gno
 
 import (
+	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -86,8 +88,59 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
 
 		// fmt.Println("regist openapi:", rule+"/"+name)
+		s.Router.POST(rule+"/"+name, doOpenAPIHandle)
 	}
 
 	// s.Router.GET(rule, doOpenAPIHandle)
-	s.Router.POST(rule+"/:"+methodFieldName, doOpenAPIHandle)
+	// s.Router.POST(rule+"/:"+methodFieldName, doOpenAPIHandle)
+}
+
+func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	uri := req.URL.Path
+	// method := ps.ByName(methodFieldName)
+
+	var item openapiItem
+	var isok bool
+	if item, isok = openapiMap[uri]; !isok {
+		doAPIError(errors.New(uri+" openapi not found"), rw)
+		return
+	}
+
+	if isReq, err := item.API.Auth(req, ps); isReq && err != nil {
+		doAPIError(err, rw)
+		return
+	}
+
+	var args util.MapData
+	src := req.PostFormValue(APIFieldSrc)
+	if src != "" {
+		err := json.Unmarshal([]byte(src), &args)
+		if err != nil {
+			doAPIError(err, rw)
+			return
+		}
+	}
+
+	ts := req.PostFormValue(APIFieldTS)
+	token := req.PostFormValue(APIFieldToken)
+	method := req.PostFormValue(APIFieldMethod)
+
+	// method+now+jsonStr+now
+	u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
+	if u32 != token {
+		doAPIError(errors.New("open api token failed"), rw)
+		return
+	}
+
+	data, err := item.Exec(req, ps, args)
+	if err != nil {
+		doAPIError(err, rw)
+		return
+	}
+
+	err = item.API.Reply(rw, data)
+	if err != nil {
+		doAPIError(err, rw)
+		return
+	}
 }

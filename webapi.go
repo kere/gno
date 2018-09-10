@@ -20,7 +20,7 @@ const (
 
 // IWebAPI interface
 type IWebAPI interface {
-	Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error)
+	// Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error)
 	Auth(req *http.Request, params httprouter.Params) (require bool, err error)
 	Exec(args util.MapData) (interface{}, error)
 	Reply(data interface{}) error
@@ -39,12 +39,13 @@ type WebAPI struct {
 }
 
 // Init api
-func (w WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error) {
-	w.ResponseWriter = rw
-	w.Request = req
-	w.Params = params
-	return w, nil
-}
+// func (w WebAPI) Init() (IWebAPI, error) {
+// func (w WebAPI) Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error) {
+// w.ResponseWriter = rw
+// w.Request = req
+// w.Params = params
+// return w, nil
+// }
 
 // IsSkipToken 是否忽略token 检查
 func (w WebAPI) IsSkipToken(method string) bool {

@@ -32,3 +32,9 @@ func (a App) PageData(req *http.Request, ps httprouter.Params, args util.MapData
 
 	return util.MapData{"isok": true}, nil
 }
+
+// // ServerSend func
+// func (a App) ServerSend(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error) {
+//
+// 	return util.MapData{"isok": true}, nil
+// }
