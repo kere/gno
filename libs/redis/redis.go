@@ -15,7 +15,7 @@ func NewPool(config map[string]string) *Pool {
 	c := conf.Conf(config)
 
 	r.MaxIdle = c.DefaultInt("max_idle", 2)
-	r.MaxActive = c.DefaultInt("capacity", 10)
+	r.MaxActive = c.DefaultInt("max_active", 10)
 	r.IdleTimeout = time.Duration(c.DefaultInt("idle_timeout", 180)) * time.Second
 	r.Network = c.DefaultString("network", "tcp")
 	r.connectString = c.DefaultString("connect", "127.0.0.1:6379")

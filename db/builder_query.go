@@ -212,7 +212,7 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 	var key string
 	if q.cache {
 		key = q.cachekey()
-		if exi, _ := cacheIns.Exists(key); exi {
+		if exi, _ := cacheIns.IsExists(key); exi {
 			return cacheGet(key)
 		}
 	}

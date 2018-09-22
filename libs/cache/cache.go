@@ -11,14 +11,14 @@ import (
 type ICache interface {
 	Init(conf.Conf) error
 	Set(string, string, int) error
-	Get(string) (string, error)
+	Get(string) (interface{}, error)
 
 	GetDriver() string
 	GetString(string) (string, error)
 	GetInt(string) (int, error)
 	GetInt64(string) (int64, error)
 	GetFloat(string) (float64, error)
-	Exists(string) (bool, error)
+	IsExists(string) (bool, error)
 	Delete(string) error
 }
 
@@ -53,13 +53,13 @@ func IsEnable() bool {
 	return cache != nil
 }
 
-// Exists key
-func Exists(key string) (bool, error) {
-	return cache.Exists(key)
+// IsExists key
+func IsExists(key string) (bool, error) {
+	return cache.IsExists(key)
 }
 
 // Get key
-func Get(key string) (string, error) {
+func Get(key string) (interface{}, error) {
 	return cache.Get(key)
 }
 

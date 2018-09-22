@@ -38,13 +38,6 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 // RegistAPI api router
 func (s *SiteServer) RegistAPI(rule string, webapi IWebAPI) {
 	f := func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-		// webapi := factory()
-		// var err error
-		// webapi, err = webapi.Init(rw, req, ps)
-		// if err != nil {
-		// 	Site.Log.Error(err)
-		// 	return
-		// }
 		err := doAPIHandle(webapi, rw, req, ps)
 		if err == nil {
 			return

@@ -27,7 +27,7 @@ func cacheSet(key string, value interface{}, expire int) error {
 }
 
 func cacheGet(key string) (DataSet, error) {
-	reply, err := cacheIns.Get(key)
+	reply, err := cacheIns.GetString(key)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func cacheGet(key string) (DataSet, error) {
 }
 
 func cacheGetX(key string, cls IVO) (VODataSet, error) {
-	reply, err := cacheIns.Get(key)
+	reply, err := cacheIns.GetString(key)
 	if err != nil {
 		return nil, err
 	}

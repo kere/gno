@@ -74,12 +74,12 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 		}
 	}
 
-	data, err := webapi.Exec(args)
+	data, err := webapi.Exec(req, ps, args)
 	if err != nil {
 		return err
 	}
 
-	return webapi.Reply(data)
+	return webapi.Reply(rw, data)
 }
 
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {

@@ -22,17 +22,14 @@ const (
 type IWebAPI interface {
 	// Init(rw http.ResponseWriter, req *http.Request, params httprouter.Params) (IWebAPI, error)
 	Auth(req *http.Request, params httprouter.Params) (require bool, err error)
-	Exec(args util.MapData) (interface{}, error)
-	Reply(data interface{}) error
+	Exec(req *http.Request, params httprouter.Params, args util.MapData) (interface{}, error)
+	Reply(rw http.ResponseWriter, data interface{}) error
 	IsSkipToken(string) bool
 }
 
 // WebAPI class
 type WebAPI struct {
-	Request        *http.Request
-	Params         httprouter.Params
-	ResponseWriter http.ResponseWriter
-	ReplyType      int //json, xml, text
+	ReplyType int //json, xml, text
 
 	IsSkipTokenMethodGet  bool // 忽略token检查
 	IsSkipTokenMethodPost bool
@@ -62,21 +59,21 @@ func (w WebAPI) Auth(req *http.Request, params httprouter.Params) (require bool,
 }
 
 // Exec api
-func (w WebAPI) Exec(args util.MapData) (interface{}, error) {
+func (w WebAPI) Exec(req *http.Request, params httprouter.Params, args util.MapData) (interface{}, error) {
 	return nil, nil
 }
 
 // Reply response
-func (w WebAPI) Reply(data interface{}) error {
+func (w WebAPI) Reply(rw http.ResponseWriter, data interface{}) error {
 	if data == nil {
-		w.ResponseWriter.WriteHeader(http.StatusOK)
+		rw.WriteHeader(http.StatusOK)
 		return nil
 	}
 
 	var src []byte
 	var err error
 	switch w.ReplyType {
-	case ReplyTypeText:
+	default:
 		src = []byte(fmt.Sprint(data))
 	case ReplyTypeJSON:
 		src, err = json.Marshal(data)
@@ -88,11 +85,8 @@ func (w WebAPI) Reply(data interface{}) error {
 		return err
 	}
 
-	w.ResponseWriter.WriteHeader(http.StatusOK)
-	w.ResponseWriter.Write(src)
+	rw.WriteHeader(http.StatusOK)
+	rw.Write(src)
 
-	// w.Request = nil
-	// w.Params = nil
-	// w.ResponseWriter = nil
 	return nil
 }

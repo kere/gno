@@ -59,14 +59,14 @@ func (r *RedisCache) Set(key, value string, expire int) error {
 }
 
 // Get func
-func (r *RedisCache) Get(key string) (string, error) {
+func (r *RedisCache) Get(key string) (interface{}, error) {
 	// r.mutex.RLock()
 	return r.client.DoString("GET", key)
 	// r.mutex.RUnlock()
 }
 
 // Exists key
-func (r *RedisCache) Exists(key string) (bool, error) {
+func (r *RedisCache) IsExists(key string) (bool, error) {
 	return r.client.Exists(key)
 }
 
