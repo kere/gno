@@ -5,19 +5,16 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/kere/gno/websock"
+	"github.com/kere/gno/libs/util"
 )
 
 // Message class
 type Message struct {
-	websock.MessageSock
 }
 
 // NewMessage f
 func NewMessage() Message {
-	w := Message{}
-	w.Target = w
-	return w
+	return Message{}
 }
 
 // Auth f
@@ -26,7 +23,7 @@ func (u Message) Auth(req *http.Request) error {
 }
 
 // Exec f
-func (u Message) Exec(conn *websocket.Conn, msg []byte) ([]byte, error) {
-	fmt.Println("receive:", string(msg))
+func (u Message) Exec(conn *websocket.Conn, args util.MapData) ([]byte, error) {
+	fmt.Println("receive:", args.String("content"))
 	return []byte("ni hao a..."), nil
 }

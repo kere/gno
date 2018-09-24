@@ -36,9 +36,9 @@ func (a App) PageData(req *http.Request, ps httprouter.Params, args util.MapData
 
 // ServerSend func
 func (a App) ServerSend(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error) {
-	connMap := websock.GetConnMap("/ws")
-	for id, conn := range connMap {
-		conn.WriteJSON(util.MapData{"isserver": true, "clientid": id})
-	}
+	m := websock.GetManager("/ws")
+	m.AllClients(func(c websock.Client) {
+		c.Conn.WriteJSON(util.MapData{"isserver": true, "clientid": c.ID})
+	})
 	return util.MapData{"isok": true}, nil
 }

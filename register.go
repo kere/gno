@@ -85,8 +85,3 @@ func (s *SiteServer) RegistGetAPI(rule string, webapi IWebAPI) {
 func (s *SiteServer) RegistWebSocket(rule string, ctl websock.IWebSock) {
 	websock.RegistWebSocket(s.Router, rule, ctl)
 }
-
-// RegistMessageSocket router
-func (s *SiteServer) RegistMessageSocket(rule string, ctl websock.IMessageSock) {
-	websock.RegistMessageSocket(s.Router, rule, ctl)
-}

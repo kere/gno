@@ -10,57 +10,9 @@ import (
 
 var upgrader websocket.Upgrader
 
-// make(map[path] map[clientID]*websocket.Conn, 0)
-var connMap = make(map[string]map[int]*websocket.Conn, 0)
-
-// GetConn get connection
-func GetConn(path string, id int) *websocket.Conn {
-	if clientMap, isok := connMap[path]; isok {
-		return clientMap[id]
-	}
-	return nil
-}
-
-// GetConnMap get connections
-func GetConnMap(path string) map[int]*websocket.Conn {
-	return connMap[path]
-}
-
-// RegistMessageSocket router
-func RegistMessageSocket(router *httprouter.Router, path string, ctl IMessageSock) {
-	router.GET(path, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-		err := ctl.Auth(req)
-		if err != nil {
-			log.App.Error(err)
-			return
-		}
-
-		conn, err := upgrader.Upgrade(rw, req, nil)
-		if err != nil {
-			return
-		}
-
-		defer conn.Close()
-
-		clientMap, isok := connMap[path]
-		if !isok {
-			clientMap = make(map[int]*websocket.Conn, 0)
-			connMap[path] = clientMap
-		}
-
-		id := CurrentClientID()
-		clientMap[id] = conn
-		defer func() {
-			conn.Close()
-			delete(clientMap, id)
-		}()
-
-		ctl.Listen(conn)
-	})
-}
-
 // RegistWebSocket router
 func RegistWebSocket(router *httprouter.Router, path string, ctl IWebSock) {
+	connMap[path] = NewManager()
 	router.GET(path, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		err := ctl.Auth(req)
 		if err != nil {
@@ -73,20 +25,17 @@ func RegistWebSocket(router *httprouter.Router, path string, ctl IWebSock) {
 			return
 		}
 
-		clientMap, isok := connMap[path]
-		if !isok {
-			clientMap = make(map[int]*websocket.Conn, 0)
-			connMap[path] = clientMap
-		}
+		m := connMap[path]
+		id := m.GenrateClientID()
+		client := m.SetClient(id, conn, req.Cookies(), req.Form)
 
-		id := CurrentClientID()
+		// conn.SetCloseHandler(func(code int, text string) error {
+		// 	return nil
+		// })
+		// fmt.Println(m.ClientCount())
 
-		clientMap[id] = conn
-		defer func() {
-			conn.Close()
-			delete(clientMap, id)
-		}()
+		defer m.Close(id)
 
-		ctl.Listen(conn)
+		client.Listen(ctl)
 	})
 }

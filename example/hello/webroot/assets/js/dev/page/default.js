@@ -35,8 +35,12 @@ require(
           alert("连接关闭...");
        };
 
-       $('#btnSend').click(function(){
+       $('#btnSendFrom').click(function(){
          client.send("ServerSend", {message: "this is from server."});
+       })
+       $('#btnSendTo').click(function(){
+         var obj = {"method":"toServer", "content":"send to server message"};
+         ws.send(JSON.stringify(obj));
        })
     } else {
        // 浏览器不支持 WebSocket
