@@ -3,7 +3,6 @@ package websock
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -46,6 +45,28 @@ func (m *Manager) AllClients(f func(c Client)) {
 	}
 }
 
+// ClientsCountByIP ip地址下的连接数量
+func (m *Manager) ClientsCountByIP(ip string) int {
+	count := 0
+	for _, c := range m.list {
+		if ip == c.IP {
+			count++
+		}
+	}
+	return count
+}
+
+// ClientsByIP ip地址下的连接
+func (m *Manager) ClientsByIP(ip string) []Client {
+	arr := make([]Client, 0)
+	for _, c := range m.list {
+		if ip == c.IP {
+			arr = append(arr, c)
+		}
+	}
+	return arr
+}
+
 // ClientCount client
 func (m *Manager) ClientCount() int {
 	return len(m.list)
@@ -62,8 +83,12 @@ func (m *Manager) Close(id int) {
 }
 
 // SetClient by id
-func (m *Manager) SetClient(id int, conn *websocket.Conn, cookies []*http.Cookie, form url.Values) *Client {
-	c := Client{ID: id, Conn: conn, Cookies: cookies, Form: form, Status: 1}
+func (m *Manager) SetClient(id int, conn *websocket.Conn, req *http.Request) *Client {
+	addr := req.Header.Get("X-Forwarded-For")
+	if addr == "" {
+		addr = req.Header.Get("X-Real-IP")
+	}
+	c := Client{ID: id, Conn: conn, Cookies: req.Cookies(), Form: req.Form, Header: req.Header, IP: addr}
 	m.list[id] = c
 	return &c
 }

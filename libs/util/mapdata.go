@@ -476,7 +476,7 @@ func (dr MapData) Time(field string) time.Time {
 		if len(dr[field].(string)) == 10 {
 			format = "2006-01-02"
 		}
-		t, err := time.Parse(format, dr[field].(string))
+		t, err := time.ParseInLocation(format, dr[field].(string), time.Local)
 		if err != nil {
 			panic(err)
 		}

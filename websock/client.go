@@ -15,7 +15,8 @@ type Client struct {
 	Conn    *websocket.Conn
 	Cookies []*http.Cookie
 	Form    url.Values
-	Status  int
+	Header  http.Header
+	IP      string
 }
 
 // Cookie get connect cookie
@@ -28,15 +29,9 @@ func (c Client) Cookie(name string) (*http.Cookie, error) {
 	return nil, http.ErrNoCookie
 }
 
-// Stop listen
-func (c *Client) Stop() {
-	c.Status = -1
-}
-
 // Close a
 func (c *Client) Close() {
 	c.Conn.Close()
-	c.Status = -1
 	c.Cookies = nil
 	c.Form = nil
 }
@@ -50,6 +45,7 @@ func (c *Client) Listen(ctl IWebSock) {
 	for {
 		err := conn.ReadJSON(&args)
 		if websocket.IsCloseError(err, 1001) {
+			// Listen 方法结束后，会自动清理当前client
 			break
 		}
 		if err != nil {

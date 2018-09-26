@@ -613,17 +613,13 @@ func (dr DataRow) JsonParse(field string, v interface{}) error {
 	return nil
 }
 
-func (dr DataRow) Time(field string) time.Time {
+func (dr DataRow) Time(field, format string) time.Time {
 	if dr.IsNull(field) {
 		return time.Unix(0, 0)
 	}
 	loc, _ := time.LoadLocation("Local")
 	switch dr[field].(type) {
 	case string:
-		format := DBTimeFormat
-		if len(dr[field].(string)) == 10 {
-			format = "2006-01-02"
-		}
 		t, err := time.ParseInLocation(format, dr[field].(string), loc)
 		if err != nil {
 			panic(err)
@@ -635,10 +631,6 @@ func (dr DataRow) Time(field string) time.Time {
 
 	case []byte:
 		str := string(dr[field].([]byte))
-		format := DBTimeFormat
-		if len(str) == 10 {
-			format = "2006-01-02"
-		}
 		t, err := time.ParseInLocation(format, str, loc)
 		if err != nil {
 			panic(err)
@@ -722,7 +714,7 @@ func (dr DataRow) ConvertTo(vo interface{}) error {
 		case reflect.Struct, reflect.Interface:
 			switch sf.Type.String() {
 			case "time.Time":
-				val.Field(i).Set(reflect.ValueOf(dr.Time(field)))
+				val.Field(i).Set(reflect.ValueOf(dr.Time(field, DBTimeFormat)))
 
 			default:
 				switch dr[field].(type) {

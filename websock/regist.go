@@ -27,7 +27,7 @@ func RegistWebSocket(router *httprouter.Router, path string, ctl IWebSock) {
 
 		m := connMap[path]
 		id := m.GenrateClientID()
-		client := m.SetClient(id, conn, req.Cookies(), req.Form)
+		client := m.SetClient(id, conn, req)
 
 		// conn.SetCloseHandler(func(code int, text string) error {
 		// 	return nil
