@@ -38,6 +38,7 @@ func (c *Client) Close() {
 
 // Listen a
 func (c *Client) Listen(ctl IWebSock) {
+	log.App.Debug("Client connected " + c.IP)
 	var args util.MapData
 	var dat interface{}
 	conn := c.Conn
@@ -46,23 +47,42 @@ func (c *Client) Listen(ctl IWebSock) {
 		err := conn.ReadJSON(&args)
 		if websocket.IsCloseError(err, 1001) {
 			// Listen 方法结束后，会自动清理当前client
-			break
+			return
 		}
 		if err != nil {
 			log.App.Error("ReadJSON:", err)
-			break
+			return
 		}
 
 		dat, err = ctl.Exec(conn, args)
 		if err != nil {
-			log.App.Error("Exec:", err)
-			break
+			switch err.(type) {
+			case SendAndCloseErr:
+				conn.WriteJSON(dat)
+				return
+
+			default:
+				log.App.Error("wsexec:", err)
+				conn.WriteJSON(util.MapData{"errmsg": err.Error()})
+			}
 		}
 
 		err = conn.WriteJSON(dat)
 		if err != nil {
 			log.App.Error("WriteJSON:", err)
-			break
+			return
 		}
 	}
+}
+
+// NewSendAndCloseErr class
+func NewSendAndCloseErr() SendAndCloseErr {
+	return SendAndCloseErr("发送后关闭连接")
+}
+
+// SendAndCloseErr class
+type SendAndCloseErr string
+
+func (err SendAndCloseErr) Error() string {
+	return string(err)
 }

@@ -2,10 +2,12 @@ package websock
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/kere/gno/libs/log"
 )
 
 // GetClient get client
@@ -80,6 +82,7 @@ func (m *Manager) Close(id int) {
 	}
 	c.Close()
 	delete(m.list, id)
+	log.App.Debug("close client " + fmt.Sprint(id))
 }
 
 // SetClient by id
@@ -88,6 +91,7 @@ func (m *Manager) SetClient(id int, conn *websocket.Conn, req *http.Request) *Cl
 	if addr == "" {
 		addr = req.Header.Get("X-Real-IP")
 	}
+
 	c := Client{ID: id, Conn: conn, Cookies: req.Cookies(), Form: req.Form, Header: req.Header, IP: addr}
 	m.list[id] = c
 	return &c
