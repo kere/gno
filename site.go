@@ -199,3 +199,11 @@ func DoError(err error) error {
 	Site.Log.Error(err).Stack()
 	return err
 }
+
+// DoRecover dillwith panic
+func DoRecover() {
+	err := recover()
+	if err != nil {
+		Site.Log.Error(err).Stack()
+	}
+}
