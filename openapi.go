@@ -121,8 +121,10 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 		}
 	}
 
-	ts := req.PostFormValue(APIFieldTS)
-	token := req.PostFormValue(APIFieldToken)
+	ts := req.Header.Get(APIFieldTS)
+	token := req.Header.Get(APIFieldToken)
+	// ts := req.PostFormValue(APIFieldTS)
+	// token := req.PostFormValue(APIFieldToken)
 	method := req.PostFormValue(APIFieldMethod)
 
 	// method+now+jsonStr+now

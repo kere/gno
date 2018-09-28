@@ -17,11 +17,11 @@ const (
 	// APIFieldSrc post field
 	APIFieldSrc = "_src"
 	// APIFieldTS post field
-	APIFieldTS = "now"
+	APIFieldTS = "Accts"
 	// APIFieldMethod post field
 	APIFieldMethod = "method"
 	// APIFieldToken post field
-	APIFieldToken = "token"
+	APIFieldToken = "Accto"
 )
 
 func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
@@ -64,8 +64,10 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 
 	if !webapi.IsSkipToken(req.Method) {
 		// method+now+jsonStr+now
-		ts := req.PostFormValue(APIFieldTS)
-		token := req.PostFormValue(APIFieldToken)
+		ts := req.Header.Get(APIFieldTS)
+		token := req.Header.Get(APIFieldToken)
+		// ts := req.PostFormValue(APIFieldTS)
+		// token := req.PostFormValue(APIFieldToken)
 		method := req.PostFormValue(APIFieldMethod)
 
 		u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
