@@ -5,7 +5,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
-	"github.com/kere/gno"
 	"github.com/kere/gno/libs/log"
 )
 
@@ -36,8 +35,16 @@ func RegistWebSocket(router *httprouter.Router, path string, ctl IWebSock) {
 		// fmt.Println(m.ClientCount())
 
 		defer m.Close(id)
-		defer gno.DoRecover()
+		defer DoRecover()
 
 		client.Listen(ctl)
 	})
+}
+
+// DoRecover dillwith panic
+func DoRecover() {
+	err := recover()
+	if err != nil {
+		log.App.Error(err).Stack()
+	}
 }
