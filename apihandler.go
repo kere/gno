@@ -1,10 +1,7 @@
 package gno
 
 import (
-	"crypto/md5"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -54,25 +51,19 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 	}
 
 	var args util.MapData
-	src := req.PostFormValue(APIFieldSrc)
-	if src != "" {
-		err := json.Unmarshal([]byte(src), &args)
+	str := req.PostFormValue(APIFieldSrc)
+	src := []byte(str)
+	if str != "" {
+		err := json.Unmarshal(src, &args)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !webapi.IsSkipToken(req.Method) {
-		// method+now+jsonStr+now
-		ts := req.Header.Get(APIFieldTS)
-		token := req.Header.Get(APIFieldToken)
-		// ts := req.PostFormValue(APIFieldTS)
-		// token := req.PostFormValue(APIFieldToken)
-		method := req.PostFormValue(APIFieldMethod)
-
-		u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
-		if u32 != token {
-			return errors.New("api token failed")
+		err := authAPIToken(req, src)
+		if err != nil {
+			return err
 		}
 	}
 

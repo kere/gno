@@ -2,10 +2,12 @@ package gno
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 
 	"github.com/julienschmidt/httprouter"
@@ -112,25 +114,19 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	}
 
 	var args util.MapData
-	src := req.PostFormValue(APIFieldSrc)
-	if src != "" {
-		err := json.Unmarshal([]byte(src), &args)
+	str := req.PostFormValue(APIFieldSrc)
+	src := []byte(str)
+	if str != "" {
+		err := json.Unmarshal(src, &args)
 		if err != nil {
 			doAPIError(err, rw)
 			return
 		}
 	}
 
-	ts := req.Header.Get(APIFieldTS)
-	token := req.Header.Get(APIFieldToken)
-	// ts := req.PostFormValue(APIFieldTS)
-	// token := req.PostFormValue(APIFieldToken)
-	method := req.PostFormValue(APIFieldMethod)
-
-	// method+now+jsonStr+now
-	u32 := fmt.Sprintf("%x", md5.Sum([]byte(ts+method+ts+src+ts)))
-	if u32 != token {
-		doAPIError(errors.New("open api token failed"), rw)
+	err := authAPIToken(req, src)
+	if err != nil {
+		doAPIError(err, rw)
 		return
 	}
 
@@ -145,4 +141,36 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 		doAPIError(err, rw)
 		return
 	}
+}
+
+const (
+	// PageAccessTokenField 页面访问token的名称
+	PageAccessTokenField = "accpt" //access page token
+)
+
+func authAPIToken(req *http.Request, src []byte) error {
+	ts := req.Header.Get(APIFieldTS)
+	token := req.Header.Get(APIFieldToken)
+
+	method := req.PostFormValue(APIFieldMethod)
+	ptoken := ""
+	c, err := req.Cookie(PageAccessTokenField)
+	if err == nil {
+		ptoken, _ = url.PathUnescape(c.Value)
+	}
+
+	// ts + method + jsonStr + ptoken
+	s := append([]byte(ts+method), src...)
+	if ptoken != "" {
+		b64, _ := base64.StdEncoding.DecodeString(ptoken)
+		s = append(s, b64...)
+	}
+
+	// method+now+jsonStr+now
+	u32 := fmt.Sprintf("%x", md5.Sum(s))
+	if u32 != token {
+		return errors.New("open api token failed")
+	}
+
+	return nil
 }
