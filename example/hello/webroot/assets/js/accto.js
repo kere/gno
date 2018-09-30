@@ -255,7 +255,7 @@
     return rstr2hex(rawHMACMD5(k, d))
   }
 
-  function md5 (string, key, raw) {
+  function accto (string, key, raw) {
     if (!key) {
       if (!raw) {
         return hexMD5(string)
@@ -270,11 +270,11 @@
 
   if (typeof define === 'function' && define.amd) {
     define(function () {
-      return md5
+      return accto
     })
   } else if (typeof module === 'object' && module.exports) {
-    module.exports = md5
+    module.exports = accto
   } else {
-    $.md5 = md5
+    $.accto = accto
   }
 })(this)

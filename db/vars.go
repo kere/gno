@@ -12,8 +12,8 @@ var (
 	bSQLLimit        = []byte(" limit ")
 	bSQLOffset       = []byte(" offset ")
 
-	// DBTimeFormat = time.RFC3339
-	DBTimeFormat   = "2006-01-02 15:04:05"
+	// DateTimeFormat = time.RFC3339
+	DateTimeFormat = "2006-01-02 15:04:05"
 	B_QuestionMark = []byte("?")
 	BNull          = []byte("NULL")
 	B_Equal        = []byte("=")

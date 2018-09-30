@@ -1,14 +1,16 @@
 require.config({
-	waitSeconds :30,
-	baseUrl : "/assets/js/",
+	waitSeconds :15,
 	paths: {
+		'util' : MYENV+'/mylib/util',
+		'accto' : MYENV+'/mylib/accto',
+    'zepto' : MYENV+'/mylib/zepto'
 	}
 });
 define(
   'ajax',
-  ['util', 'md5', 'zepto'],
+  ['util', 'accto', 'zepto'],
 
-  function(util, md5) {
+  function(util, accto) {
     var ajax  = {
       NewClient : function(path, timeout){
         return new Client(path, timeout);
@@ -63,7 +65,7 @@ define(
         this.path = path || "/api/web";
         this.isrun = false;
         this.timeout= 300;
-
+        this.pfield = 'accpt';
     }
 
     Client.prototype.errorHandler = function(r){console.log(r);};
@@ -95,16 +97,18 @@ define(
         $t.addClass('weui-btn_loading');
       }
 
-      var now = (new Date()).getTime(),
+      var ts = (new Date()).getTime().toString(),
         jsonStr = args ? JSON.stringify(args) : '',
-        str = now+method+now+jsonStr+now;
+        token = window.atob(decodeURI(util.getCookie(this.pfield))),
+        str = ts+method+jsonStr + token;
 
       return $.ajax({
         url:        this.path + '/' + method,
         type:       'POST',
         dataType:   'json',
         cache:      false,
-        data:       {'_src': jsonStr, 'now': now, 'token': md5(str), 'method': method},
+        data:       {'_src': jsonStr, 'method': method},
+        headers: {'Accto':accto(str), 'Accts': ts},
         timeout:    this.timeout * 1000
 
       }).always(function(){

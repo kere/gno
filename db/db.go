@@ -94,7 +94,7 @@ func New(name string, conf map[string]string) *Database {
 			HostAddr: confGet(conf, "hostaddr"),
 			Port:     confGet(conf, "port"),
 		}
-		DBTimeFormat = time.RFC3339
+		DateTimeFormat = time.RFC3339
 
 	case "mysql":
 		driver = &drivers.Mysql{DBName: confGet(conf, "dbname"),

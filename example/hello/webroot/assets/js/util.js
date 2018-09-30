@@ -1,6 +1,5 @@
 require.config({
 	waitSeconds :30,
-	baseUrl : "/assets/js/",
 	paths: {
     'zepto' : MYENV+'/mylib/zepto'
 	}
@@ -173,6 +172,7 @@ define('util', ['zepto'], function(){
           return decodeURI(sParameterName[1]);
       }
     }
+    return '';
 	};
 
 	// util.cipherString = function(rsaData, nick, pwd){
@@ -292,7 +292,7 @@ define('util', ['zepto'], function(){
           return c.substring(nameEQ.length,c.length);
         }
     }
-    return null;
+    return '';
   };
 
   util.deleteCookie = function (name) {
@@ -375,6 +375,41 @@ define('util', ['zepto'], function(){
     setTimeout(function(){$el.addClass('hide');}, 150);
   }
 
+  util.taggle = function(e){
+    var $t;
+    if(e.currentTarget){
+      $t = $(e.currentTarget);
+      if($t.hasClass('parent-pp')){
+        $t = $t.parent().parent();
+      } else if($t.hasClass('parent-p')){
+        $t = $t.parent();
+      }
+    }else{
+      $t = e;
+    }
+
+    // index = index ? '-'+index : '';
+    var $box = $t.next('.default-hide');
+    if($t.hasClass('open')){
+      if($box.hasClass('fade')){
+        $box.removeClass('in');
+        setTimeout(function(){
+          $t.removeClass('open');
+        }, 150)
+      }else{
+        $t.removeClass('open');
+      }
+
+      return 'close';
+    }else{
+      $t.addClass('open').siblings('.open').removeClass('open');
+      setTimeout(function(){
+        $box.addClass('in');
+      }, 10)
+      $t.parent().siblings().find('.open').removeClass('open');
+      return 'open';
+    }
+  }
 
 	return util;
 });

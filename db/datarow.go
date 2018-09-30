@@ -714,7 +714,7 @@ func (dr DataRow) ConvertTo(vo interface{}) error {
 		case reflect.Struct, reflect.Interface:
 			switch sf.Type.String() {
 			case "time.Time":
-				val.Field(i).Set(reflect.ValueOf(dr.Time(field, DBTimeFormat)))
+				val.Field(i).Set(reflect.ValueOf(dr.Time(field, DateTimeFormat)))
 
 			default:
 				switch dr[field].(type) {
