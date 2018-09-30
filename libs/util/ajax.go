@@ -11,15 +11,12 @@ import (
 	"time"
 )
 
-func AjaxGet(uri string, dat MapData) ([]byte, error) {
+func AjaxGet(uri string, vals url.Values) ([]byte, error) {
 	params := ""
-	if dat != nil {
-		vals := url.Values{}
-		for k, v := range dat {
-			vals.Add(k, fmt.Sprint(v))
-		}
+	if len(vals) > 0 {
 		params = "?" + vals.Encode()
 	}
+	fmt.Println(uri + params)
 	resq, err := http.Get(uri + params)
 	if err != nil {
 		return nil, err
