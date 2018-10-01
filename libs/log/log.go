@@ -136,8 +136,11 @@ func New(folder, name, storeType, levelStr string) *Logger {
 	if level < 0 || storeType == ConstNone {
 		fmt.Println("xxx Logger Closed xxx")
 		l = NewEmpty()
-	} else if storeType == "file" {
+	} else if storeType == "filedate" {
 		file := filepath.Join(folder, fmt.Sprint(time.Now().Format("20060102"), "-", name, ".log"))
+		l = NewLogger(file, levelStr)
+	} else if storeType == "file" {
+		file := filepath.Join(folder, name+".log")
 		l = NewLogger(file, levelStr)
 	} else {
 		l = NewLogger("", levelStr)
@@ -147,6 +150,7 @@ func New(folder, name, storeType, levelStr string) *Logger {
 	return l
 }
 
+// Use n log
 func Use(n string) {
 	App = pool[n]
 }
