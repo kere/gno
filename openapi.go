@@ -162,7 +162,7 @@ func generateAPIToken(req *http.Request, src []byte) string {
 	}
 
 	// ts + method + jsonStr + ptoken
-	s := append([]byte(ts+method), src...)
+	s := append([]byte(ts+method+ts), src...)
 	if ptoken != "" {
 		b64, _ := base64.StdEncoding.DecodeString(ptoken)
 		s = append(s, b64...)
@@ -175,9 +175,6 @@ func authAPIToken(req *http.Request, src []byte) error {
 	token := req.Header.Get(APIFieldToken)
 	u32 := generateAPIToken(req, src)
 	if u32 != token {
-		fmt.Println("url:", req.URL.String())
-		fmt.Println("postform:", req.PostForm)
-		fmt.Println("header:", req.Header)
 		return errors.New("open api token failed")
 	}
 
@@ -200,7 +197,7 @@ func SendAPI(uri string, method string, dat util.MapData) (util.MapData, error) 
 	// ts+method+jsonStr + token;
 	ts := fmt.Sprint(time.Now().Unix())
 
-	buf := bytes.NewBufferString(ts + method)
+	buf := bytes.NewBufferString(ts + method + ts)
 	buf.Write(src)
 	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
 
