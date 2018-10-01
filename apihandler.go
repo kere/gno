@@ -10,17 +10,6 @@ import (
 	"github.com/kere/gno/libs/util"
 )
 
-const (
-	// APIFieldSrc post field
-	APIFieldSrc = "_src"
-	// APIFieldTS post field
-	APIFieldTS = "Accts"
-	// APIFieldMethod post field
-	APIFieldMethod = "method"
-	// APIFieldToken post field
-	APIFieldToken = "Accto"
-)
-
 func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
 	isReq, isOK, urlstr, err := p.Auth()
 	if isReq && !isOK {

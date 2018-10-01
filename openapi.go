@@ -1,21 +1,34 @@
 package gno
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/kere/gno/libs/util"
 )
 
 const (
-	methodFieldName = "_method"
+	// APIFieldSrc post field
+	APIFieldSrc = "_src"
+	// APIFieldTS post field
+	APIFieldTS = "Accts"
+	// APIFieldMethod post field
+	APIFieldMethod = "method"
+	// APIFieldToken post field
+	APIFieldToken = "Accto"
+	// PageAccessTokenField 页面访问token的名称
+	PageAccessTokenField = "accpt" //access page token
 )
 
 // IOpenAPI interface
@@ -89,17 +102,12 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		f := v.Method(i).Interface().(func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error))
 		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
 
-		// fmt.Println("regist openapi:", rule+"/"+name)
 		s.Router.POST(rule+"/"+name, doOpenAPIHandle)
 	}
-
-	// s.Router.GET(rule, doOpenAPIHandle)
-	// s.Router.POST(rule+"/:"+methodFieldName, doOpenAPIHandle)
 }
 
 func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	uri := req.URL.Path
-	// method := ps.ByName(methodFieldName)
 
 	var item openapiItem
 	var isok bool
@@ -143,14 +151,8 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	}
 }
 
-const (
-	// PageAccessTokenField 页面访问token的名称
-	PageAccessTokenField = "accpt" //access page token
-)
-
-func authAPIToken(req *http.Request, src []byte) error {
+func generateAPIToken(req *http.Request, src []byte) string {
 	ts := req.Header.Get(APIFieldTS)
-	token := req.Header.Get(APIFieldToken)
 
 	method := req.PostFormValue(APIFieldMethod)
 	ptoken := ""
@@ -166,11 +168,70 @@ func authAPIToken(req *http.Request, src []byte) error {
 		s = append(s, b64...)
 	}
 
-	// method+now+jsonStr+now
-	u32 := fmt.Sprintf("%x", md5.Sum(s))
+	return fmt.Sprintf("%x", md5.Sum(s))
+}
+
+func authAPIToken(req *http.Request, src []byte) error {
+	token := req.Header.Get(APIFieldToken)
+	u32 := generateAPIToken(req, src)
 	if u32 != token {
+		fmt.Println("url:", req.URL.String())
+		fmt.Println("postform:", req.PostForm)
+		fmt.Println("header:", req.Header)
 		return errors.New("open api token failed")
 	}
 
 	return nil
+}
+
+// SendAPI send api method
+func SendAPI(uri string, method string, dat util.MapData) (util.MapData, error) {
+	// data:       {'_src': jsonStr, 'now': now, 'token': md5(str), 'method': method},
+	// str = now+method+now+jsonStr+now;
+	src, err := json.Marshal(dat)
+	if err != nil {
+		return nil, err
+	}
+
+	vals := url.Values{}
+	vals.Add(APIFieldSrc, string(src))
+	vals.Add(APIFieldMethod, method)
+
+	// ts+method+jsonStr + token;
+	ts := fmt.Sprint(time.Now().Unix())
+
+	buf := bytes.NewBufferString(ts + method)
+	buf.Write(src)
+	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+
+	req, err := http.NewRequest(http.MethodPost, uri+"/"+method, strings.NewReader(vals.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set(APIFieldTS, ts)
+	req.Header.Set(APIFieldToken, token)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+
+	resq, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resq.Body.Close()
+
+	body, err := ioutil.ReadAll(resq.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resq.StatusCode != http.StatusOK {
+		return nil, errors.New(string(body) + " " + uri + "/" + method)
+	}
+
+	var obj util.MapData
+	err = json.Unmarshal(body, &obj)
+
+	return obj, err
 }
