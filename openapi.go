@@ -112,12 +112,12 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	var item openapiItem
 	var isok bool
 	if item, isok = openapiMap[uri]; !isok {
-		doAPIError(errors.New(uri+" openapi not found"), rw)
+		doAPIError(errors.New(uri+" openapi not found"), rw, req)
 		return
 	}
 
 	if isReq, err := item.API.Auth(req, ps); isReq && err != nil {
-		doAPIError(err, rw)
+		doAPIError(err, rw, req)
 		return
 	}
 
@@ -127,26 +127,26 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	if str != "" {
 		err := json.Unmarshal(src, &args)
 		if err != nil {
-			doAPIError(err, rw)
+			doAPIError(err, rw, req)
 			return
 		}
 	}
 
 	err := authAPIToken(req, src)
 	if err != nil {
-		doAPIError(err, rw)
+		doAPIError(err, rw, req)
 		return
 	}
 
 	data, err := item.Exec(req, ps, args)
 	if err != nil {
-		doAPIError(err, rw)
+		doAPIError(err, rw, req)
 		return
 	}
 
 	err = item.API.Reply(rw, data)
 	if err != nil {
-		doAPIError(err, rw)
+		doAPIError(err, rw, req)
 		return
 	}
 }

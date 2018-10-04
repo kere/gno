@@ -43,7 +43,7 @@ func (s *SiteServer) RegistAPI(rule string, webapi IWebAPI) {
 			return
 		}
 		// do error
-		doAPIError(err, rw)
+		doAPIError(err, rw, req)
 	}
 
 	s.Router.POST(rule, f)
@@ -65,7 +65,7 @@ func (s *SiteServer) RegistPostAPI(rule string, webapi IWebAPI) {
 			return
 		}
 		// do error
-		doAPIError(err, rw)
+		doAPIError(err, rw, req)
 	})
 }
 
@@ -77,7 +77,7 @@ func (s *SiteServer) RegistGetAPI(rule string, webapi IWebAPI) {
 			return
 		}
 		// do error
-		doAPIError(err, rw)
+		doAPIError(err, rw, req)
 	})
 }
 

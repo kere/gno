@@ -65,7 +65,7 @@ func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps h
 }
 
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
-	log.App.Warn(err)
+	log.App.Error(err)
 	if errorURL == "" {
 		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write([]byte(err.Error()))
@@ -75,8 +75,12 @@ func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.R
 	http.Redirect(rw, req, errorURL+"?msg="+err.Error(), http.StatusSeeOther)
 }
 
-func doAPIError(err error, rw http.ResponseWriter) {
-	log.App.Warn(err)
+func doAPIError(err error, rw http.ResponseWriter, req *http.Request) {
+	addr := req.Header.Get("X-Forwarded-For")
+	if addr == "" {
+		addr = req.Header.Get("X-Real-IP")
+	}
+	log.App.Error(err, addr)
 	rw.WriteHeader(http.StatusInternalServerError)
 	rw.Write([]byte(err.Error()))
 }

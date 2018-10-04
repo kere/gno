@@ -10,18 +10,27 @@ import (
 
 var upgrader websocket.Upgrader
 
+func realip(req *http.Request) string {
+	addr := req.Header.Get("X-Forwarded-For")
+	if addr == "" {
+		addr = req.Header.Get("X-Real-IP")
+	}
+	return addr
+}
+
 // RegistWebSocket router
 func RegistWebSocket(router *httprouter.Router, path string, ctl IWebSock) {
 	connMap[path] = NewManager()
 	router.GET(path, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		err := ctl.Auth(req)
 		if err != nil {
-			log.App.Error(err)
+			log.App.Error(err, realip(req))
 			return
 		}
 
 		conn, err := upgrader.Upgrade(rw, req, nil)
 		if err != nil {
+			log.App.Error(err, realip(req))
 			return
 		}
 
@@ -35,16 +44,16 @@ func RegistWebSocket(router *httprouter.Router, path string, ctl IWebSock) {
 		// fmt.Println(m.ClientCount())
 
 		defer m.Close(id)
-		defer DoRecover()
+		defer DoRecover(req)
 
 		client.Listen(ctl)
 	})
 }
 
 // DoRecover dillwith panic
-func DoRecover() {
+func DoRecover(req *http.Request) {
 	err := recover()
 	if err != nil {
-		log.App.Error(err).Stack()
+		log.App.Error(err, realip(req)).Stack()
 	}
 }
