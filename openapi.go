@@ -175,7 +175,7 @@ func authAPIToken(req *http.Request, src []byte) error {
 	token := req.Header.Get(APIFieldToken)
 	u32 := generateAPIToken(req, src)
 	if u32 != token {
-		return errors.New("open api token failed")
+		return errors.New("api token failed")
 	}
 
 	return nil
