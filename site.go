@@ -136,7 +136,8 @@ func Init() *SiteServer {
 	// PID
 	s.PID = a.DefaultString("pid", "")
 
-	s.HomeDir = filepath.Dir(os.Args[0])
+	dir := filepath.Dir(ConfigName)
+	s.HomeDir, _ = filepath.Abs(filepath.Join(dir, ".."))
 
 	Site = s
 
