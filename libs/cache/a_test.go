@@ -3,7 +3,43 @@ package cache
 import (
 	"fmt"
 	"testing"
+	"time"
 )
+
+type cacheMap struct {
+	Map
+}
+
+var counter int
+
+func (c *cacheMap) Build(args ...interface{}) (interface{}, error) {
+	str := args[0].(string)
+	counter++
+	fmt.Println("build cache ", str, counter)
+	return counter, nil
+}
+
+func Test_map(t *testing.T) {
+	c := &cacheMap{}
+	c.Init(c, 3)
+
+	v := c.Get("a")
+	if v.(int) != 1 {
+		fmt.Println(v)
+	}
+
+	time.Sleep(2 * time.Second)
+	v = c.Get("a")
+	if v.(int) != 1 {
+		fmt.Println(v)
+	}
+
+	time.Sleep(1 * time.Second)
+	v = c.Get("a")
+	if v.(int) != 2 {
+		fmt.Println(v)
+	}
+}
 
 func Test_func(t *testing.T) {
 	// driver=redis

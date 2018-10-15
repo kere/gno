@@ -29,20 +29,20 @@ type Map struct {
 	target ICachedMap
 	Lock   sync.RWMutex
 	// Data        map[string]interface{}
-	Data    map[string]*ExpiresVal
+	Data    map[string]ExpiresVal
 	expires time.Duration
 }
 
 // Init class
 func (m *Map) Init(t ICachedMap, expires int) {
-	m.Data = make(map[string]*ExpiresVal, 0)
+	m.Data = make(map[string]ExpiresVal, 0)
 	m.target = t
 	m.expires = time.Duration(expires) * time.Second
 }
 
 // SetExpires func
-func (m *Map) SetExpires(expires int) {
-	m.expires = time.Duration(expires) * time.Second
+func (m *Map) SetExpires(second int) {
+	m.expires = time.Duration(second) * time.Second
 }
 
 // GetExpires func
@@ -65,7 +65,7 @@ func (m *Map) Get(args ...interface{}) interface{} {
 	key := m.buildKey(args...)
 	m.Lock.RLock()
 	// key = market+code:dtype
-	if v, isok := m.Data[key]; isok && isNotExpired(v) {
+	if v, isok := m.Data[key]; isok && v.isNotExpired() {
 		m.Lock.RUnlock()
 		return v.Value
 	}
@@ -73,7 +73,7 @@ func (m *Map) Get(args ...interface{}) interface{} {
 
 	// not found ---------------------
 	m.Lock.Lock()
-	if v, isok := m.Data[key]; isok && isNotExpired(v) {
+	if v, isok := m.Data[key]; isok && v.isNotExpired() {
 		m.Lock.RUnlock()
 		return v.Value
 	}
@@ -92,7 +92,7 @@ func (m *Map) Get(args ...interface{}) interface{} {
 	}
 
 	ex := time.Now().Add(m.expires)
-	v := &ExpiresVal{Value: obj, Expires: m.expires, ExpiresAt: ex}
+	v := ExpiresVal{Value: obj, Expires: m.expires, ExpiresAt: ex}
 
 	m.Data[key] = v
 
@@ -103,11 +103,11 @@ func (m *Map) Get(args ...interface{}) interface{} {
 // ClearAll release all
 func (m *Map) ClearAll() {
 	m.Lock.Lock()
-	for k, v := range m.Data {
-		v.Value = nil
-		m.Data[k] = nil
-	}
-	m.Data = make(map[string]*ExpiresVal, 0)
+	// for k, v := range m.Data {
+	// 	v.Value = nil
+	// 	m.Data[k] = nil
+	// }
+	m.Data = make(map[string]ExpiresVal, 0)
 	m.Lock.Unlock()
 }
 
@@ -152,16 +152,16 @@ func (m *Map) Print() {
 }
 
 // isExpired value is expired
-func isExpired(e *ExpiresVal) bool {
-	if e == nil || e.Expires == 0 {
+func (e ExpiresVal) isExpired() bool {
+	if e.Expires == 0 {
 		return true
 	}
 	return e.ExpiresAt.Before(time.Now())
 }
 
 // isNotExpired value is expired
-func isNotExpired(e *ExpiresVal) bool {
-	if e == nil || e.Expires == 0 {
+func (e ExpiresVal) isNotExpired() bool {
+	if e.Expires == 0 {
 		return false
 	}
 	return e.ExpiresAt.After(time.Now())
