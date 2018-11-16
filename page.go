@@ -25,6 +25,7 @@ type IPage interface {
 
 	AddHead(src string)
 	AddJS(filename string)
+	AddHeadJS(filename string)
 	SetJSPosition(pos string)
 	AddCSS(filename string)
 	AddTop(filename string, data interface{})
@@ -132,6 +133,12 @@ func (p *Page) AddCSS(filename string) {
 func (p *Page) AddJS(filename string) {
 	r := render.NewJS(filename)
 	p.JS = append(p.JS, r)
+}
+
+// AddHeadJS js file
+func (p *Page) AddHeadJS(filename string) {
+	r := render.NewJS(filename)
+	p.Head = append(p.Head, r)
 }
 
 // AddTop add a top render
