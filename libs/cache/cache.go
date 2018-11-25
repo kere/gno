@@ -14,6 +14,7 @@ type ICache interface {
 	Get(string) (interface{}, error)
 
 	GetDriver() string
+	GetExpires(string) (int, error)
 	GetString(string) (string, error)
 	GetInt(string) (int, error)
 	GetInt64(string) (int64, error)
@@ -61,6 +62,11 @@ func IsExists(key string) (bool, error) {
 // Get key
 func Get(key string) (interface{}, error) {
 	return cache.Get(key)
+}
+
+// GetExpires key
+func GetExpires(key string) (int, error) {
+	return cache.GetExpires(key)
 }
 
 // GetString key

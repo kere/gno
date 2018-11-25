@@ -65,9 +65,16 @@ func (r *RedisCache) Get(key string) (interface{}, error) {
 	// r.mutex.RUnlock()
 }
 
-// Exists key
+// IsExists key
 func (r *RedisCache) IsExists(key string) (bool, error) {
 	return r.client.Exists(key)
+}
+
+// GetExpires int
+func (r *RedisCache) GetExpires(key string) (int, error) {
+	// 如果key不存在或者已过期，返回 -2
+	// 如果key存在并且没有设置过期时间（永久有效），返回 -1 。
+	return r.client.DoInt("ttl")
 }
 
 // GetString string

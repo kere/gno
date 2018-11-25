@@ -9,6 +9,14 @@ import (
 	humanize "github.com/dustin/go-humanize"
 )
 
+// Abs int
+func Abs(val int) int {
+	if val < 0 {
+		return -1 * val
+	}
+	return val
+}
+
 // Money string
 func Money(val float64) string {
 	val = Round(val, 2)
