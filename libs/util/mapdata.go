@@ -198,7 +198,11 @@ func (dr MapData) Int64(field string) int64 {
 	case string:
 		i, err := strconv.ParseInt(dr[field].(string), 10, 64)
 		if err != nil {
-			panic(err)
+			v, err := strconv.ParseFloat(dr[field].(string), 64)
+			if err != nil {
+				panic(err)
+			}
+			i = int64(v)
 		}
 		return i
 
