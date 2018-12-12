@@ -7,6 +7,7 @@ import (
 	"net/url"
 )
 
+// AjaxGet 获取Get
 func AjaxGet(uri string, vals url.Values) ([]byte, error) {
 	params := ""
 	if len(vals) > 0 {
@@ -22,6 +23,7 @@ func AjaxGet(uri string, vals url.Values) ([]byte, error) {
 	return ioutil.ReadAll(resq.Body)
 }
 
+// AjaxPost 获取Post
 func AjaxPost(uri string, dat MapData) ([]byte, error) {
 	vals := url.Values{}
 	for k, v := range dat {
