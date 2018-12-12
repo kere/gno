@@ -103,6 +103,7 @@ func Init() *SiteServer {
 		}
 		s.Location = loc
 	}
+	pool = NewPool(a.DefaultInt("pool", 200))
 
 	// JsVersion CSSVersion
 	s.JSVersion = a.DefaultString("js_version", "")

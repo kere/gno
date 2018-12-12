@@ -9,19 +9,18 @@ import (
 	"github.com/kere/gno/libs/util"
 )
 
-func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
 	uri := req.URL.Path
 
 	var item openapiItem
 	var isok bool
 	if item, isok = openapiMap[uri]; !isok {
-		doAPIError(errors.New(uri+" openapi not found"), rw, req)
-		return
+		// doAPIError(errors.New(uri+" openapi not found"), rw, req)
+		return errors.New(uri + " openapi not found")
 	}
 
 	if isReq, err := item.API.Auth(req, ps); isReq && err != nil {
-		doAPIError(err, rw, req)
-		return
+		return err
 	}
 
 	var args util.MapData
@@ -30,26 +29,19 @@ func doOpenAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	if str != "" {
 		err := json.Unmarshal(src, &args)
 		if err != nil {
-			doAPIError(err, rw, req)
-			return
+			return err
 		}
 	}
 
 	err := authAPIToken(req, src)
 	if err != nil {
-		doAPIError(err, rw, req)
-		return
+		return err
 	}
 
 	data, err := item.Exec(req, ps, args)
 	if err != nil {
-		doAPIError(err, rw, req)
-		return
+		return err
 	}
 
-	err = item.API.Reply(rw, data)
-	if err != nil {
-		doAPIError(err, rw, req)
-		return
-	}
+	return item.API.Reply(rw, data)
 }

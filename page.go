@@ -1,6 +1,7 @@
 package gno
 
 import (
+	"io"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -39,7 +40,7 @@ type IPage interface {
 	Auth() (require, isok bool, redirectURL string, err error)
 	// Build() error
 	Prepare() error
-	Render() error
+	Render(io.Writer) error
 	SetCookie(name, value string, age int, path, domain string, httpOnly bool)
 }
 
@@ -228,7 +229,7 @@ func SetCookie(w http.ResponseWriter, name, value string, age int, path, domain 
 }
 
 // Render page
-func (p *Page) Render() error {
+func (p *Page) Render(w io.Writer) error {
 	lyt := layout.NewPage()
 	// lyt := p.Layout
 	lyt.Lang = p.Lang
@@ -255,7 +256,7 @@ func (p *Page) Render() error {
 	p.Params = nil
 	p.Request = nil
 
-	err := lyt.Render(p.ResponseWriter)
+	err := lyt.Render(w)
 	p.ResponseWriter = nil
 	return err
 }

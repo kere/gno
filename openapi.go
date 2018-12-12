@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
@@ -77,33 +76,6 @@ func (w OpenAPI) Reply(rw http.ResponseWriter, data interface{}) error {
 	rw.Write(src)
 
 	return nil
-}
-
-type openAPIExec func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error)
-
-type openapiItem struct {
-	Exec openAPIExec
-	API  IOpenAPI
-}
-
-var openapiMap = make(map[string]openapiItem)
-
-// RegistOpenAPI init open api
-func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
-	v := reflect.ValueOf(openapi)
-	typ := v.Type()
-	l := typ.NumMethod()
-	for i := 0; i < l; i++ {
-		m := typ.Method(i)
-		name := m.Name
-		if name == "Auth" || name == "Reply" {
-			continue
-		}
-		f := v.Method(i).Interface().(func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error))
-		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
-
-		s.Router.POST(rule+"/"+name, doOpenAPIHandle)
-	}
 }
 
 func generateAPIToken(req *http.Request, src []byte) string {

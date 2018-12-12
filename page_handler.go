@@ -29,7 +29,7 @@ func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprou
 		return err
 	}
 
-	return p.Render()
+	return p.Render(rw)
 }
 
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
