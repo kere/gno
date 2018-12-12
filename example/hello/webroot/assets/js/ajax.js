@@ -1,17 +1,153 @@
 require.config({
 	waitSeconds :15,
 	paths: {
-		'util' : MYENV+'/mylib/util',
-		'accto' : MYENV+'/mylib/accto',
-    'zepto' : MYENV+'/mylib/zepto'
+		'accto' : MYENV+'/mylib/accto'
 	}
 });
+
 define(
   'ajax',
-  ['util', 'accto', 'zepto'],
+  ['util', 'accto'],
 
   function(util, accto) {
-    var ajax  = {
+    function ajaxFunc(options) {
+        //编码数据
+        function setData() {
+          //设置对象的遍码
+          function setObjData(data, parentName) {
+              function encodeData(name, value, parentName) {
+                  var items = [];
+                  name = parentName === undefined ? name : parentName + "[" + name + "]";
+                  if (typeof value === "object" && value !== null) {
+                      items = items.concat(setObjData(value, name));
+                  } else {
+                      name = encodeURIComponent(name);
+                      value = encodeURIComponent(value);
+                      items.push(name + "=" + value);
+                  }
+                  return items;
+              }
+              var arr = [],value;
+              if (Object.prototype.toString.call(data) == '[object Array]') {
+                  for (var i = 0, len = data.length; i < len; i++) {
+                      value = data[i];
+                      arr = arr.concat(encodeData( typeof value == "object"?i:"", value, parentName));
+                  }
+              } else if (Object.prototype.toString.call(data) == '[object Object]') {
+                  for (var key in data) {
+                      value = data[key];
+                      arr = arr.concat(encodeData(key, value, parentName));
+                  }
+              }
+              return arr;
+          };
+          //设置字符串的遍码，字符串的格式为：a=1&b=2;
+          function setStrData(data) {
+              var arr = data.split("&");
+              for (var i = 0, len = arr.length; i < len; i++) {
+                  name = encodeURIComponent(arr[i].split("=")[0]);
+                  value = encodeURIComponent(arr[i].split("=")[1]);
+                  arr[i] = name + "=" + value;
+              }
+              return arr;
+          }
+
+          if (data) {
+            if (typeof data === "string") {
+                data = setStrData(data);
+            } else if (typeof data === "object") {
+                data = setObjData(data);
+            }
+            data = data.join("&").replace("/%20/g", "+");
+            //若是使用get方法或JSONP，则手动添加到URL中
+            if (type === "get") {
+                url += url.indexOf("?") > -1 ? (url.indexOf("=") > -1 ? "&" + data : data) : "?" + data;
+            }
+          }
+        }
+
+        //设置请求超时
+        function TimeOut(n){
+          var p = new Promise(function(resolve, reject){
+            setTimeout(function(){
+              reject('timeout');
+            }, n);
+          });
+          return p;
+        }
+
+        // XHR
+        function createXHR() {
+          //由于IE6的XMLHttpRequest对象是通过MSXML库中的一个ActiveX对象实现的。
+          //所以创建XHR对象，需要在这里做兼容处理。
+          function getXHR() {
+            if (window.XMLHttpRequest) {
+              return new XMLHttpRequest();
+            } else {
+              //遍历IE中不同版本的ActiveX对象
+              var versions = ["Microsoft", "msxm3", "msxml2", "msxml1"];
+              for (var i = 0; i < versions.length; i++) {
+                try {
+                  var version = versions[i] + ".XMLHTTP";
+                  return new ActiveXObject(version);
+                } catch (e) {
+
+                }
+              }
+            }
+          }
+          //创建对象。
+          xhr = getXHR();
+          xhr.open(type, url, async);
+          //设置请求头
+          if (type === "post" && !contentType) {
+            //若是post提交，则设置content-Type 为application/x-www-four-urlencoded
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+          } else if (contentType) {
+            xhr.setRequestHeader("Content-Type", contentType);
+          }
+
+          for (var key in headers) {
+            xhr.setRequestHeader(key, headers[key]);
+          }
+
+          var promise = new Promise(function(resolve, reject){
+            //添加监听
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState === 4) {
+                if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
+                  resolve(xhr.responseText);
+                } else {
+                  reject(xhr);
+                }
+              }
+            };
+            //发送请求
+            xhr.send(type === "get" ? null : data);
+          });
+          return promise;
+        }
+
+
+        var url = options.url || "", //请求的链接
+            type = (options.type || "get").toLowerCase(), //请求的方法,默认为get
+            data = options.data || {}, //请求的数据
+            contentType = options.contentType || "", //请求头
+            dataType = options.dataType || "", //请求的类型
+            headers = options.headers || [], //请求headers
+            async = options.async === undefined ? true : options.async, //是否异步，默认为true.
+            timeOut = options.timeout || 30000, //超时时间。
+            // before = options.before || function() {}, //发送之前执行的函数
+            // error = options.error || function() {}, //错误执行的函数
+            success = options.success || function() {}; //请求成功的回调函数
+
+        var xhr = null; //xhr对角
+
+        setData();
+        return Promise.race([createXHR(), TimeOut(timeOut)])
+    }
+
+    var comp  = {
       NewClient : function(path, timeout){
         return new Client(path, timeout);
       },
@@ -22,10 +158,14 @@ define(
           this.diff = unix>0 ? (new Date()).getTime() - unix*1000 : 0;
         },
         now : function(){
-            return new Date(this.time());
+          return new Date(this.time());
         },
         time : function(){
-            return (new Date()).getTime() - this.diff;
+          return (new Date()).getTime() - this.diff;
+        },
+        utctime : function(){
+          var d = this.now();
+          return d.getTime() - d.getTimezoneOffset();
         }
       },
 
@@ -64,7 +204,7 @@ define(
     var Client = function(path){
         this.path = path || "/api/web";
         this.isrun = false;
-        this.timeout= 300;
+        this.timeout= 20;
         this.pfield = 'accpt';
     }
 
@@ -72,12 +212,8 @@ define(
 
     // 排他性运行
     Client.prototype.sendEx = function(method, args, opt){
-      if(this.deferred && this.deferred.state()=='pending'){
-          var func = function(){}
-          return {done:func, fail:func, always:func};
-      }
-      this.deferred = this.send(method, args, opt);
-      return this.deferred;
+      if(this.isrun) return;
+      return this.send(method, args, opt);
     };
 
     Client.prototype.send = function(method, args, opt){
@@ -97,60 +233,77 @@ define(
         $t.addClass('weui-btn_loading');
       }
 
-      var ts = (new Date()).getTime().toString(),
+      var ts = comp.serverTime.utctime().toString(),
         jsonStr = args ? JSON.stringify(args) : '',
-        token = window.atob(decodeURI(util.getCookie(this.pfield))),
-        str = ts+method+jsonStr + token;
+        ptoken = util.getCookie(this.pfield),
+        token = ptoken == '' ? '' : window.atob(decodeURI(ptoken)),
+        str = ts+method+ts+jsonStr + token;
 
-      return $.ajax({
-        url:        this.path + '/' + method,
-        type:       'POST',
-        dataType:   'json',
-        cache:      false,
-        data:       {'_src': jsonStr, 'method': method},
-        headers: {'Accto':accto(str), 'Accts': ts},
-        timeout:    this.timeout * 1000
+      var promise = ajaxFunc({
+          url:        this.path + '/' + method,
+          type:       'post',
+          dataType:   'json',
+          cache:      false,
+          data:       {'_src': jsonStr, 'method': method},
+          headers: {'Accto':accto(str), 'Accts': ts},
+          timeout:    this.timeout * 1000
 
-      }).always(function(){
-        clas.isrun = false;
-        if(opt.loading){
-          util.hideToast();
-        }
-
-        if(opt.target){
-          var $t = opt.target;
-          if(typeof $t == 'string'){
-            $t = $($t);
+        }).then(function(result){
+          clas.isrun = false;
+          if(opt.loading){
+            util.hideToast();
           }
-          $t.removeClass('weui-btn_loading');
-        }
 
-      }).fail(function (jqXHR, textStatus, errorThrown){
-        if(!jqXHR) return;
+          if(opt.target){
+            var $t = opt.target;
+            if(typeof $t == 'string'){
+              $t = $($t);
+            }
+            $t.removeClass('weui-btn_loading');
+          }
+          return JSON.parse(result);
 
-        switch(jqXHR.status){
-          case 599:
+        }).catch(function (xhr){
+          clas.isrun = false;
+          if(opt.loading){
+            util.hideToast();
+          }
+
+          if(opt.target){
+            var $t = opt.target;
+            if(typeof $t == 'string'){
+              $t = $($t);
+            }
+            $t.removeClass('weui-btn_loading');
+          }
+          var error = xhr.responseText, status = xhr.status;
+          switch(status){
+          case 500:
             if(clas.errorHandler){
               try{
-                  clas.errorHandler(JSON.parse(jqXHR.responseText))
+                clas.errorHandler(error)
               }catch(e){
-                  console.log(e)
+                console.log(e)
               }
             }
             break;
           case 404:
-            console.log(textStatus+': api not found!')
+            error = status+': api not found!'
             break;
           default:
-          if(jqXHR.responseText)
-            console.log(textStatus+': '+jqXHR.responseText);
-          else
-            console.log('请稍后再试');
-            break;
-        }
-      });
+            if(error){
+              console.log(status+': '+error);
+            } else{
+              console.log('请稍后再试');
+            }
+          }
+
+          return Promise.reject(status, error);
+        });
+
+        return promise;
     }
 
-    return ajax;
+    return comp;
   }
 )

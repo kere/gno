@@ -1,6 +1,7 @@
 package gno
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -24,11 +25,11 @@ type PoolParams struct {
 func NewPool(n int) *ants.PoolWithFunc {
 	po, err := ants.NewPoolWithFunc(n, func(a interface{}) {
 		ps, ok := a.(*PoolParams)
-		var err error
 		if !ok {
-			ps.Error <- err
+			ps.Error <- errors.New("pool params error")
 			return
 		}
+		var err error
 		switch ps.Typ {
 		case 1:
 			err = doPageHandle(ps.Page, ps.RW, ps.Req, ps.Params)
