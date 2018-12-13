@@ -9,7 +9,7 @@ import (
 	"github.com/kere/gno/libs/util"
 )
 
-func doAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
+func webAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
 	if isReq, err := webapi.Auth(req, ps); isReq && err != nil {
 		return err
 	}

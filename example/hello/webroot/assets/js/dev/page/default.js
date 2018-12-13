@@ -7,10 +7,10 @@ require.config({
 });
 
 require(
-	['ajax'],
+	['ajax', 'util'],
 	function (ajax, util){
     var client = ajax.NewClient("/openapi/app");
-    client.send("PageData", {name:'tom', age: 22}).done(function(result){
+    client.send("PageData", {name:'tom', age: 22}).then(function(result){
       console.log(result)
     })
 

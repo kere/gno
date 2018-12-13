@@ -8,7 +8,7 @@ import (
 	"github.com/kere/gno/libs/log"
 )
 
-func doPageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
+func pageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
 	isReq, isOK, urlstr, err := p.Auth()
 	if isReq && !isOK {
 		if urlstr != "" {

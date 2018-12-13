@@ -1,10 +1,3 @@
-require.config({
-	waitSeconds :15,
-	paths: {
-		'accto' : MYENV+'/mylib/accto'
-	}
-});
-
 define(
   'ajax',
   ['util', 'accto'],

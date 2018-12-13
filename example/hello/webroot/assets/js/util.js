@@ -1,9 +1,3 @@
-require.config({
-	waitSeconds :30,
-	paths: {
-    'zepto' : MYENV+'/mylib/zepto'
-	}
-});
 define('util', ['zepto'], function(){
 	var util = {}
 

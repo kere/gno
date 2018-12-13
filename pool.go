@@ -32,11 +32,11 @@ func NewPool(n int) *ants.PoolWithFunc {
 		var err error
 		switch ps.Typ {
 		case 1:
-			err = doPageHandle(ps.Page, ps.RW, ps.Req, ps.Params)
+			err = pageHandle(ps.Page, ps.RW, ps.Req, ps.Params)
 		case 2:
 			err = openAPIHandle(ps.RW, ps.Req, ps.Params)
 		case 3:
-			err = doAPIHandle(ps.WebAPI, ps.RW, ps.Req, ps.Params)
+			err = webAPIHandle(ps.WebAPI, ps.RW, ps.Req, ps.Params)
 		}
 
 		ps.Error <- err

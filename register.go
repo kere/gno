@@ -32,8 +32,10 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		f := v.Method(i).Interface().(func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error))
 		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
 
-		// s.Router.POST(rule+"/"+name, doOpenAPIHandle)
+		// s.Router.POST(rule+"/"+name, openAPIHandle)
+
 		s.Router.POST(rule+"/"+name, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+			// err := openAPIHandle(rw, req, ps)
 			arg := PoolParams{Typ: 2, RW: rw, Req: req, Params: ps, Error: make(chan error, 1)}
 			pool.Serve(&arg)
 			err := <-arg.Error
@@ -49,6 +51,8 @@ func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
 		p.Init("GET", rw, req, ps)
+		// err := pageHandle(p, rw, req, ps)
+
 		arg := PoolParams{Typ: 1, RW: rw, Req: req, Params: ps, Page: p, Error: make(chan error, 1)}
 		pool.Serve(&arg)
 		err := <-arg.Error
@@ -63,6 +67,8 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 	s.Router.POST(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
 		p.Init("POST", rw, req, ps)
+		// err := pageHandle(p, rw, req, ps)
+
 		arg := PoolParams{Typ: 1, RW: rw, Req: req, Params: ps, Page: p, Error: make(chan error, 1)}
 		pool.Serve(&arg)
 		err := <-arg.Error
