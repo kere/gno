@@ -41,7 +41,7 @@ type IPage interface {
 	// Build() error
 	Prepare() error
 	Render(io.Writer) error
-	Finish()
+	After()
 	SetCookie(name, value string, age int, path, domain string, httpOnly bool)
 }
 
@@ -261,8 +261,8 @@ func (p *Page) Render(w io.Writer) error {
 	return err
 }
 
-// Finish page
-func (p *Page) Finish() {
+// After page
+func (p *Page) After() {
 	p.Params = nil
 	p.Request = nil
 	p.ResponseWriter = nil
