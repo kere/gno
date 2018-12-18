@@ -11,10 +11,6 @@ import (
 	"github.com/kere/gno/render"
 )
 
-var (
-// templateExt = ".htm"
-)
-
 // IPage interface
 type IPage interface {
 	GetName() string
@@ -23,6 +19,9 @@ type IPage interface {
 	GetResponseWriter() http.ResponseWriter
 	GetRequest() *http.Request
 	GetParams() httprouter.Params
+	GetCacheMode() int
+	GetExpires() int
+	// SetPageCache(mode, expires int)
 
 	AddHead(src string)
 	AddJS(filename string)
@@ -49,6 +48,9 @@ type Page struct {
 	Title string
 	Name  string
 	Dir   string
+
+	CacheMode int // 0: no cache   1: cache page   2:cache by url path
+	Expires   int //page expires
 
 	HTML string
 
@@ -205,7 +207,7 @@ func (p *Page) Prepare() error {
 
 // SetCookie cookie
 func (p *Page) SetCookie(name, value string, age int, path, domain string, httpOnly bool) {
-	SetCookie(p.ResponseWriter, name, value, age, path, domain, httpOnly)
+	SetCookie(p.GetResponseWriter(), name, value, age, path, domain, httpOnly)
 }
 
 // SetCookie f
@@ -257,6 +259,6 @@ func (p *Page) Render(w io.Writer) error {
 	p.Request = nil
 
 	err := lyt.Render(w)
-	p.ResponseWriter = nil
+	// p.ResponseWriter = nil
 	return err
 }

@@ -51,7 +51,6 @@ func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
 		p.Init("GET", rw, req, ps)
-		// err := pageHandle(p, rw, req, ps)
 
 		arg := PoolParams{Typ: 1, RW: rw, Req: req, Params: ps, Page: p, Error: make(chan error, 1)}
 		pool.Serve(&arg)

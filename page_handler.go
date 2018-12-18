@@ -1,6 +1,7 @@
 package gno
 
 import (
+	"bytes"
 	"net/http"
 	"net/url"
 
@@ -24,12 +25,22 @@ func pageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httproute
 		return nil
 	}
 
+	if TryCache(p, rw) {
+		return nil
+	}
+
 	err = p.Prepare()
 	if err != nil {
 		return err
 	}
-
-	return p.Render(rw)
+	buf := bytes.NewBuffer(nil)
+	err = p.Render(buf)
+	if err != nil {
+		return err
+	}
+	TrySetCache(p, buf)
+	_, err = rw.Write(buf.Bytes())
+	return err
 }
 
 func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {

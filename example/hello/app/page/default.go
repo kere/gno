@@ -17,6 +17,7 @@ func NewDefaultPage() gno.IPage {
 	d.Name = "default"
 	d.Dir = ""
 	d.Theme = ""
+	// d.SetPageExpires(gno.CacheModePage, 300)
 	return d
 }
 

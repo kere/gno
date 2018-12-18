@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"sync"
-
 	"github.com/garyburd/redigo/redis"
 	"github.com/kere/gno/libs/conf"
 	libRedis "github.com/kere/gno/libs/redis"
@@ -12,7 +10,7 @@ import (
 type RedisCache struct {
 	Driver string
 	client *libRedis.Pool
-	mutex  sync.RWMutex
+	// mutex  sync.RWMutex
 }
 
 // NewRedisCache new
@@ -45,13 +43,13 @@ func (r *RedisCache) Delete(key string) error {
 func (r *RedisCache) Set(key, value string, expire int) error {
 	var err error
 
-	r.mutex.Lock()
+	// r.mutex.Lock()
 	if expire > 0 {
 		err = r.client.Send("SETEX", key, expire, value)
 	} else {
 		err = r.client.Send("SET", key, value)
 	}
-	r.mutex.Unlock()
+	// r.mutex.Unlock()
 	if err != nil {
 		return err
 	}
