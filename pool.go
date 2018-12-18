@@ -32,7 +32,7 @@ func NewPool(n int) *ants.PoolWithFunc {
 		var err error
 		switch ps.Typ {
 		case 1:
-			err = pageHandle(ps.Page, ps.RW, ps.Req, ps.Params)
+			err = pageHandle(ps.Page)
 		case 2:
 			err = openAPIHandle(ps.RW, ps.Req, ps.Params)
 		case 3:

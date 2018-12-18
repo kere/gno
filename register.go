@@ -52,7 +52,7 @@ func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 		p := factory()
 		p.Init("GET", rw, req, ps)
 
-		arg := PoolParams{Typ: 1, RW: rw, Req: req, Params: ps, Page: p, Error: make(chan error, 1)}
+		arg := PoolParams{Typ: 1, Page: p, Error: make(chan error, 1)}
 		pool.Serve(&arg)
 		err := <-arg.Error
 		if err != nil {
@@ -68,7 +68,7 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 		p.Init("POST", rw, req, ps)
 		// err := pageHandle(p, rw, req, ps)
 
-		arg := PoolParams{Typ: 1, RW: rw, Req: req, Params: ps, Page: p, Error: make(chan error, 1)}
+		arg := PoolParams{Typ: 1, Page: p, Error: make(chan error, 1)}
 		pool.Serve(&arg)
 		err := <-arg.Error
 		if err != nil {

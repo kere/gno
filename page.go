@@ -19,9 +19,10 @@ type IPage interface {
 	GetResponseWriter() http.ResponseWriter
 	GetRequest() *http.Request
 	GetParams() httprouter.Params
+
 	GetCacheMode() int
 	GetExpires() int
-	// SetPageCache(mode, expires int)
+	SetPageCache(mode, expires int)
 
 	AddHead(src string)
 	AddJS(filename string)
@@ -40,6 +41,7 @@ type IPage interface {
 	// Build() error
 	Prepare() error
 	Render(io.Writer) error
+	Finish()
 	SetCookie(name, value string, age int, path, domain string, httpOnly bool)
 }
 
@@ -255,10 +257,13 @@ func (p *Page) Render(w io.Writer) error {
 	lyt.Bottom = p.Bottom
 
 	// p.Layout = nil
+	err := lyt.Render(w)
+	return err
+}
+
+// Finish page
+func (p *Page) Finish() {
 	p.Params = nil
 	p.Request = nil
-
-	err := lyt.Render(w)
-	// p.ResponseWriter = nil
-	return err
+	p.ResponseWriter = nil
 }

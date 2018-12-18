@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/kere/gno/libs/log"
 )
 
-func pageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
+func pageHandle(p IPage) error {
 	isReq, isOK, urlstr, err := p.Auth()
 	if isReq && !isOK {
 		if urlstr != "" {
@@ -20,12 +19,12 @@ func pageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httproute
 				u.RawQuery += "&msg=" + url.PathEscape(err.Error())
 			}
 
-			http.Redirect(rw, req, u.String(), http.StatusSeeOther)
+			http.Redirect(p.GetResponseWriter(), p.GetRequest(), u.String(), http.StatusSeeOther)
 		}
 		return nil
 	}
 
-	if TryCache(p, rw) {
+	if TryCache(p) {
 		return nil
 	}
 
@@ -33,13 +32,18 @@ func pageHandle(p IPage, rw http.ResponseWriter, req *http.Request, ps httproute
 	if err != nil {
 		return err
 	}
+
 	buf := bytes.NewBuffer(nil)
+
 	err = p.Render(buf)
 	if err != nil {
 		return err
 	}
+
 	TrySetCache(p, buf)
-	_, err = rw.Write(buf.Bytes())
+	_, err = p.GetResponseWriter().Write(buf.Bytes())
+
+	p.Finish()
 	return err
 }
 

@@ -80,6 +80,11 @@ func (r *RedisCache) GetString(key string) (string, error) {
 	return redis.String(r.Get(key))
 }
 
+// GetBytes string
+func (r *RedisCache) GetBytes(key string) ([]byte, error) {
+	return redis.Bytes(r.Get(key))
+}
+
 // GetInt int
 func (r *RedisCache) GetInt(key string) (int, error) {
 	return redis.Int(r.Get(key))

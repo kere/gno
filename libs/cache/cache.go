@@ -16,6 +16,7 @@ type ICache interface {
 	GetDriver() string
 	GetExpires(string) (int, error)
 	GetString(string) (string, error)
+	GetBytes(string) ([]byte, error)
 	GetInt(string) (int, error)
 	GetInt64(string) (int64, error)
 	GetFloat(string) (float64, error)
@@ -72,6 +73,11 @@ func GetExpires(key string) (int, error) {
 // GetString key
 func GetString(key string) (string, error) {
 	return cache.GetString(key)
+}
+
+// GetBytes key
+func GetBytes(key string) ([]byte, error) {
+	return cache.GetBytes(key)
 }
 
 // GetInt int
