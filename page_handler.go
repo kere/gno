@@ -24,13 +24,13 @@ func pageHandle(p IPage) error {
 		return nil
 	}
 
-	if TryCache(p) {
-		return nil
-	}
-
 	err = p.Prepare()
 	if err != nil {
 		return err
+	}
+
+	if TryCache(p) {
+		return nil
 	}
 
 	buf := bytes.NewBuffer(nil)
