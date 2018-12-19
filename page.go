@@ -41,9 +41,16 @@ type IPage interface {
 	// Build() error
 	Prepare() error
 	Render(io.Writer) error
-	After()
 	SetCookie(name, value string, age int, path, domain string, httpOnly bool)
+
+	// AddAfter(PageExec)  //add page after exec
+	// AddBefore(PageExec) // add page before exec
+	// RunBefore()
+	RunAfter()
 }
+
+// PageExec run page exec
+type PageExec func(IPage)
 
 // Page class
 type Page struct {
@@ -75,6 +82,9 @@ type Page struct {
 
 	// Layout     *layout.Page
 	JSPosition string
+
+	AfterExecs  []PageExec
+	BeforeExecs []PageExec
 }
 
 // Init page
@@ -235,7 +245,6 @@ func SetCookie(w http.ResponseWriter, name, value string, age int, path, domain 
 // Render page
 func (p *Page) Render(w io.Writer) error {
 	lyt := layout.NewPage()
-	// lyt := p.Layout
 	lyt.Lang = p.Lang
 
 	lyt.Head.Theme = p.Theme
@@ -261,9 +270,32 @@ func (p *Page) Render(w io.Writer) error {
 	return err
 }
 
-// After page
-func (p *Page) After() {
+// // AddBefore page
+// func (p *Page) AddBefore(e PageExec) {
+// 	p.BeforeExecs = append(p.BeforeExecs, e)
+// }
+
+// // AddAfter page
+// func (p *Page) AddAfter(e PageExec) {
+// 	p.AfterExecs = append(p.AfterExecs, e)
+// }
+
+// RunAfter page
+func (p *Page) RunAfter() {
+	// l := len(p.AfterExecs)
+	// for i := 0; i < l; i++ {
+	// 	p.AfterExecs[i](p)
+	// }
+
 	p.Params = nil
 	p.Request = nil
 	p.ResponseWriter = nil
 }
+
+// // RunBefore page
+// func (p *Page) RunBefore() {
+// 	l := len(p.BeforeExecs)
+// 	for i := 0; i < l; i++ {
+// 		p.BeforeExecs[i](p)
+// 	}
+// }

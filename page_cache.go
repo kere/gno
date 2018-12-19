@@ -17,8 +17,10 @@ const (
 	CacheModeNone = 0
 	//CacheModePage 缓存页面
 	CacheModePage = 1
+	//CacheModePagePath 缓存页面
+	CacheModePagePath = 2
 	//CacheModeFile 文件缓存页面
-	CacheModeFile = 2
+	CacheModeFile = 3
 
 	pagecacheKeyPrefix = "c:"
 	pageCacheSubfix    = ".htm"
@@ -26,11 +28,11 @@ const (
 
 const (
 	// HeaderEtag etag
-	HeaderEtag = "Etag"
+	HeaderEtag = "ETag"
 	// HeaderCacheCtl cache
 	HeaderCacheCtl = "Cache-Control"
-	// HeaderIfNoneMath If-None-Match
-	HeaderIfNoneMath = "If-None-Match"
+	// HeaderIfNoneMatch If-None-Match
+	HeaderIfNoneMatch = "If-None-Match"
 )
 
 // SetPageCache value
@@ -55,11 +57,17 @@ func TryCache(p IPage) bool {
 	var err error
 	switch p.GetCacheMode() {
 	case CacheModePage:
+		key := pagecacheKeyPrefix + p.GetDir() + p.GetName()
+		src, err = cache.GetBytes(key)
+
+	case CacheModePagePath:
 		key := pagecacheKeyPrefix + p.GetRequest().URL.Path
 		src, err = cache.GetBytes(key)
+
 	case CacheModeFile:
 		filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
 		src, err = ioutil.ReadFile(filename)
+
 	default:
 		return false
 	}
@@ -71,18 +79,29 @@ func TryCache(p IPage) bool {
 	req := p.GetRequest()
 	w := p.GetResponseWriter()
 	// check use cache ?
-	token := fmt.Sprintf("%x", util.MD5(src))
-	etag := req.Header.Get(HeaderIfNoneMath)
+	etag := req.Header.Get(HeaderIfNoneMatch)
 
+	// for k, v := range req.Header {
+	// 	fmt.Println(k, "=", v)
+	// }
+	// fmt.Println(etag)
+
+	token := fmt.Sprintf("%x", util.MD5(src))
+	// token := string(util.CRC64Token(src))
 	if etag == token {
 		w.WriteHeader(http.StatusNotModified)
 		return true
 	}
-	h := w.Header()
 
-	h.Set(HeaderEtag, token)
+	h := w.Header()
 	// Cache-Control: public, max-age=3600
-	// h.Set(HeaderCacheCtl, "public, max-age="+fmt.Sprint(p.GetExpires()))
+	h.Add(HeaderCacheCtl, "public")
+	h.Set(HeaderEtag, token)
+	// fmt.Println("response::")
+	// for k, v := range h {
+	// 	fmt.Println(k, "=", v)
+	// }
+	// fmt.Println()
 
 	w.Write(src)
 	return true
@@ -92,6 +111,10 @@ func TryCache(p IPage) bool {
 func TrySetCache(p IPage, buf *bytes.Buffer) error {
 	switch p.GetCacheMode() {
 	case CacheModePage:
+		key := pagecacheKeyPrefix + p.GetDir() + p.GetName()
+		return cache.Set(key, buf.String(), p.GetExpires())
+
+	case CacheModePagePath:
 		key := pagecacheKeyPrefix + p.GetRequest().URL.Path
 		return cache.Set(key, buf.String(), p.GetExpires())
 

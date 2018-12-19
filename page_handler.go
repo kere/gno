@@ -24,7 +24,10 @@ func pageHandle(p IPage) error {
 		return nil
 	}
 
+	// p.RunBefore()
+
 	if TryCache(p) {
+		log.App.Debug("Page Cache", p.GetRequest().URL.String())
 		return nil
 	}
 
@@ -43,7 +46,7 @@ func pageHandle(p IPage) error {
 	TrySetCache(p, buf)
 	_, err = p.GetResponseWriter().Write(buf.Bytes())
 
-	p.After()
+	p.RunAfter()
 	return err
 }
 
