@@ -48,6 +48,7 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 
 // RegistGet router
 func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
+	ClearCache()
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
 		p.Init("GET", rw, req, ps)

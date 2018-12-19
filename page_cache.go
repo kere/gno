@@ -2,14 +2,14 @@ package gno
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/kere/gno/libs/cache"
-	"github.com/kere/gno/libs/util"
 )
 
 const (
@@ -24,6 +24,9 @@ const (
 
 	pagecacheKeyPrefix = "c:"
 	pageCacheSubfix    = ".htm"
+
+	delim1 = byte('\n')
+	delim2 = "\n"
 )
 
 const (
@@ -33,6 +36,10 @@ const (
 	HeaderCacheCtl = "Cache-Control"
 	// HeaderIfNoneMatch If-None-Match
 	HeaderIfNoneMatch = "If-None-Match"
+	// HeaderLastModified Last-Modified
+	HeaderLastModified = "Last-Modified"
+	// HeaderIfModifiedSince = "If-Modified-Since"
+	HeaderIfModifiedSince = "If-Modified-Since"
 )
 
 // SetPageCache value
@@ -53,16 +60,27 @@ func (p *Page) GetCacheMode() int {
 
 // TryCache try to get cache
 func TryCache(p IPage) bool {
-	var src []byte
+	var src, srcTmp []byte
 	var err error
+	var last string
 	switch p.GetCacheMode() {
 	case CacheModePage:
 		key := pagecacheKeyPrefix + p.GetDir() + p.GetName()
-		src, err = cache.GetBytes(key)
+		srcTmp, err = cache.GetBytes(key)
+		buf := bytes.NewBuffer(srcTmp)
+		// 读取第一行时间戳
+		last, _ = buf.ReadString(delim1)
+		last = strings.TrimRight(last, delim2)
+		src, _ = ioutil.ReadAll(buf)
 
 	case CacheModePagePath:
 		key := pagecacheKeyPrefix + p.GetRequest().URL.Path
-		src, err = cache.GetBytes(key)
+		srcTmp, err = cache.GetBytes(key)
+		buf := bytes.NewBuffer(srcTmp)
+		// 读取第一行时间戳
+		last, _ = buf.ReadString(delim1)
+		last = strings.TrimRight(last, delim2)
+		src, _ = ioutil.ReadAll(buf)
 
 	case CacheModeFile:
 		filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
@@ -79,29 +97,26 @@ func TryCache(p IPage) bool {
 	req := p.GetRequest()
 	w := p.GetResponseWriter()
 	// check use cache ?
-	etag := req.Header.Get(HeaderIfNoneMatch)
+	// etag0 := req.Header.Get(HeaderIfNoneMatch)
+	last0 := req.Header.Get(HeaderIfModifiedSince)
 
-	// for k, v := range req.Header {
-	// 	fmt.Println(k, "=", v)
-	// }
-	// fmt.Println(etag)
+	h := w.Header()
+	// etag := fmt.Sprintf("%x", util.MD5(src))
+	// etag := string(util.CRC64Token(src))
+	// fmt.Println("etag:", etag, " etag0:", etag0)
+	// fmt.Println("last:", last, " last0:", last0)
 
-	token := fmt.Sprintf("%x", util.MD5(src))
-	// token := string(util.CRC64Token(src))
-	if etag == token {
+	if last != "" && last == last0 {
 		w.WriteHeader(http.StatusNotModified)
+		// h.Set(HeaderIfNoneMatch, "false")
 		return true
 	}
 
-	h := w.Header()
 	// Cache-Control: public, max-age=3600
-	h.Add(HeaderCacheCtl, "public")
-	h.Set(HeaderEtag, token)
-	// fmt.Println("response::")
-	// for k, v := range h {
-	// 	fmt.Println(k, "=", v)
-	// }
-	// fmt.Println()
+	h.Add(HeaderCacheCtl, "must-revalidate")
+	h.Set(HeaderEtag, last)
+	// h.Set(HeaderIfNoneMatch, "true")
+	h.Set(HeaderLastModified, last)
 
 	w.Write(src)
 	return true
@@ -112,11 +127,18 @@ func TrySetCache(p IPage, buf *bytes.Buffer) error {
 	switch p.GetCacheMode() {
 	case CacheModePage:
 		key := pagecacheKeyPrefix + p.GetDir() + p.GetName()
-		return cache.Set(key, buf.String(), p.GetExpires())
+		last := time.Now().Format(time.RFC1123)
+		src := append([]byte(last), byte('\n'))
+		src = append(src, buf.Bytes()...)
+
+		return cache.Set(key, string(src), p.GetExpires())
 
 	case CacheModePagePath:
 		key := pagecacheKeyPrefix + p.GetRequest().URL.Path
-		return cache.Set(key, buf.String(), p.GetExpires())
+		last := time.Now().Format(time.RFC1123)
+		src := append([]byte(last), byte('\n'))
+		src = append(src, buf.Bytes()...)
+		return cache.Set(key, string(src), p.GetExpires())
 
 	case CacheModeFile:
 		filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
@@ -138,8 +160,8 @@ func TrySetCache(p IPage, buf *bytes.Buffer) error {
 	}
 }
 
-// TryClearCache Clear cache
-func TryClearCache() error {
+// ClearCache Clear cache
+func ClearCache() error {
 	if !cache.IsOK() {
 		return nil
 	}
