@@ -2,11 +2,14 @@ package gno
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/kere/gno/libs/cache"
+	"github.com/kere/gno/libs/util"
 )
 
 const (
@@ -19,6 +22,15 @@ const (
 
 	pagecacheKeyPrefix = "c:"
 	pageCacheSubfix    = ".htm"
+)
+
+const (
+	// HeaderEtag etag
+	HeaderEtag = "Etag"
+	// HeaderCacheCtl cache
+	HeaderCacheCtl = "Cache-Control"
+	// HeaderIfNoneMath If-None-Match
+	HeaderIfNoneMath = "If-None-Match"
 )
 
 // SetPageCache value
@@ -56,7 +68,23 @@ func TryCache(p IPage) bool {
 		return false
 	}
 
-	p.GetResponseWriter().Write(src)
+	req := p.GetRequest()
+	w := p.GetResponseWriter()
+	// check use cache ?
+	token := fmt.Sprintf("%x", util.MD5(src))
+	etag := req.Header.Get(HeaderIfNoneMath)
+
+	if etag == token {
+		w.WriteHeader(http.StatusNotModified)
+		return true
+	}
+	h := w.Header()
+
+	h.Set(HeaderEtag, token)
+	// Cache-Control: public, max-age=3600
+	// h.Set(HeaderCacheCtl, "public, max-age="+fmt.Sprint(p.GetExpires()))
+
+	w.Write(src)
 	return true
 }
 

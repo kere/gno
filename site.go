@@ -77,7 +77,7 @@ func Init() *SiteServer {
 		Listen: a.DefaultString("listen", ":8080"),
 		Router: httprouter.New()}
 
-	// ----------- log -------------
+	//  log
 	if config.IsSet("log") {
 		l := config.GetConf("log")
 

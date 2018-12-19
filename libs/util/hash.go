@@ -1,9 +1,10 @@
 package util
 
 import (
+	"crypto/md5"
 	"fmt"
 	"hash/crc32"
-	"io"
+	"hash/crc64"
 	"time"
 
 	"github.com/spaolacci/murmur3"
@@ -14,12 +15,29 @@ var (
 	BaseChars = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
+//MD5 md5校验
+func MD5(src []byte) []byte {
+	m := md5.New()
+	m.Write(src)
+	return m.Sum(nil)
+}
+
+// ECMATable table
+var ECMATable = crc64.MakeTable(crc64.ECMA)
+
+//CRC64Token crc校验
+func CRC64Token(src []byte) []byte {
+	csum := crc64.Checksum(src, ECMATable)
+	return IntZipTo62(csum)
+}
+
 //CRC32Token crc校验
-func CRC32Token(str string) string {
+func CRC32Token(src []byte) []byte {
 	ieee := crc32.NewIEEE()
-	io.WriteString(ieee, str)
+	// io.WriteString(ieee, str)
+	ieee.Write(src)
 	v64 := uint64(ieee.Sum32())
-	return string(IntZipTo62(v64))
+	return IntZipTo62(v64)
 }
 
 // Unique 获得一个稀有字符

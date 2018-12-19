@@ -22,7 +22,7 @@ func Test_crypto(t *testing.T) {
 	fmt.Println(string(text))
 }
 
-//--------------------------- Benchmark ---------------------------
+// Benchmark
 
 func Benchmark_encrypto(b *testing.B) {
 	iv := MD5([]byte("1"))
@@ -53,8 +53,6 @@ func Benchmark_decrypto(b *testing.B) {
 		}
 	}
 }
-
-//---------------------------
 
 func toError(err interface{}) {
 	if err != nil {
