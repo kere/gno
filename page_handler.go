@@ -2,6 +2,7 @@ package gno
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"net/url"
 
@@ -13,6 +14,9 @@ func pageHandle(p IPage) error {
 	if isReq && !isOK {
 		if urlstr != "" {
 			u, _ := url.Parse(urlstr)
+			if err == nil {
+				err = errors.New("page auth failed")
+			}
 			if u.RawQuery == "" {
 				u.RawQuery = "msg=" + url.PathEscape(err.Error())
 			} else {

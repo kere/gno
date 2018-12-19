@@ -114,7 +114,7 @@ func TryCache(p IPage) bool {
 
 	// Cache-Control: public, max-age=3600
 	h.Add(HeaderCacheCtl, "must-revalidate")
-	h.Set(HeaderEtag, last)
+	// h.Set(HeaderEtag, last)
 	// h.Set(HeaderIfNoneMatch, "true")
 	h.Set(HeaderLastModified, last)
 
@@ -130,6 +130,7 @@ func TrySetCache(p IPage, buf *bytes.Buffer) error {
 		last := time.Now().Format(time.RFC1123)
 		src := append([]byte(last), byte('\n'))
 		src = append(src, buf.Bytes()...)
+		p.GetResponseWriter().Header().Set(HeaderLastModified, last)
 
 		return cache.Set(key, string(src), p.GetExpires())
 
@@ -138,6 +139,7 @@ func TrySetCache(p IPage, buf *bytes.Buffer) error {
 		last := time.Now().Format(time.RFC1123)
 		src := append([]byte(last), byte('\n'))
 		src = append(src, buf.Bytes()...)
+		p.GetResponseWriter().Header().Set(HeaderLastModified, last)
 		return cache.Set(key, string(src), p.GetExpires())
 
 	case CacheModeFile:
