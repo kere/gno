@@ -2,10 +2,9 @@ package gno
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -19,8 +18,8 @@ const (
 	CacheModePage = 1
 	//CacheModePagePath 缓存页面
 	CacheModePagePath = 2
-	//CacheModeFile 文件缓存页面
-	CacheModeFile = 3
+	// CacheModeFile 文件缓存页面
+	// CacheModeFile = 3
 
 	pagecacheKeyPrefix = "c:"
 	pageCacheSubfix    = ".htm"
@@ -42,20 +41,14 @@ const (
 	HeaderIfModifiedSince = "If-Modified-Since"
 )
 
-// SetPageCache value
-func (p *Page) SetPageCache(mode, expires int) {
-	p.CacheMode = mode
-	p.Expires = expires
+// SetCacheOption value
+func (p *Page) SetCacheOption(mode, headerExp, cacheExp int) {
+	p.CacheOption = CacheOption{Mode: mode, HeaderExpires: headerExp, CacheExpires: cacheExp}
 }
 
-// GetExpires value
-func (p *Page) GetExpires() int {
-	return p.Expires
-}
-
-// GetCacheMode value
-func (p *Page) GetCacheMode() int {
-	return p.CacheMode
+// GetCacheOption value
+func (p *Page) GetCacheOption() *CacheOption {
+	return &p.CacheOption
 }
 
 // TryCache try to get cache
@@ -63,7 +56,7 @@ func TryCache(p IPage) bool {
 	var src, srcTmp []byte
 	var err error
 	var last string
-	switch p.GetCacheMode() {
+	switch p.GetCacheOption().Mode {
 	case CacheModePage:
 		key := pagecacheKeyPrefix + p.GetDir() + p.GetName()
 		srcTmp, err = cache.GetBytes(key)
@@ -82,9 +75,9 @@ func TryCache(p IPage) bool {
 		last = strings.TrimRight(last, delim2)
 		src, _ = ioutil.ReadAll(buf)
 
-	case CacheModeFile:
-		filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
-		src, err = ioutil.ReadFile(filename)
+	// case CacheModeFile:
+	// 	filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
+	// 	src, err = ioutil.ReadFile(filename)
 
 	default:
 		return false
@@ -100,7 +93,7 @@ func TryCache(p IPage) bool {
 	// etag0 := req.Header.Get(HeaderIfNoneMatch)
 	last0 := req.Header.Get(HeaderIfModifiedSince)
 
-	h := w.Header()
+	// h := w.Header()
 	// etag := fmt.Sprintf("%x", util.MD5(src))
 	// etag := string(util.CRC64Token(src))
 	// fmt.Println("etag:", etag, " etag0:", etag0)
@@ -112,11 +105,9 @@ func TryCache(p IPage) bool {
 		return true
 	}
 
-	// Cache-Control: public, max-age=3600
-	h.Add(HeaderCacheCtl, "must-revalidate")
 	// h.Set(HeaderEtag, last)
 	// h.Set(HeaderIfNoneMatch, "true")
-	h.Set(HeaderLastModified, last)
+	setResponseHeader(p, last)
 
 	w.Write(src)
 	return true
@@ -124,42 +115,56 @@ func TryCache(p IPage) bool {
 
 // TrySetCache TrySet cache
 func TrySetCache(p IPage, buf *bytes.Buffer) error {
-	switch p.GetCacheMode() {
+	var err error
+	var last string
+	switch p.GetCacheOption().Mode {
 	case CacheModePage:
 		key := pagecacheKeyPrefix + p.GetDir() + p.GetName()
-		last := time.Now().Format(time.RFC1123)
+		last = time.Now().Format(time.RFC1123)
 		src := append([]byte(last), byte('\n'))
 		src = append(src, buf.Bytes()...)
-		p.GetResponseWriter().Header().Set(HeaderLastModified, last)
-
-		return cache.Set(key, string(src), p.GetExpires())
+		err = cache.Set(key, string(src), p.GetCacheOption().CacheExpires)
 
 	case CacheModePagePath:
 		key := pagecacheKeyPrefix + p.GetRequest().URL.Path
-		last := time.Now().Format(time.RFC1123)
+		last = time.Now().Format(time.RFC1123)
 		src := append([]byte(last), byte('\n'))
 		src = append(src, buf.Bytes()...)
-		p.GetResponseWriter().Header().Set(HeaderLastModified, last)
-		return cache.Set(key, string(src), p.GetExpires())
+		err = cache.Set(key, string(src), p.GetCacheOption().CacheExpires)
 
-	case CacheModeFile:
-		filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
-		err := os.MkdirAll(filepath.Dir(filename), os.ModeDir)
-		if err != nil {
-			return err
-		}
-
-		f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC, os.ModePerm)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		_, err = f.Write(buf.Bytes())
-		return err
-
-	default:
-		return nil
+		// case CacheModeFile:
+		// 	filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
+		// 	err = os.MkdirAll(filepath.Dir(filename), os.ModeDir)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		//
+		// 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	defer f.Close()
+		// 	_, err = f.Write(buf.Bytes())
 	}
+	if err != nil {
+		return err
+	}
+
+	setResponseHeader(p, last)
+
+	return nil
+}
+func setResponseHeader(p IPage, lastModified string) {
+	h := p.GetResponseWriter().Header()
+	opt := p.GetCacheOption()
+	// set response header
+	// Cache-Control: public, max-age=3600
+	if opt.HeaderExpires > 0 {
+		h.Add(HeaderCacheCtl, "must-revalidate, max-age="+fmt.Sprint(opt.HeaderExpires))
+	} else {
+		h.Add(HeaderCacheCtl, "must-revalidate")
+	}
+	h.Set(HeaderLastModified, lastModified)
 }
 
 // ClearCache Clear cache

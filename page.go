@@ -20,9 +20,8 @@ type IPage interface {
 	GetRequest() *http.Request
 	GetParams() httprouter.Params
 
-	GetCacheMode() int
-	GetExpires() int
-	SetPageCache(mode, expires int)
+	SetCacheOption(mode, headerExp, cacheExp int)
+	GetCacheOption() *CacheOption
 
 	AddHead(src string)
 	AddJS(filename string)
@@ -52,14 +51,20 @@ type IPage interface {
 // PageExec run page exec
 type PageExec func(IPage)
 
+// CacheOption parameters
+type CacheOption struct {
+	Mode          int // 0: no cache   1: cache page   2:cache by url path
+	HeaderExpires int // page header expires
+	CacheExpires  int // cache expreies
+}
+
 // Page class
 type Page struct {
 	Title string
 	Name  string
 	Dir   string
 
-	CacheMode int // 0: no cache   1: cache page   2:cache by url path
-	Expires   int //page expires
+	CacheOption CacheOption
 
 	HTML string
 
