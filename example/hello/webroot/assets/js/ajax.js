@@ -1,3 +1,10 @@
+require.config({
+	waitSeconds :15,
+	paths: {
+		'accto' : MYENV+'/mylib/accto'
+	}
+});
+
 define(
   'ajax',
   ['util', 'accto'],
@@ -111,7 +118,7 @@ define(
                 if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
                   resolve(xhr.responseText);
                 } else {
-                  reject(xhr);
+                  reject(xhr.status, xhr.statusText);
                 }
               }
             };
@@ -167,15 +174,17 @@ define(
         return hostArr[hostArr.length-2]+'.'+hostArr[hostArr.length-1]
       },
 
-      getUrlVars: function(){
-        var vars = [], hash;
-        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-        for(var i = 0; i < hashes.length; i++) {
-        hash = hashes[i].split('=');
-        vars.push(hash[0]);
-        vars[hash[0]] = hash[1];
+      getUrlVar: function(sParam){
+        var sPageURL = window.location.search.substring(1);
+        var sURLVariables = sPageURL.split('&');
+        for (var i = 0; i < sURLVariables.length; i++) {
+          var sParameterName = sURLVariables[i].split('=');
+          if (sParameterName[0] == sParam)
+          {
+              return decodeURI(sParameterName[1]);
+          }
         }
-        return vars;
+        return null;
       },
 
       datasetDecode : function(data){
@@ -197,7 +206,7 @@ define(
     var Client = function(path){
         this.path = path || "/api/web";
         this.isrun = false;
-        this.timeout= 20;
+        this.timeout= 10;
         this.pfield = 'accpt';
     }
 
@@ -254,9 +263,11 @@ define(
             }
             $t.removeClass('weui-btn_loading');
           }
+          if(result=="") return null;
+
           return JSON.parse(result);
 
-        }).catch(function (xhr){
+        }).catch(function (status, error){
           clas.isrun = false;
           if(opt.loading){
             util.hideToast();
@@ -269,12 +280,12 @@ define(
             }
             $t.removeClass('weui-btn_loading');
           }
-          var error = xhr.responseText, status = xhr.status;
           switch(status){
+          case 599:
           case 500:
             if(clas.errorHandler){
               try{
-                clas.errorHandler(error)
+                clas.errorHandler(JSON.parse(error))
               }catch(e){
                 console.log(e)
               }
@@ -282,6 +293,7 @@ define(
             break;
           case 404:
             error = status+': api not found!'
+            console.log(error)
             break;
           default:
             if(error){

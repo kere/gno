@@ -1,3 +1,10 @@
+require.config({
+	waitSeconds :30,
+	baseUrl : "/assets/js/",
+	paths: {
+    'zepto' : MYENV+'/mylib/zepto'
+	}
+});
 define('util', ['zepto'], function(){
 	var util = {}
 
@@ -166,8 +173,15 @@ define('util', ['zepto'], function(){
           return decodeURI(sParameterName[1]);
       }
     }
-    return '';
 	};
+	util.getUrlRouterParam = function (index){
+    var arr = window.location.pathname.split('/'),
+      l = arr.length,
+      i = l-1-index;
+    if (i<0) return null;
+
+    return arr[i];
+  }
 
 	// util.cipherString = function(rsaData, nick, pwd){
 	// 	var rsa = new RSAKey(),
@@ -340,7 +354,7 @@ define('util', ['zepto'], function(){
 
   util.toast = function(){
     return $('<div id="toast" class="weui-toast fade hide">'+
-      '<div class="weui-mask_transparent"></div>'+
+      '<div class="weui-mask_bk"></div>'+
       '<div class="weui-toast">'+
           '<i class="toast-success weui-icon-success-no-circle weui-icon_toast"></i>'+
           '<p class="toast-success weui-toast__content">已完成</p>'+
@@ -367,6 +381,19 @@ define('util', ['zepto'], function(){
     var $el = $('#toast');
     $el.removeClass('in');
     setTimeout(function(){$el.addClass('hide');}, 150);
+  }
+
+  util.perm = function(s){
+    var perm = this.getCookie('perm');
+    var arr = perm.split(','), tmp;
+    for (var i = 0; i < arr.length; i++) {
+      tmp = arr[i].split('=');
+      if (tmp.length!=2) continue;
+      if(tmp[0] == s){
+        return tmp[1] == '1';
+      }
+    }
+    return false;
   }
 
   util.taggle = function(e){
@@ -404,6 +431,7 @@ define('util', ['zepto'], function(){
       return 'open';
     }
   }
+
 
 	return util;
 });
