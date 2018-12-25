@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/util"
 	"github.com/kere/gno/websock"
 )
@@ -51,7 +52,7 @@ func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		p := factory()
 		p.Init("GET", rw, req, ps)
-
+		// err := pageHandle(p)
 		arg := PoolParams{Typ: 1, Page: p, Error: make(chan error, 1)}
 		pool.Serve(&arg)
 		err := <-arg.Error
@@ -104,4 +105,25 @@ func (s *SiteServer) RegistGetAPI(rule string, webapi IWebAPI) {
 // RegistWebSocket router
 func (s *SiteServer) RegistWebSocket(rule string, ctl websock.IWebSock) {
 	websock.RegistWebSocket(s.Router, rule, ctl)
+}
+
+func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
+	log.App.Error(err)
+	if errorURL == "" {
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	// ErrorURL redirect to
+	http.Redirect(rw, req, errorURL+"?msg="+err.Error(), http.StatusSeeOther)
+}
+
+func doAPIError(err error, rw http.ResponseWriter, req *http.Request) {
+	addr := req.Header.Get("X-Forwarded-For")
+	if addr == "" {
+		addr = req.Header.Get("X-Real-IP")
+	}
+	log.App.Error(err, addr)
+	rw.WriteHeader(http.StatusInternalServerError)
+	rw.Write([]byte(err.Error()))
 }

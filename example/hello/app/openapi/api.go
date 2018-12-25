@@ -1,7 +1,6 @@
 package openapi
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -29,7 +28,7 @@ func (a App) Auth(req *http.Request, ps httprouter.Params) (bool, error) {
 
 // PageData func
 func (a App) PageData(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error) {
-	fmt.Println(args)
+	// fmt.Println(args)
 
 	return util.MapData{"isok": true}, nil
 }

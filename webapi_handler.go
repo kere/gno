@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/util"
 )
 
@@ -37,14 +36,4 @@ func webAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps 
 	}
 
 	return webapi.Reply(rw, data)
-}
-
-func doAPIError(err error, rw http.ResponseWriter, req *http.Request) {
-	addr := req.Header.Get("X-Forwarded-For")
-	if addr == "" {
-		addr = req.Header.Get("X-Real-IP")
-	}
-	log.App.Error(err, addr)
-	rw.WriteHeader(http.StatusInternalServerError)
-	rw.Write([]byte(err.Error()))
 }

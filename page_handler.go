@@ -53,14 +53,3 @@ func pageHandle(p IPage) error {
 	p.RunAfter()
 	return err
 }
-
-func doPageError(errorURL string, err error, rw http.ResponseWriter, req *http.Request) {
-	log.App.Error(err)
-	if errorURL == "" {
-		rw.WriteHeader(http.StatusInternalServerError)
-		rw.Write([]byte(err.Error()))
-		return
-	}
-	// ErrorURL redirect to
-	http.Redirect(rw, req, errorURL+"?msg="+err.Error(), http.StatusSeeOther)
-}
