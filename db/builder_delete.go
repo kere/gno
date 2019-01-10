@@ -13,7 +13,7 @@ type DeleteBuilder struct {
 }
 
 func NewDeleteBuilder(t string) *DeleteBuilder {
-	return (&DeleteBuilder{}).Table(t)
+	return &DeleteBuilder{table: t}
 }
 
 func (d *DeleteBuilder) Table(t string) *DeleteBuilder {

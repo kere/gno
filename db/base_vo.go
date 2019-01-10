@@ -105,14 +105,16 @@ func (b *BaseVO) TxCreateAndReturnID(tx *Tx) (sql.Result, error) {
 	if b.target == nil {
 		panic("vo.target is nil")
 	}
-	ins := NewInsertBuilder(b.Table).ReturnID()
+	ins := NewInsertBuilder(b.Table)
+	ins.ReturnID()
 	return ins.TxInsert(tx, b.target)
 }
 
 // CreateIfNotFound insert data if not found
 // return true if insert
 func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, error) {
-	if NewExistsBuilder(b.Table).Where(where, params...).Exists() {
+	e := NewExistsBuilder(b.Table)
+	if e.Where(where, params...).Exists() {
 		return false, nil
 	}
 
@@ -121,13 +123,15 @@ func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, er
 
 // Update func
 func (b *BaseVO) Update(where string, params ...interface{}) error {
-	_, err := NewUpdateBuilder(b.Table).Where(where, params...).Update(b.target)
+	u := NewUpdateBuilder(b.Table)
+	_, err := u.Where(where, params...).Update(b.target)
 	return err
 }
 
 // TxUpdate func
 func (b *BaseVO) TxUpdate(tx *Tx, where string, params ...interface{}) error {
-	_, err := NewUpdateBuilder(b.Table).Where(where, params...).TxUpdate(tx, b.target)
+	u := NewUpdateBuilder(b.Table)
+	_, err := u.Where(where, params...).TxUpdate(tx, b.target)
 	return err
 }
 
@@ -147,19 +151,22 @@ func (b *BaseVO) UpdateFields(fields []string, where string, params ...interface
 		}
 	}
 
-	_, err := NewUpdateBuilder(b.Table).Where(where, params...).Update(dat)
+	u := NewUpdateBuilder(b.Table)
+	_, err := u.Where(where, params...).Update(dat)
 	return err
 }
 
 // Delete func
 func (b *BaseVO) Delete(where string, params ...interface{}) error {
-	_, err := NewDeleteBuilder(b.Table).Where(where, params...).Delete()
+	d := NewDeleteBuilder(b.Table)
+	_, err := d.Where(where, params...).Delete()
 	return err
 }
 
 // TxDelete func
 func (b *BaseVO) TxDelete(tx *Tx, where string, params ...interface{}) error {
-	_, err := NewDeleteBuilder(b.Table).Where(where, params...).TxDelete(tx)
+	d := NewDeleteBuilder(b.Table)
+	_, err := d.Where(where, params...).TxDelete(tx)
 	return err
 }
 

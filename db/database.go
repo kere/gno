@@ -100,7 +100,7 @@ type Database struct {
 	Driver     IDriver
 	Log        *log.Logger
 	Connection *Connection
-	Location   *time.Location
+	// Location   *time.Location
 }
 
 func NewDatabase(name string, driver IDriver, lg *log.Logger) *Database {

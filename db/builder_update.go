@@ -13,7 +13,7 @@ type UpdateBuilder struct {
 }
 
 func NewUpdateBuilder(t string) *UpdateBuilder {
-	return (&UpdateBuilder{}).Table(t)
+	return &UpdateBuilder{table: t}
 }
 
 func (u *UpdateBuilder) Table(t string) *UpdateBuilder {

@@ -32,7 +32,7 @@ type InsertBuilder struct {
 
 // NewInsertBuilder func
 func NewInsertBuilder(t string) *InsertBuilder {
-	return (&InsertBuilder{}).IsPrepare(true).Table(t)
+	return &InsertBuilder{table: t, isPrepare: true}
 }
 
 // IsPrepare func
@@ -100,7 +100,7 @@ func (ins *InsertBuilder) parseM(rows DataSet) []byte {
 				if string(key) == string(key2) {
 					switch values2[k].(type) {
 					case time.Time:
-						values = append(values, fmt.Sprintf("'%s'", (values2[k].(time.Time)).Format("2006-01-02 15:04:05")))
+						values = append(values, fmt.Sprintf("'%s'", (values2[k].(time.Time)).Format(time.RFC1123)))
 					case string, []byte:
 						values = append(values, "'"+fmt.Sprint(values2[k])+"'")
 					default:

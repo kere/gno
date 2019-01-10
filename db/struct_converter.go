@@ -113,7 +113,7 @@ func (sc *StructConverter) KeyValueList(stype string) ([][]byte, []interface{}, 
 
 func (sc *StructConverter) DataRow2Struct(datarow DataRow) (IVO, error) {
 	rowStruct := reflect.New(sc.GetTypeElem())
-	err := datarow.ConvertTo(rowStruct.Interface().(IVO))
+	err := datarow.CopyToVO(rowStruct.Interface().(IVO))
 	if err != nil {
 		return nil, err
 	}
@@ -141,12 +141,16 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 	if sc.val.Kind() == reflect.Ptr {
 		val = sc.val.Elem()
 	}
+
 	switch fieldTyp.Type.Kind() {
 	case reflect.Map, reflect.Slice, reflect.Array:
 		if val.Field(n).Len() == 0 {
 			return true
 		}
 	case reflect.Struct:
+		if fieldTyp.Type.String() == timeClassName && (val.Field(n).Interface().(time.Time)).IsZero() {
+			return true
+		}
 		return !val.Field(n).IsValid()
 
 	case reflect.Interface:
@@ -179,9 +183,6 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 
 	l := typ.NumField()
 
-	var field reflect.StructField
-	var dbField string
-
 	var skipTag string
 	var skipEmpty string
 	var autotime string
@@ -190,8 +191,8 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 	datarow := DataRow{}
 
 	for n := 0; n < l; n++ {
-		field = typ.Field(n)
-		dbField = field.Tag.Get("json")
+		field := typ.Field(n)
+		dbField := field.Tag.Get("json")
 
 		if dbField == "" {
 			if field.Name == "BaseVO" {
@@ -199,8 +200,6 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			}
 			dbField = field.Name
 		}
-
-		// isJSONType = len(dbField) > 5 && dbField[len(dbField)-5:] == "_json"
 
 		skipTag = field.Tag.Get("skip")
 		if actionType != "" && skipTag == actionType {
@@ -219,16 +218,13 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 
 		skipEmpty = field.Tag.Get("skipempty")
 		autotime = field.Tag.Get("autotime")
-		if autotime == "true" && field.Type.String() == "time.Time" && (value.(time.Time)).IsZero() {
-			if Current().Location.String() == "UTC" {
-				datarow[dbField] = time.Now()
-			} else {
-				datarow[dbField] = time.Now().In(Current().Location)
-			}
+		if (autotime == "true" || autotime == actionType) && field.Type.String() == "time.Time" && (value.(time.Time)).IsZero() {
+			// ------- time zone --------
+			datarow[dbField] = time.Now()
 			continue
 		}
 
-		if (skipEmpty == "all" || skipEmpty == actionType) && sc.isEmpty(field, n) {
+		if (skipEmpty == "" || skipEmpty == "all" || skipEmpty == actionType) && sc.isEmpty(field, n) {
 			continue
 		}
 

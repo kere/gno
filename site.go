@@ -44,8 +44,8 @@ var (
 type SiteServer struct {
 	Listen string
 
-	Location *time.Location
-	Router   *httprouter.Router
+	// Location *time.Location
+	Router *httprouter.Router
 
 	ErrorURL   string
 	JSVersion  string
@@ -95,14 +95,14 @@ func Init() *SiteServer {
 	s.Log = log.Get("app")
 
 	// ------- time zone --------
-	if a.IsSet("timezone") {
-		zone := a.GetString("timezone")
-		loc, err := time.LoadLocation(zone)
-		if err != nil {
-			panic(err)
-		}
-		s.Location = loc
-	}
+	// if a.IsSet("timezone") {
+	// 	zone := a.GetString("timezone")
+	// 	loc, err := time.LoadLocation(zone)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	s.Location = loc
+	// }
 	pool = NewPool(a.DefaultInt("pool", 200))
 
 	// JsVersion CSSVersion

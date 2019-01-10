@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
-	"time"
 
 	"github.com/kere/gno/db/drivers"
 	"github.com/kere/gno/libs/conf"
@@ -94,7 +93,6 @@ func New(name string, conf map[string]string) *Database {
 			HostAddr: confGet(conf, "hostaddr"),
 			Port:     confGet(conf, "port"),
 		}
-		DateTimeFormat = time.RFC3339
 
 	case "mysql":
 		driver = &drivers.Mysql{DBName: confGet(conf, "dbname"),
@@ -125,13 +123,14 @@ func New(name string, conf map[string]string) *Database {
 
 	d := NewDatabase(name, driver, logger)
 
-	if confGet(conf, "timezone") != "" {
-		loc, err := time.LoadLocation(confGet(conf, "timezone"))
-		if err != nil {
-			panic(err)
-		}
-		d.Location = loc
-	}
+	// ------- time zone --------
+	// if confGet(conf, "timezone") != "" {
+	// 	loc, err := time.LoadLocation(confGet(conf, "timezone"))
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	d.Location = loc
+	// }
 
 	dbpool.SetDatabase(name, d)
 	dbpool.SetCurrent(d)

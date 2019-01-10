@@ -19,13 +19,15 @@ type DataRow map[string]interface{}
 
 // Insert datarow item
 func (dr DataRow) Insert(table string) error {
-	_, err := NewInsertBuilder(table).Insert(dr)
+	ins := NewInsertBuilder(table)
+	_, err := ins.Insert(dr)
 	return err
 }
 
 // TxInsert datarow item
 func (dr DataRow) TxInsert(tx *Tx, table string) error {
-	_, err := NewInsertBuilder(table).TxInsert(tx, dr)
+	ins := NewInsertBuilder(table)
+	_, err := ins.TxInsert(tx, dr)
 	return err
 }
 
@@ -90,7 +92,8 @@ func (dr DataRow) ChangedData(newRow DataRow) DataRow {
 
 // Update datarow item
 func (dr DataRow) Update(table string, where string, params ...interface{}) error {
-	_, err := NewUpdateBuilder(table).Where(where, params...).Update(dr)
+	u := NewUpdateBuilder(table)
+	_, err := u.Where(where, params...).Update(dr)
 	return err
 }
 
@@ -98,20 +101,25 @@ func (dr DataRow) Update(table string, where string, params ...interface{}) erro
 // If exists then update
 // If not found then insert
 func (dr DataRow) Save(table string, where string, params ...interface{}) error {
-	if NewExistsBuilder(table).Where(where, params...).Exists() {
-		_, err := NewUpdateBuilder(table).Where(where, params...).Update(dr)
+	e := NewExistsBuilder(table)
+	if e.Where(where, params...).Exists() {
+		e := NewUpdateBuilder(table)
+		_, err := e.Where(where, params...).Update(dr)
 		return err
 	}
-	_, err := NewInsertBuilder(table).Insert(dr)
+	ins := NewInsertBuilder(table)
+	_, err := ins.Insert(dr)
 	return err
 }
 
 // InsertIfNotFound inert data
 func (dr DataRow) InsertIfNotFound(table string, where string, params ...interface{}) (bool, error) {
-	if NewExistsBuilder(table).Where(where, params...).Exists() {
+	e := NewExistsBuilder(table)
+	if e.Where(where, params...).Exists() {
 		return true, nil
 	}
-	_, err := NewInsertBuilder(table).Insert(dr)
+	ins := NewInsertBuilder(table)
+	_, err := ins.Insert(dr)
 	return false, err
 }
 
@@ -250,6 +258,15 @@ func (dr DataRow) Bytes(field string) []byte {
 	default:
 		return B_EmptyString
 	}
+}
+
+// Rune return
+func (dr DataRow) Rune(field string) rune {
+	str := dr.String(field)
+	if str == "" {
+		return 0
+	}
+	return rune(str[0])
 }
 
 // String return
@@ -610,6 +627,7 @@ func (dr DataRow) Hstore(field string) map[string]string {
 
 }
 
+// JsonParse data row to parse json field
 func (dr DataRow) JsonParse(field string, v interface{}) error {
 	if err := json.Unmarshal(dr.Bytes(field), v); err != nil {
 		return err
@@ -617,14 +635,21 @@ func (dr DataRow) JsonParse(field string, v interface{}) error {
 	return nil
 }
 
-func (dr DataRow) Time(field, format string) time.Time {
+// Time default
+func (dr DataRow) Time(field string) time.Time {
+	return dr.TimeParse(field, DateTimeFormat)
+}
+
+// TimeParse default
+func (dr DataRow) TimeParse(field, layout string) time.Time {
 	if dr.IsNull(field) {
 		return time.Unix(0, 0)
 	}
-	loc, _ := time.LoadLocation("Local")
+
 	switch dr[field].(type) {
 	case string:
-		t, err := time.ParseInLocation(format, dr[field].(string), loc)
+		t, err := time.Parse(layout, dr[field].(string))
+		// t, err := time.ParseInLocation(format, dr[field].(string), loc)
 		if err != nil {
 			panic(err)
 		}
@@ -634,8 +659,8 @@ func (dr DataRow) Time(field, format string) time.Time {
 		return dr[field].(time.Time)
 
 	case []byte:
-		str := string(dr[field].([]byte))
-		t, err := time.ParseInLocation(format, str, loc)
+		t, err := time.Parse(layout, string(dr[field].([]byte)))
+		// t, err := time.ParseInLocation(format, str, loc)
 		if err != nil {
 			panic(err)
 		}
@@ -646,8 +671,8 @@ func (dr DataRow) Time(field, format string) time.Time {
 	}
 }
 
-// CopyTo func
-func (dr DataRow) CopyTo(vo interface{}) error {
+// CopyToWithJSON copy to json vo
+func (dr DataRow) CopyToWithJSON(vo interface{}) error {
 	src, err := json.Marshal(dr)
 	if err != nil {
 		return err
@@ -656,8 +681,8 @@ func (dr DataRow) CopyTo(vo interface{}) error {
 	return json.Unmarshal(src, vo)
 }
 
-// ConvertTo func
-func (dr DataRow) ConvertTo(vo interface{}) error {
+// CopyTo func
+func (dr DataRow) CopyToVO(vo interface{}) error {
 	typ := reflect.TypeOf(vo)
 	if typ.Kind() != reflect.Ptr {
 		return errors.New("arg vo must be a kind of ptr")
@@ -717,8 +742,8 @@ func (dr DataRow) ConvertTo(vo interface{}) error {
 
 		case reflect.Struct, reflect.Interface:
 			switch sf.Type.String() {
-			case "time.Time":
-				val.Field(i).Set(reflect.ValueOf(dr.Time(field, DateTimeFormat)))
+			case timeClassName:
+				val.Field(i).Set(reflect.ValueOf(dr.Time(field)))
 
 			default:
 				switch dr[field].(type) {

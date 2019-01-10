@@ -13,7 +13,7 @@ type ExistsBuilder struct {
 }
 
 func NewExistsBuilder(t string) *ExistsBuilder {
-	return (&ExistsBuilder{}).Table(t)
+	return &ExistsBuilder{table: t}
 }
 
 func (e *ExistsBuilder) Table(t string) *ExistsBuilder {

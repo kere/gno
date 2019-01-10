@@ -31,7 +31,7 @@ type QueryBuilder struct {
 
 // NewQueryBuilder new
 func NewQueryBuilder(t string) *QueryBuilder {
-	return (&QueryBuilder{}).Table(t).IsPrepare(true)
+	return &QueryBuilder{table: t, isPrepare: true}
 }
 
 // Table return string
@@ -45,6 +45,7 @@ func (q *QueryBuilder) GetTable() string {
 	return q.table
 }
 
+// IsPrepare prepare sql
 func (q *QueryBuilder) IsPrepare(v bool) *QueryBuilder {
 	q.isPrepare = v
 	return q

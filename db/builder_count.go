@@ -11,7 +11,7 @@ type CounterBuilder struct {
 }
 
 func NewCounterBuilder(t string) *CounterBuilder {
-	return (&CounterBuilder{}).Table(t)
+	return &CounterBuilder{table: t}
 }
 
 func (c *CounterBuilder) Table(t string) *CounterBuilder {

@@ -107,6 +107,15 @@ func (dr MapData) BytesDefault(field string, v []byte) []byte {
 	return dr.Bytes(field)
 }
 
+// Rune return
+func (dr MapData) Rune(field string) rune {
+	str := dr.String(field)
+	if str == "" {
+		return 0
+	}
+	return rune(str[0])
+}
+
 // String string
 func (dr MapData) String(field string) string {
 	switch dr[field].(type) {
