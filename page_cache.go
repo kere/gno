@@ -53,6 +53,10 @@ func (p *Page) GetCacheOption() *CacheOption {
 
 // TryCache try to get cache
 func TryCache(p IPage) bool {
+	if RunMode == ModeDev {
+		return false
+	}
+
 	var src, srcTmp []byte
 	var err error
 	var last string

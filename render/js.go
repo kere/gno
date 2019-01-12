@@ -39,7 +39,7 @@ func (t JS) Render(w io.Writer) error {
 		w.Write([]byte(AssetsURL + "/assets/js/" + filename))
 	}
 	if JSVersion != "" {
-		w.Write([]byte(fmt.Sprint("?v=", JSVersion)))
+		w.Write([]byte(fmt.Sprint("?gv=", JSVersion)))
 	}
 
 	w.Write(BytesQuote)
