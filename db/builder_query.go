@@ -294,7 +294,7 @@ func (q *QueryBuilder) QueryOne() (DataRow, error) {
 // }
 
 func (q *QueryBuilder) writeField(s *bytes.Buffer) {
-	field := B_StarKey
+	field := BStarKey
 	if q.field != "" {
 		field = []byte(q.field)
 	} else if q.cls != nil {

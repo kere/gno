@@ -2,7 +2,12 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"reflect"
+)
+
+const (
+	subfixJSON = "_json"
 )
 
 var ivotype reflect.Type = reflect.TypeOf((*IVO)(nil)).Elem()
@@ -72,8 +77,10 @@ func keyValueList(actionType string, data interface{}) (keys [][]byte, values []
 		}
 
 		if v != nil && typ.Implements(ivotype) {
-			sm := NewStructConvert(v)
-			values = append(values, sm.Struct2DataRow(actionType))
+			values = append(values, NewStructConvert(v).Struct2DataRow(actionType))
+		} else if len(k) > 5 && k[len(k)-5:] == subfixJSON {
+			b, _ := json.Marshal(v)
+			values = append(values, b)
 		} else {
 			values = append(values, database.Driver.FlatData(typ, v))
 		}

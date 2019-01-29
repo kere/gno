@@ -138,11 +138,14 @@ func (sc *StructConverter) DataSet2Struct(dataset DataSet) (VODataSet, error) {
 
 func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 	val := sc.val
-	if sc.val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Ptr {
 		val = sc.val.Elem()
 	}
 
 	switch fieldTyp.Type.Kind() {
+	case reflect.Ptr:
+		return val.Field(n).IsNil()
+
 	case reflect.Map, reflect.Slice, reflect.Array:
 		if val.Field(n).Len() == 0 {
 			return true
@@ -151,6 +154,7 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 		if fieldTyp.Type.String() == timeClassName && (val.Field(n).Interface().(time.Time)).IsZero() {
 			return true
 		}
+
 		return !val.Field(n).IsValid()
 
 	case reflect.Interface:
@@ -177,36 +181,45 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 	return false
 }
 
+const (
+	tagSkip      = "skip"
+	tagJson      = "json"
+	tagCType     = "ctype"
+	tagSkipEmpty = "skipempty"
+	tagAutotime  = "autotime"
+	vTrue        = "true"
+	vAll         = "all"
+	vBaseVO      = "BaseVO"
+)
+
 // Struct2DataRow to datarow
 func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 	typ := sc.GetTypeElem()
 
 	l := typ.NumField()
 
-	var skipTag string
-	var skipEmpty string
-	var autotime string
+	var skipTag, skipEmpty, autotime string
 	var value interface{}
 
 	datarow := DataRow{}
 
 	for n := 0; n < l; n++ {
 		field := typ.Field(n)
-		dbField := field.Tag.Get("json")
+		dbField := field.Tag.Get(tagJson)
 
 		if dbField == "" {
-			if field.Name == "BaseVO" {
+			if field.Name == vBaseVO {
 				continue
 			}
 			dbField = field.Name
 		}
 
-		skipTag = field.Tag.Get("skip")
+		skipTag = field.Tag.Get(tagSkip)
 		if actionType != "" && skipTag == actionType {
 			continue
 		}
 
-		if skipTag == "all" {
+		if skipTag == vAll {
 			continue
 		}
 
@@ -216,9 +229,9 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			value = sc.val.Field(n).Interface()
 		}
 
-		skipEmpty = field.Tag.Get("skipempty")
-		autotime = field.Tag.Get("autotime")
-		if (autotime == "true" || autotime == actionType) && field.Type.String() == "time.Time" && (value.(time.Time)).IsZero() {
+		skipEmpty = field.Tag.Get(tagSkipEmpty)
+		autotime = field.Tag.Get(tagAutotime)
+		if (autotime == vTrue || autotime == actionType) && field.Type.String() == "time.Time" && (value.(time.Time)).IsZero() {
 			// ------- time zone --------
 			datarow[dbField] = time.Now()
 			continue
@@ -228,21 +241,7 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			continue
 		}
 
-		if exec, isok := field.Tag.Lookup("exec"); isok {
-			call := sc.val.MethodByName(exec)
-
-			if call.IsValid() {
-				result := call.Call([]reflect.Value{reflect.ValueOf(actionType)})
-
-				if result[1].IsNil() && result[0].CanInterface() {
-					datarow[dbField] = result[0].Interface()
-				}
-				continue
-			}
-		}
-
 		datarow[dbField] = value
-
 	}
 
 	return datarow

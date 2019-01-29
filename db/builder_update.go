@@ -72,6 +72,23 @@ func (u *UpdateBuilder) UpdateByString(str string) (sql.Result, error) {
 	return u.getDatabase().ExecPrepare(NewSqlState(s.Bytes(), values...))
 }
 
+func (u *UpdateBuilder) TxUpdateByString(tx *Tx, str string) (sql.Result, error) {
+	var values []interface{}
+	s := bytes.Buffer{}
+	driver := u.getDatabase().Driver
+	s.Write(bSQLUpdate)
+	s.WriteString(driver.QuoteField(u.table))
+	s.Write(bSQLSet)
+	s.WriteString(str)
+	if u.where != nil {
+		s.Write(bSQLWhere)
+		s.WriteString(u.where.Cond)
+		values = u.where.Args
+	}
+
+	return tx.ExecPrepare(NewSqlState(s.Bytes(), values...))
+}
+
 func (u *UpdateBuilder) TxUpdate(tx *Tx, data interface{}) (sql.Result, error) {
 	return tx.ExecPrepare(u.SqlState(data))
 }

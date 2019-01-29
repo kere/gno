@@ -236,7 +236,7 @@ func (dr DataRow) BoolDefault(field string, v bool) bool {
 // Bytes return
 func (dr DataRow) Bytes(field string) []byte {
 	if dr.IsNull(field) {
-		return B_EmptyString
+		return BEmptyString
 	}
 
 	switch dr[field].(type) {
@@ -256,7 +256,7 @@ func (dr DataRow) Bytes(field string) []byte {
 		return []byte(strconv.FormatUint(dr.Uint64(field), 10))
 
 	default:
-		return B_EmptyString
+		return BEmptyString
 	}
 }
 

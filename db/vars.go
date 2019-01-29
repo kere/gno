@@ -38,8 +38,8 @@ var (
 	BNull          = []byte("NULL")
 	B_Equal        = []byte("=")
 
-	BCommaSplit   = []byte(",")
-	B_EmptyString = []byte("")
-	B_StarKey     = []byte("*")
-	B_Space       = []byte(" ")
+	BCommaSplit  = []byte(",")
+	BEmptyString = []byte("")
+	BStarKey     = []byte("*")
+	BSpace       = []byte(" ")
 )

@@ -108,6 +108,7 @@ func (this *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
 
 }
 
+// FlatData for value
 func (this *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
 	if v == nil {
 		return "NULL"
