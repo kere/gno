@@ -14,12 +14,12 @@ import (
 const (
 	//CacheModeNone 不缓存页面
 	CacheModeNone = 0
-	//CacheModePage 缓存页面
+	//CacheModePage 按照页面名称缓存
 	CacheModePage = 1
-	//CacheModePagePath 缓存页面
+	//CacheModePagePath 按照URL Path缓存页面
 	CacheModePagePath = 2
-	// CacheModeFile 文件缓存页面
-	// CacheModeFile = 3
+	//CacheModePageURI 按照URL缓存页面
+	CacheModePageURI = 3
 
 	pagecacheKeyPrefix = "c:"
 	pageCacheSubfix    = ".htm"
@@ -59,34 +59,35 @@ func TryCache(p IPage) bool {
 
 	var src, srcTmp []byte
 	var err error
-	var last string
+	var last, key string
 	switch p.GetCacheOption().Mode {
 	case CacheModePage:
-		key := pagecacheKeyPrefix + p.GetDir() + p.GetName()
-		srcTmp, err = cache.GetBytes(key)
-		buf := bytes.NewBuffer(srcTmp)
-		// 读取第一行时间戳
-		last, _ = buf.ReadString(delim1)
-		last = strings.TrimRight(last, delim2)
-		src, _ = ioutil.ReadAll(buf)
+		key = pagecacheKeyPrefix + p.GetDir() + p.GetName()
 
 	case CacheModePagePath:
-		key := pagecacheKeyPrefix + p.GetRequest().URL.Path
-		srcTmp, err = cache.GetBytes(key)
-		buf := bytes.NewBuffer(srcTmp)
-		// 读取第一行时间戳
-		last, _ = buf.ReadString(delim1)
-		last = strings.TrimRight(last, delim2)
-		src, _ = ioutil.ReadAll(buf)
+		key = pagecacheKeyPrefix + p.GetRequest().URL.Path
+
+	case CacheModePageURI:
+		key = pagecacheKeyPrefix + p.GetRequest().URL.RequestURI()
 
 	// case CacheModeFile:
 	// 	filename := filepath.Join(WEBROOT, p.GetRequest().URL.Path+pageCacheSubfix)
 	// 	src, err = ioutil.ReadFile(filename)
-
 	default:
 		return false
 	}
-
+	srcTmp, err = cache.GetBytes(key)
+	if err != nil {
+		return false
+	}
+	buf := bytes.NewBuffer(srcTmp)
+	// 读取第一行时间戳
+	last, err = buf.ReadString(delim1)
+	if err != nil {
+		return false
+	}
+	last = strings.TrimRight(last, delim2)
+	src, err = ioutil.ReadAll(buf)
 	if err != nil {
 		return false
 	}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"reflect"
+	"strings"
 )
 
 const (
@@ -53,17 +54,24 @@ func keyValueList(actionType string, data interface{}) (keys [][]byte, values []
 	for k, v := range d {
 		typ := reflect.TypeOf(v)
 
-		keys[i] = []byte(database.Driver.QuoteField(k))
-
 		if isUpdate {
 			if v == nil {
-				keys[i] = append(keys[i], B_Equal[0])
-				keys[i] = append(keys[i], BNull...)
+				// version=version+1
+				if strings.IndexByte(k, B_Equal[0]) > 0 {
+					keys[i] = []byte(k)
+				} else {
+					keys[i] = []byte(database.Driver.QuoteField(k))
+					keys[i] = append(keys[i], B_Equal[0])
+					keys[i] = append(keys[i], BNull...)
+				}
 				i++
 				continue
 			} else {
+				keys[i] = []byte(database.Driver.QuoteField(k))
 				keys[i] = append(keys[i], B_Equal[0], B_QuestionMark[0])
 			}
+		} else {
+			keys[i] = []byte(database.Driver.QuoteField(k))
 		}
 
 		if !isUpdate && v == nil {

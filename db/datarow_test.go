@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 )
 
@@ -47,5 +48,29 @@ func TestDataRow(t *testing.T) {
 	row2["uint"] = uint(126)
 	if row2.Int("uint") != 126 {
 		t.Fatal("uint failed")
+	}
+}
+
+func TestDataSet(t *testing.T) {
+	row := DataRow{"id": 1, "name": "tom1", "age": 22}
+	arr := DataSet{row}
+
+	row = DataRow{"id": 2, "name": "tom2", "age": 23}
+	arr = append(arr, row)
+	row = DataRow{"id": 3, "name": "tom3", "age": 24}
+	arr = append(arr, row)
+	row = DataRow{"id": 4, "name": "tom4", "age": 25}
+	arr = append(arr, row)
+	row = DataRow{"id": 5, "name": "tom5", "age": 26}
+	arr = append(arr, row)
+
+	s := NewDataSetSorted(arr, "id")
+
+	if !sort.IsSorted(&s) {
+		t.Fatal()
+	}
+	i := s.IndexOfInt(4)
+	if i != 3 {
+		t.Fatal()
 	}
 }

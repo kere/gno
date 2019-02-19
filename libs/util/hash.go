@@ -57,20 +57,21 @@ func IntZipTo62(u64 uint64) []byte {
 	return IntZipBaseStr(u64, BaseChars)
 }
 
-func calculateZip(l, n uint64) (uint64, uint64) {
-	return n / l, n % l
-}
+// func calculateZip(l, n uint64) (uint64, uint64) {
+// 	return n / l, n % l
+// }
 
 // IntZipBaseStr int 转换压缩成字符串列表内的字符串
 func IntZipBaseStr(num uint64, s []byte) []byte {
 	l := uint64(len(s))
 
 	result := []byte{}
-	v, m := calculateZip(l, num)
+	// v, m := calculateZip(l, num)
+	v, m := num/l, num%l
 	result = append(result, s[m])
 
 	for v >= l {
-		v, m = calculateZip(l, v)
+		v, m = v/l, v%l
 		result = append([]byte{s[m]}, result...)
 	}
 
@@ -79,3 +80,28 @@ func IntZipBaseStr(num uint64, s []byte) []byte {
 	}
 	return result
 }
+
+// // BaseStrToInt10 压缩字符串回退为10位整数
+// func BaseStrToInt10(str string, s []byte) (uint64, error) {
+// 	l := len(str)
+// 	index := bytes.IndexByte(s, str[l-1])
+// 	if index < 0 {
+// 		return 0, errors.New("parse failed")
+// 	}
+// 	sum := uint64(index)
+// 	base := len(s)
+//
+// 	for i := 1; i < l; i++ {
+// 		index = bytes.IndexByte(s, str[l-i-1])
+// 		if index < 0 {
+// 			return 0, errors.New("parse failed")
+// 		}
+// 		sum += uint64(math.Pow(float64(index*base), float64(i)))
+// 	}
+// 	return sum, nil
+// }
+
+// // Unzip62 反向计算压缩字符串
+// func Unzip62(str string) (uint64, error) {
+// 	return BaseStrToInt10(str, BaseChars)
+// }

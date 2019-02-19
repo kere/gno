@@ -36,7 +36,7 @@ type IPage interface {
 	AddBottomRender(r render.IRender)
 
 	Init(method string, w http.ResponseWriter, req *http.Request, ps httprouter.Params)
-	Auth() (require, isok bool, redirectURL string, err error)
+	Auth() (redirectURL string, err error)
 	// Build() error
 	Prepare() error
 	Render(io.Writer) error
@@ -213,8 +213,8 @@ func (p *Page) AddScript(position, src string, data map[string]string) {
 
 // Auth page auth
 // if require is true then do auth
-func (p *Page) Auth() (require, isok bool, redirectURL string, err error) {
-	return false, false, "", nil
+func (p *Page) Auth() (redirectURL string, err error) {
+	return "", nil
 }
 
 // Prepare page

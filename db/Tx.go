@@ -17,14 +17,9 @@ func NewTx() *Tx {
 }
 
 func (t *Tx) Begin() *Tx {
-	t.GetTx()
-	return t
-}
-
-func (t *Tx) GetTx() *sql.Tx {
-	if t.tx != nil {
-		return t.tx
-	}
+	// if t.tx != nil {
+	// 	return t
+	// }
 
 	t.conn = Current().Connection.Connect()
 	tx, err := t.conn.Begin()
@@ -34,7 +29,7 @@ func (t *Tx) GetTx() *sql.Tx {
 	}
 	t.tx = tx
 	t.IsError = false
-	return t.tx
+	return t
 }
 
 func (t *Tx) FindOne(cls IVO, item *SqlState) (IVO, error) {

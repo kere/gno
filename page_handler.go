@@ -2,7 +2,6 @@ package gno
 
 import (
 	"bytes"
-	"errors"
 	"net/http"
 	"net/url"
 
@@ -10,25 +9,27 @@ import (
 )
 
 func pageHandle(p IPage) error {
-	isReq, isOK, urlstr, err := p.Auth()
-	if isReq && !isOK {
-		if urlstr != "" {
-			u, _ := url.Parse(urlstr)
-			if err == nil {
-				err = errors.New("page auth failed")
+	uri, err := p.Auth()
+	if uri != "" || err != nil {
+		if uri != "" && err != nil {
+			// add msg=? after url
+			var u *url.URL
+			u, err = url.Parse(uri)
+			if err != nil {
+				return err
 			}
 			if u.RawQuery == "" {
 				u.RawQuery = "msg=" + url.PathEscape(err.Error())
 			} else {
 				u.RawQuery += "&msg=" + url.PathEscape(err.Error())
 			}
-
-			http.Redirect(p.GetResponseWriter(), p.GetRequest(), u.String(), http.StatusSeeOther)
+			uri = u.String()
+		} else if err != nil {
+			uri = "/error?msg=" + url.PathEscape(err.Error())
 		}
+		http.Redirect(p.GetResponseWriter(), p.GetRequest(), uri, http.StatusSeeOther)
 		return nil
 	}
-
-	// p.RunBefore()
 
 	if TryCache(p) {
 		log.App.Debug("Page Cache", p.GetRequest().URL.String())

@@ -9,7 +9,7 @@ import (
 	"github.com/kere/gno/libs/util"
 )
 
-func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) error {
+func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (err error) {
 	uri := req.URL.Path
 
 	var item openapiItem
@@ -17,6 +17,19 @@ func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Para
 	if item, isok = openapiMap[uri]; !isok {
 		// doAPIError(errors.New(uri+" openapi not found"), rw, req)
 		return errors.New(uri + " openapi not found")
+	}
+
+	if RunMode == ModePro {
+		defer func() {
+			if p := recover(); p != nil {
+				str, ok := p.(string)
+				if ok {
+					err = errors.New(str)
+				} else {
+					err = errors.New("panic")
+				}
+			}
+		}()
 	}
 
 	if isReq, err := item.API.Auth(req, ps); isReq && err != nil {
@@ -33,7 +46,7 @@ func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Para
 		}
 	}
 
-	err := authAPIToken(req, src)
+	err = authAPIToken(req, src)
 	if err != nil {
 		return err
 	}

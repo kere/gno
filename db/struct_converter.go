@@ -184,6 +184,7 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 const (
 	tagSkip      = "skip"
 	tagJson      = "json"
+	tagPlus      = "plus"
 	tagCType     = "ctype"
 	tagSkipEmpty = "skipempty"
 	tagAutotime  = "autotime"
@@ -227,6 +228,14 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			value = sc.val.Elem().Field(n).Interface()
 		} else {
 			value = sc.val.Field(n).Interface()
+		}
+
+		// plus field
+		tagplus := field.Tag.Get(tagPlus)
+		if actionType == ActionUpdate && tagplus != "" {
+			// version=version+1
+			datarow[dbField+"="+dbField+"+"+tagplus] = nil
+			continue
 		}
 
 		skipEmpty = field.Tag.Get(tagSkipEmpty)
