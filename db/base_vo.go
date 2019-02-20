@@ -92,12 +92,8 @@ func (b *BaseVO) TxCreate(tx *Tx) error {
 	}
 	ins := NewInsertBuilder(b.Table)
 	_, err := ins.TxInsert(tx, b.target)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	tx.DoError(err)
+	return err
 }
 
 // TxCreateAndReturnID func
@@ -107,12 +103,16 @@ func (b *BaseVO) TxCreateAndReturnID(tx *Tx) (sql.Result, error) {
 	}
 	ins := NewInsertBuilder(b.Table)
 	ins.ReturnID()
-	return ins.TxInsert(tx, b.target)
+	r, err := ins.TxInsert(tx, b.target)
+	tx.DoError(err)
+	return r, err
 }
 
 // TxExists is found
 func (b *BaseVO) TxExists(tx *Tx, where string, params ...interface{}) (bool, error) {
-	return NewExistsBuilder(b.Table).Where(where, params...).TxExists(tx)
+	isok, err := NewExistsBuilder(b.Table).Where(where, params...).TxExists(tx)
+	tx.DoError(err)
+	return isok, err
 }
 
 // Exists is found
@@ -134,7 +134,7 @@ func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, er
 // TxCreateIfNotFound insert data if not found
 // return true if insert
 func (b *BaseVO) TxCreateIfNotFound(tx *Tx, where string, params ...interface{}) (bool, error) {
-	if exists, err := NewExistsBuilder(b.Table).Where(where, params...).TxExists(tx); exists || err != nil {
+	if exists, err := NewExistsBuilder(b.Table).Where(where, params...).TxExists(tx); exists || tx.DoError(err) {
 		return false, err
 	}
 
@@ -152,6 +152,7 @@ func (b *BaseVO) Update(where string, params ...interface{}) error {
 func (b *BaseVO) TxUpdate(tx *Tx, where string, params ...interface{}) error {
 	u := NewUpdateBuilder(b.Table)
 	_, err := u.Where(where, params...).TxUpdate(tx, b.target)
+	tx.DoError(err)
 	return err
 }
 
@@ -187,6 +188,7 @@ func (b *BaseVO) Delete(where string, params ...interface{}) error {
 func (b *BaseVO) TxDelete(tx *Tx, where string, params ...interface{}) error {
 	d := NewDeleteBuilder(b.Table)
 	_, err := d.Where(where, params...).TxDelete(tx)
+	tx.DoError(err)
 	return err
 }
 

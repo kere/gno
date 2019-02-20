@@ -2,6 +2,9 @@ package db
 
 import (
 	"database/sql"
+
+	"github.com/kere/gno/libs/log"
+	"github.com/kere/gno/libs/myerr"
 )
 
 type Tx struct {
@@ -16,7 +19,7 @@ func NewTx() *Tx {
 	return &Tx{}
 }
 
-func (t *Tx) Begin() *Tx {
+func (t *Tx) Begin() error {
 	// if t.tx != nil {
 	// 	return t
 	// }
@@ -24,17 +27,18 @@ func (t *Tx) Begin() *Tx {
 	t.conn = Current().Connection.Connect()
 	tx, err := t.conn.Begin()
 	if err != nil {
-		Current().Log.Error(err)
-		return nil
+		t.IsError = true
+		log.App.Alert(err).Stack()
+		return err
 	}
 	t.tx = tx
 	t.IsError = false
-	return t
+	return nil
 }
 
 func (t *Tx) FindOne(cls IVO, item *SqlState) (IVO, error) {
 	r, err := t.Find(cls, item)
-	if err != nil {
+	if t.DoError(err) {
 		return nil, err
 	}
 
@@ -47,7 +51,7 @@ func (t *Tx) FindOne(cls IVO, item *SqlState) (IVO, error) {
 
 func (t *Tx) QueryOne(item *SqlState) (DataRow, error) {
 	r, err := t.Query(item)
-	if err != nil {
+	if t.DoError(err) {
 		return nil, err
 	}
 
@@ -60,7 +64,7 @@ func (t *Tx) QueryOne(item *SqlState) (DataRow, error) {
 
 func (t *Tx) Exists(item *SqlState) (bool, error) {
 	r, err := t.Query(item)
-	if err != nil {
+	if t.DoError(err) {
 		return false, err
 	}
 	return len(r) > 0, nil
@@ -174,26 +178,38 @@ func (t *Tx) close() error {
 	return t.conn.Close()
 }
 
-func (t *Tx) End() bool {
-	defer t.close()
-	return t.Commit()
-}
-
-func (t *Tx) Commit() bool {
-	if t.IsError {
-		return false
-	}
-	if err := t.tx.Commit(); err != nil {
-		panic(err)
-	}
-
-	return true
-}
-
-func (t *Tx) DoError(err error) bool {
+func (t *Tx) End() error {
+	err := t.Commit()
 	if err != nil {
-		Current().Log.Error(err)
-		t.tx.Rollback()
+		return err
+	}
+	return t.close()
+}
+
+func (t *Tx) Commit() error {
+	if t.IsError {
+		return nil
+	}
+	err := t.tx.Commit()
+	if err != nil {
+		log.App.Alert(err)
+	}
+	return err
+}
+
+// DoError tx
+func (t *Tx) DoError(err error) bool {
+	if t.IsError {
+		return true
+	}
+
+	if err != nil {
+		myerr.New(err).Log().Stack()
+		err2 := t.tx.Rollback()
+		if err2 != nil {
+			log.App.Alert(err2, "rollback faield")
+			return true
+		}
 		t.IsError = true
 		t.LastError = err
 		return true
@@ -201,6 +217,7 @@ func (t *Tx) DoError(err error) bool {
 	return false
 }
 
+// Rollback err
 func (t *Tx) Rollback() error {
 	return t.tx.Rollback()
 }

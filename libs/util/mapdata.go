@@ -358,6 +358,9 @@ func (dr MapData) Strings(field string) []string {
 		return v
 	case string, []byte:
 		s := dr.String(field)
+		if s == "" {
+			return []string{}
+		}
 		return strings.Split(s, ",")
 	default:
 		return []string{}

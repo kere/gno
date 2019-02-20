@@ -93,6 +93,7 @@ func (sc *StructConverter) buildFieldInfo() {
 	}
 }
 
+// DBFields f
 func (sc *StructConverter) DBFields() [][]byte {
 	if len(sc.dbfields) == 0 {
 		sc.buildFieldInfo()
@@ -100,6 +101,7 @@ func (sc *StructConverter) DBFields() [][]byte {
 	return sc.dbfields
 }
 
+// Fields f
 func (sc *StructConverter) Fields() []*StructField {
 	if len(sc.fields) == 0 {
 		sc.buildFieldInfo()
@@ -107,10 +109,12 @@ func (sc *StructConverter) Fields() []*StructField {
 	return sc.fields
 }
 
+// KeyValueList f
 func (sc *StructConverter) KeyValueList(stype string) ([][]byte, []interface{}, [][]byte) {
 	return keyValueList(stype, sc.target)
 }
 
+//DataRow2Struct f
 func (sc *StructConverter) DataRow2Struct(datarow DataRow) (IVO, error) {
 	rowStruct := reflect.New(sc.GetTypeElem())
 	err := datarow.CopyToVO(rowStruct.Interface().(IVO))
@@ -120,6 +124,7 @@ func (sc *StructConverter) DataRow2Struct(datarow DataRow) (IVO, error) {
 	return (rowStruct.Interface()).(IVO), nil
 }
 
+// DataSet2Struct f
 func (sc *StructConverter) DataSet2Struct(dataset DataSet) (VODataSet, error) {
 	result := VODataSet{}
 	var err error
@@ -143,9 +148,6 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 	}
 
 	switch fieldTyp.Type.Kind() {
-	case reflect.Ptr:
-		return val.Field(n).IsNil()
-
 	case reflect.Map, reflect.Slice, reflect.Array:
 		if val.Field(n).Len() == 0 {
 			return true
@@ -156,9 +158,6 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 		}
 
 		return !val.Field(n).IsValid()
-
-	case reflect.Interface:
-		return val.Field(n).IsNil()
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return val.Field(n).Int() == 0
@@ -174,7 +173,7 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 
 	default:
 		s := fmt.Sprint(val.Field(n).Interface())
-		if s == "" || s == "0" {
+		if s == vNil || s == "" || s == "0" {
 			return true
 		}
 	}
@@ -184,11 +183,14 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 const (
 	tagSkip      = "skip"
 	tagJson      = "json"
-	tagPlus      = "plus"
-	tagCType     = "ctype"
 	tagSkipEmpty = "skipempty"
-	tagAutotime  = "autotime"
-	vTrue        = "true"
+	tagType      = "type"
+	typTime      = "time"
+	typAutoTime  = "autotime"
+	typPlus      = "plus"
+	typPlus1     = "plus1"
+	typVersion   = "version"
+	vNil         = "<nil>"
 	vAll         = "all"
 	vBaseVO      = "BaseVO"
 )
@@ -199,8 +201,10 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 
 	l := typ.NumField()
 
-	var skipTag, skipEmpty, autotime string
+	var skipTag, skipEmpty, tagtyp string
 	var value interface{}
+	var fieldVal reflect.Value
+	isupdate := actionType == "update"
 
 	datarow := DataRow{}
 
@@ -216,37 +220,47 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 		}
 
 		skipTag = field.Tag.Get(tagSkip)
-		if actionType != "" && skipTag == actionType {
-			continue
-		}
-
-		if skipTag == vAll {
+		if skipTag == vAll || (actionType != "" && skipTag == actionType) {
 			continue
 		}
 
 		if sc.val.Kind() == reflect.Ptr {
-			value = sc.val.Elem().Field(n).Interface()
+			fieldVal = sc.val.Elem().Field(n)
 		} else {
-			value = sc.val.Field(n).Interface()
+			fieldVal = sc.val.Field(n)
+		}
+		value = fieldVal.Interface()
+
+		tagtyp = field.Tag.Get(tagType)
+		switch tagtyp {
+		case typTime:
+			v := value.(time.Time)
+			if v.IsZero() {
+				value = nil
+			}
+		case typAutoTime:
+			v := value.(time.Time)
+			if v.IsZero() {
+				value = time.Now()
+			}
+		case typPlus:
+			if isupdate {
+				datarow[dbField+"="+dbField+"+"+fmt.Sprint(value)] = nil
+			}
+			continue
+		case typPlus1:
+			if isupdate {
+				datarow[dbField+"="+dbField+"+1"] = nil
+			}
+			continue
 		}
 
-		// plus field
-		tagplus := field.Tag.Get(tagPlus)
-		if actionType == ActionUpdate && tagplus != "" {
-			// version=version+1
-			datarow[dbField+"="+dbField+"+"+tagplus] = nil
-			continue
+		if fieldVal.Kind() == reflect.Ptr && fmt.Sprint(fieldVal) == vNil {
+			value = nil
 		}
 
 		skipEmpty = field.Tag.Get(tagSkipEmpty)
-		autotime = field.Tag.Get(tagAutotime)
-		if (autotime == vTrue || autotime == actionType) && field.Type.String() == "time.Time" && (value.(time.Time)).IsZero() {
-			// ------- time zone --------
-			datarow[dbField] = time.Now()
-			continue
-		}
-
-		if (skipEmpty == "" || skipEmpty == "all" || skipEmpty == actionType) && sc.isEmpty(field, n) {
+		if (skipEmpty == "all" || skipEmpty == actionType) && (value == nil || sc.isEmpty(field, n)) {
 			continue
 		}
 

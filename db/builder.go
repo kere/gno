@@ -60,6 +60,7 @@ func keyValueList(actionType string, data interface{}) (keys [][]byte, values []
 				if strings.IndexByte(k, B_Equal[0]) > 0 {
 					keys[i] = []byte(k)
 				} else {
+					// field=NULL
 					keys[i] = []byte(database.Driver.QuoteField(k))
 					keys[i] = append(keys[i], B_Equal[0])
 					keys[i] = append(keys[i], BNull...)

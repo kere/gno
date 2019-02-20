@@ -9,6 +9,7 @@ import (
 
 	"github.com/kere/gno/db/drivers"
 	"github.com/kere/gno/libs/conf"
+	"github.com/kere/gno/libs/myerr"
 )
 
 var (
@@ -153,11 +154,11 @@ func CQuery(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, myerr.New(err).Log().Stack()
 	}
 	dataset, err := ScanRows(rows)
 	if err != nil {
-		return nil, err
+		return nil, myerr.New(err).Log().Stack()
 	}
 
 	return dataset, nil
@@ -177,7 +178,7 @@ func CQueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, e
 
 	s, err := conn.Prepare(sqlstring)
 	if err != nil {
-		return nil, err
+		return nil, myerr.New(err).Log().Stack()
 	}
 
 	defer s.Close()
@@ -188,12 +189,12 @@ func CQueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, e
 		rows, err = s.Query(args...)
 	}
 	if err != nil {
-		return nil, err
+		return nil, myerr.New(err).Log().Stack()
 	}
 
 	dataset, err := ScanRows(rows)
 	if err != nil {
-		return nil, err
+		return nil, myerr.New(err).Log().Stack()
 	}
 
 	return dataset, nil
@@ -218,14 +219,14 @@ func CQueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, e
 // 	return NewStructConvert(cls).DataSet2Struct(dataset)
 // }
 
-// Excute sql from a file
+// ExecFromFile sql from a file
 // This function run sql under not transaction mode and use the current database from database bool
 func ExecFromFile(file string) error {
 	var filebytes []byte
 	var err error
 
 	if filebytes, err = ioutil.ReadFile(file); err != nil {
-		return err
+		return myerr.New(err).Log().Stack()
 	}
 	conn := Current().Connection.Connect()
 	b := bytes.Split(filebytes, []byte(";"))
@@ -236,45 +237,46 @@ func ExecFromFile(file string) error {
 
 		_, err = Exec(conn, i)
 		if err != nil {
-			return err
+			return myerr.New(err).Log().Stack()
 		}
 	}
 	return nil
 }
 
-// Excute sql.
+// Exec sql.
 // If your has more than on sql command, it will only excute the first.
 // This function use the current database from database bool
-func Exec(conn *sql.DB, sqlstr []byte, args ...interface{}) (sql.Result, error) {
+func Exec(conn *sql.DB, sqlstr []byte, args ...interface{}) (result sql.Result, err error) {
 	sqlstring := string(sqlstr)
 	Current().Log.Sql(sqlstr, args)
 
 	if len(args) == 0 {
-		return conn.Exec(sqlstring)
+		result, err = conn.Exec(sqlstring)
 	} else {
-		return conn.Exec(sqlstring, args...)
+		result, err = conn.Exec(sqlstring, args...)
 	}
-
+	return result, myerr.New(err).Log().Stack()
 }
 
-// Excute sql on prepare mode
+// ExecPrepare sql on prepare mode
 // This function use the current database from database bool
-func ExecPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (sql.Result, error) {
+func ExecPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (result sql.Result, err error) {
 	sqlstring := string(sqlstr)
 	Current().Log.Sql(sqlstr, args)
 
 	s, err := conn.Prepare(sqlstring)
 	if err != nil {
-		return nil, err
+		return nil, myerr.New(err).Log().Stack()
 	}
 
 	defer s.Close()
 
 	if len(args) == 0 {
-		return s.Exec()
+		result, err = s.Exec()
 	} else {
-		return s.Exec(args...)
+		result, err = s.Exec(args...)
 	}
+	return result, myerr.New(err).Log().Stack()
 }
 
 // Get a database instance by name from database pool
@@ -282,7 +284,7 @@ func Get(name string) *Database {
 	return dbpool.GetDatabase(name)
 }
 
-// Return the current database from database pool
+//Current Return the current database from database pool
 func Current() *Database {
 	if dbpool.Current() == nil {
 		panic("db is not initalized")

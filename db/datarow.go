@@ -553,6 +553,10 @@ func (dr DataRow) Strings(field string) []string {
 	case string, []byte:
 
 		s := dr.String(field)
+		if s == "" {
+			return []string{}
+		}
+
 		l := len(s)
 		if l > 0 && Current().Driver.DriverName() == drivers.DriverPSQL {
 			if s[:1] == "{" && s[l-1:l] == "}" {
