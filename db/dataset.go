@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"reflect"
+	"sort"
 )
 
 // DataSet datarow list
@@ -249,8 +250,13 @@ func NewDataSetSorted(dataset DataSet, field string) DataSetSorted {
 }
 
 // Sort sort.Interface.
-func (s *DataSetSorted) Sort() int {
-	return len(s.dataset)
+func (s *DataSetSorted) Sort() {
+	sort.Sort(s)
+}
+
+// Reverse sort.Interface.
+func (s *DataSetSorted) Reverse() {
+	sort.Reverse(s)
 }
 
 // Len is part of sort.Interface.

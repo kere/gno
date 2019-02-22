@@ -23,6 +23,8 @@ const (
 var (
 	// DateTimeFormat = 2018-08-27 21:24:08.097823 +0000 GMT
 	DateTimeFormat = "2006-01-02 15:04:05 -0700 MST"
+	// DTFormat not with time zone
+	DTFormat = "2006-01-02 15:04:05"
 
 	bSQLSelect = []byte("select ")
 	bSQLDelete = []byte("delete ")
