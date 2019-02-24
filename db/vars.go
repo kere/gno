@@ -14,13 +14,19 @@ const (
 	ActionUpdate = "update"
 	// ActionInsert insert
 	ActionInsert = "insert"
-
+	// timeClassName s
 	timeClassName = "time.Time"
-
+	// ColumnBytePrefix prefix
 	ColumnBytePrefix = "byte_"
+	//FieldCount count
+	FieldCount = "count"
+	//FieldJSON json
+	FieldJSON = "json"
 )
 
 var (
+	bPGReturning = []byte(" RETURNING id")
+	sPGReturning = " RETURNING id"
 	// DateTimeFormat = 2018-08-27 21:24:08.097823 +0000 GMT
 	DateTimeFormat = "2006-01-02 15:04:05 -0700 MST"
 	// DTFormat not with time zone
@@ -36,12 +42,25 @@ var (
 	bSQLLimit  = []byte(" limit ")
 	bSQLOffset = []byte(" offset ")
 
-	B_QuestionMark = []byte("?")
-	BNull          = []byte("NULL")
-	B_Equal        = []byte("=")
+	// BDoller $
+	BDoller = []byte("$")
+	//BQuestionMark ?
+	BQuestionMark = []byte("?")
+	// BNull null
+	BNull = []byte("NULL")
+	// BEqual =
+	BEqual = []byte("=")
 
-	BCommaSplit  = []byte(",")
+	//BCommaSplit ,
+	BCommaSplit = []byte(",")
+	//SCommaSplit ,
+	SCommaSplit = ","
+	// BEmptyString ''
 	BEmptyString = []byte("")
-	BStarKey     = []byte("*")
-	BSpace       = []byte(" ")
+	//BStarKey *
+	BStarKey = []byte("*")
+	//BSpace ' '
+	BSpace = []byte(" ")
+	// SQuot ''
+	SQuot = "'"
 )

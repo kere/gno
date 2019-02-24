@@ -7,6 +7,7 @@ import (
 	"github.com/kere/gno/libs/myerr"
 )
 
+//Tx class
 type Tx struct {
 	builder
 	conn      *sql.DB
@@ -15,16 +16,18 @@ type Tx struct {
 	LastError error
 }
 
+// NewTx tx
 func NewTx() *Tx {
 	return &Tx{}
 }
 
+// Begin tx
 func (t *Tx) Begin() error {
 	// if t.tx != nil {
 	// 	return t
 	// }
 
-	t.conn = Current().Connection.Connect()
+	t.conn = t.GetDatabase().Connection.Connect()
 	tx, err := t.conn.Begin()
 	if err != nil {
 		t.IsError = true
@@ -36,57 +39,54 @@ func (t *Tx) Begin() error {
 	return nil
 }
 
-func (t *Tx) FindOne(cls IVO, item *SqlState) (IVO, error) {
-	r, err := t.Find(cls, item)
+// func (t *Tx) FindOne(cls IVO, item *SqlState) (IVO, error) {
+// 	r, err := t.Find(cls, item)
+// 	if t.DoError(err) {
+// 		return nil, err
+// 	}
+//
+// 	if len(r) > 0 {
+// 		return r[0], nil
+// 	} else {
+// 		return nil, nil
+// 	}
+// }
+
+// QueryOne tx
+func (t *Tx) QueryOne(sql string, args ...interface{}) (DataRow, error) {
+	r, err := t.Query(sql, args...)
 	if t.DoError(err) {
 		return nil, err
 	}
 
 	if len(r) > 0 {
 		return r[0], nil
-	} else {
-		return nil, nil
 	}
+	return nil, nil
 }
 
-func (t *Tx) QueryOne(item *SqlState) (DataRow, error) {
-	r, err := t.Query(item)
-	if t.DoError(err) {
-		return nil, err
-	}
-
-	if len(r) > 0 {
-		return r[0], nil
-	} else {
-		return nil, nil
-	}
-}
-
-func (t *Tx) Exists(item *SqlState) (bool, error) {
-	r, err := t.Query(item)
+// Exists db
+func (t *Tx) Exists(sql string, args ...interface{}) (bool, error) {
+	r, err := t.Query(sql, args...)
 	if t.DoError(err) {
 		return false, err
 	}
 	return len(r) > 0, nil
 }
 
-func (t *Tx) Query(s *SqlState) (DataSet, error) {
+// Query db tx
+func (t *Tx) Query(sqlstr string, args ...interface{}) (DataSet, error) {
 	if t.IsError {
 		return nil, nil
 	}
 
-	// sqlstr := string(t.database.AdaptSql(item.Sql))
-	database := Current()
-	bsqlstr := s.GetSql()
-
-	database.Log.Sql(bsqlstr, s.GetArgs())
-
-	st, err := t.tx.Prepare(string(bsqlstr))
+	t.GetDatabase().Log(sqlstr, args)
+	st, err := t.tx.Prepare(sqlstr)
 	if t.DoError(err) {
 		return nil, err
 	}
 
-	rows, err := st.Query(s.GetArgs()...)
+	rows, err := st.Query(args...)
 	if t.DoError(err) {
 		return nil, err
 	}
@@ -101,41 +101,40 @@ func (t *Tx) Query(s *SqlState) (DataSet, error) {
 	return dataset, nil
 }
 
-func (t *Tx) Find(cls IVO, item *SqlState) (VODataSet, error) {
+// func (t *Tx) Find(cls IVO, item *SqlState) (VODataSet, error) {
+// 	if t.IsError {
+// 		return nil, nil
+// 	}
+//
+// 	// sqlstr := string(t.database.AdaptSql(item.Sql))
+// 	database := Current()
+// 	database.Log.Sql(item.GetSql(), item.GetArgs())
+//
+// 	dataset, err := t.Query(item)
+// 	if t.DoError(err) {
+// 		return nil, err
+// 	}
+//
+// 	return NewStructConvert(cls).DataSet2Struct(dataset)
+// }
+
+// Exec db
+func (t *Tx) Exec(sqlstr string, args ...interface{}) (sql.Result, error) {
 	if t.IsError {
 		return nil, nil
 	}
-
 	// sqlstr := string(t.database.AdaptSql(item.Sql))
-	database := Current()
-	database.Log.Sql(item.GetSql(), item.GetArgs())
+	t.GetDatabase().Log(sqlstr, args)
 
-	dataset, err := t.Query(item)
-	if t.DoError(err) {
-		return nil, err
-	}
-
-	return NewStructConvert(cls).DataSet2Struct(dataset)
-}
-
-func (t *Tx) Exec(s *SqlState) (sql.Result, error) {
-	if t.IsError {
-		return nil, nil
-	}
-	// sqlstr := string(t.database.AdaptSql(item.Sql))
-	database := Current()
-	bsqlstr := s.GetSql()
-
-	database.Log.Sql(bsqlstr, s.GetArgs())
-
-	r, err := t.tx.Exec(string(bsqlstr), s.GetArgs()...)
+	r, err := t.tx.Exec(sqlstr, args...)
 	if t.DoError(err) {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (t *Tx) LastInsertId(table, pkey string) int64 {
+// LastInsertID return lastid
+func (t *Tx) LastInsertID(table, pkey string) int64 {
 	if t.IsError {
 		return -1
 	}
@@ -149,25 +148,22 @@ func (t *Tx) LastInsertId(table, pkey string) int64 {
 	return count
 }
 
-func (t *Tx) ExecPrepare(s *SqlState) (sql.Result, error) {
+// ExecPrepare db
+func (t *Tx) ExecPrepare(sqlstr string, args ...interface{}) (sql.Result, error) {
 	if t.IsError {
 		return nil, nil
 	}
+	t.GetDatabase().Log(sqlstr, args)
 	// sqlstr := string(t.database.AdaptSql(item.Sql))
-	database := Current()
-	bsqlstr := s.GetSql()
-
-	database.Log.Sql(bsqlstr, s.GetArgs())
-
-	sqlstr := string(bsqlstr)
 	st, err := t.tx.Prepare(sqlstr)
 	if t.DoError(err) {
 		return nil, err
 	}
-	r, err := st.Exec(s.GetArgs()...)
+	r, err := st.Exec(args...)
 	if t.DoError(err) {
 		return nil, err
 	}
+
 	return r, nil
 }
 
@@ -178,6 +174,7 @@ func (t *Tx) close() error {
 	return t.conn.Close()
 }
 
+// End func
 func (t *Tx) End() error {
 	err := t.Commit()
 	if err != nil {
@@ -186,6 +183,7 @@ func (t *Tx) End() error {
 	return t.close()
 }
 
+// Commit func
 func (t *Tx) Commit() error {
 	if t.IsError {
 		return nil

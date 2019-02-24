@@ -3,9 +3,10 @@ package drivers
 import "reflect"
 
 const (
-	DriverPSQL   = "postgres"
-	DriverMySQL  = "mysql"
-	DriverSqlite = "sqlite"
+	DriverPSQL    = "postgres"
+	DriverMySQL   = "mysql"
+	DriverSqlite  = "sqlite"
+	sQuestionMark = "?"
 )
 
 var (
@@ -14,19 +15,20 @@ var (
 	b_BRACKET_LEFT  = []byte("[")
 	b_BRACKET_RIGHT = []byte("]")
 	b_COMMA         = []byte(",")
-	b_Dollar        = []byte("$")
-	B_QuestionMark  = []byte("?")
+	bDollar         = []byte("$")
+	BQuestionMark   = []byte("?")
 	b_Quote         = []byte("'")
 	b_DoubleQuote   = []byte("\"")
 	bZero           = []byte("0")
 	bNaN            = []byte("NaN")
 )
 
+// Common class
 type Common struct {
 	connect string
 }
 
-func (c *Common) AdaptSql(b []byte) []byte {
+func (c *Common) Adapt(b string, n int) string {
 	return b
 }
 
@@ -54,22 +56,22 @@ func (c *Common) ParseStringSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-func (this *Common) FlatData(typ reflect.Type, v interface{}) interface{} {
+func (c *Common) FlatData(typ reflect.Type, v interface{}) interface{} {
 	return nil
 }
 
-func (this *Common) ParseNumberSlice(src []byte, ptr interface{}) error {
+func (c *Common) ParseNumberSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-func (this *Common) StringSlice(src []byte) ([]string, error) {
+func (c *Common) StringSlice(src []byte) ([]string, error) {
 	return nil, nil
 }
 
-func (this *Common) HStore(src []byte) (map[string]string, error) {
+func (c *Common) HStore(src []byte) (map[string]string, error) {
 	return nil, nil
 }
 
-func (this *Common) DriverName() string {
+func (c *Common) Name() string {
 	return ""
 }

@@ -9,6 +9,7 @@ import (
 
 var cacheIns cache.ICache
 
+// SetCache f
 func SetCache(c cache.ICache) {
 	cacheIns = c
 }

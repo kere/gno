@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unsafe"
 )
 
 var (
@@ -20,6 +21,11 @@ func PathToURL(items ...string) string {
 		return s
 	}
 	return strings.Replace(s, "\\", "/", -1)
+}
+
+// BytesToStr bytes convert to string
+func BytesToStr(s []byte) string {
+	return *(*string)(unsafe.Pointer(&s))
 }
 
 // RandStr 生成任意长度的字符串

@@ -36,22 +36,24 @@ func NewInsertBuilder(t string) *InsertBuilder {
 }
 
 // IsPrepare func
-func (q *InsertBuilder) IsPrepare(v bool) *InsertBuilder {
-	q.isPrepare = v
-	return q
+func (ins *InsertBuilder) IsPrepare(v bool) *InsertBuilder {
+	ins.isPrepare = v
+	return ins
 }
 
 // ReturnID func
-func (q *InsertBuilder) ReturnID() *InsertBuilder {
-	q.isReturnID = true
-	return q
+func (ins *InsertBuilder) ReturnID() *InsertBuilder {
+	ins.isReturnID = true
+	return ins
 }
 
-func (q *InsertBuilder) GetIsPrepare() bool {
-	return q.isPrepare
+// GetIsPrepare get
+func (ins *InsertBuilder) GetIsPrepare() bool {
+	return ins.isPrepare
 }
 
-func (ins *InsertBuilder) AddExcludeFields(fields ...string) *InsertBuilder {
+// AddSkipFields skip fields
+func (ins *InsertBuilder) AddSkipFields(fields ...string) *InsertBuilder {
 	if ins.excludeFields == nil {
 		ins.excludeFields = make([]string, 0)
 	}
@@ -60,27 +62,34 @@ func (ins *InsertBuilder) AddExcludeFields(fields ...string) *InsertBuilder {
 	return ins
 }
 
+// Table string
 func (ins *InsertBuilder) Table(t string) *InsertBuilder {
 	ins.table = t
 	return ins
 }
 
-var b_PG_RETURNING = []byte(" RETURNING id")
+var (
+	insInto     = []byte("insert into ")
+	insVal1     = []byte(" (")
+	insVal2     = []byte(") values ")
+	insBracketL = []byte("(")
+	insBracketR = []byte(")")
+)
 
-func (ins *InsertBuilder) parseM(rows DataSet) []byte {
+func (ins *InsertBuilder) parseM(rows DataSet) string {
 	size := len(rows)
 	if size == 0 {
-		return nil
+		return ""
 	}
 
-	keys, _, _ := keyValueList("insert", rows[0])
+	keys, _, _ := keyValueList(ActionInsert, rows[0])
 	s := bytes.Buffer{}
-	driver := ins.getDatabase().Driver
-	s.WriteString("insert into ")
+	driver := ins.GetDatabase().Driver
+	s.Write(insInto)
 	s.WriteString(driver.QuoteField(ins.table))
-	s.WriteString(" (")
+	s.Write(insVal1)
 	s.Write(bytes.Join(keys, BCommaSplit))
-	s.WriteString(") values ")
+	s.Write(insVal2)
 
 	// length := len(keys)
 	var values []string
@@ -91,8 +100,8 @@ func (ins *InsertBuilder) parseM(rows DataSet) []byte {
 	var k int
 
 	for i := 0; i < size; i++ {
-		s.WriteString("(")
-		keys2, values2, _ = keyValueList("insert", rows[i])
+		s.Write(insBracketL)
+		keys2, values2, _ = keyValueList(ActionInsert, rows[i])
 		// 顺序原因，需要重新定位
 		values = make([]string, 0)
 		for _, key = range keys {
@@ -100,9 +109,9 @@ func (ins *InsertBuilder) parseM(rows DataSet) []byte {
 				if string(key) == string(key2) {
 					switch values2[k].(type) {
 					case time.Time:
-						values = append(values, fmt.Sprintf("'%s'", (values2[k].(time.Time)).Format(time.RFC1123)))
+						values = append(values, SQuot+(values2[k].(time.Time)).Format(time.RFC1123)+SQuot)
 					case string, []byte:
-						values = append(values, "'"+fmt.Sprint(values2[k])+"'")
+						values = append(values, SQuot+fmt.Sprint(values2[k])+SQuot)
 					default:
 						values = append(values, fmt.Sprint(values2[k]))
 					}
@@ -110,55 +119,50 @@ func (ins *InsertBuilder) parseM(rows DataSet) []byte {
 				}
 			}
 		}
-		s.WriteString(strings.Join(values, ","))
-		s.WriteString(")")
+		s.WriteString(strings.Join(values, SCommaSplit))
+		s.Write(insBracketR)
 		if i < size-1 {
-			s.WriteString(",")
+			s.Write(BCommaSplit)
 		}
 	}
 
-	return s.Bytes()
+	return s.String()
 }
 
-func (ins *InsertBuilder) parse(data interface{}) ([]byte, []interface{}) {
-	keys, values, stmts := keyValueList("insert", data)
+func (ins *InsertBuilder) parse(data interface{}) (string, []interface{}) {
+	keys, values, stmts := keyValueList(ActionInsert, data)
 
 	s := bytes.Buffer{}
-	driver := ins.getDatabase().Driver
-	s.WriteString("insert into ")
+	driver := ins.GetDatabase().Driver
+	s.Write(insInto)
 	s.WriteString(driver.QuoteField(ins.table))
-	s.WriteString(" (")
+	s.Write(insVal1)
 	s.Write(bytes.Join(keys, BCommaSplit))
-	s.WriteString(") values (")
+	s.Write(insVal2)
+	s.Write(insBracketL)
 	s.Write(bytes.Join(stmts, BCommaSplit))
-	s.WriteString(")")
+	s.Write(insBracketR)
 
-	return s.Bytes(), values
+	return s.String(), values
 }
 
-func (ins *InsertBuilder) SqlState(data interface{}) *SqlState {
-	sql, args := ins.parse(data)
-	return NewSqlState(sql, args...)
-}
-
+// Insert db
 func (ins *InsertBuilder) Insert(data interface{}) (sql.Result, error) {
-	s := ins.SqlState(data)
-
-	cdb := ins.getDatabase()
+	cdb := ins.GetDatabase()
+	sql, vals := ins.parse(data)
 	if ins.isPrepare {
-		return cdb.ExecPrepare(s)
+		return cdb.ExecPrepare(sql, vals...)
 	}
-
-	return cdb.Exec(s)
+	return cdb.Exec(sql, vals...)
 }
 
-// InsertM
+// InsertM func
 func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 	size := 500
 	n := len(rows)
 	if n <= size {
-		ss := NewSqlState(ins.parseM(rows))
-		return ins.getDatabase().Exec(ss)
+		sql, vals := ins.parse(rows)
+		return ins.GetDatabase().Exec(sql, vals...)
 	}
 
 	// pagination
@@ -175,7 +179,7 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 				tmp = append(tmp, rows[k])
 			}
 
-			sqlR, err = ins.getDatabase().Exec(NewSqlState(ins.parseM(tmp)))
+			sqlR, err = ins.GetDatabase().Exec(ins.parseM(tmp))
 			if err != nil {
 				return sqlR, err
 			}
@@ -183,7 +187,7 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 			for k = 0; k < size; k++ {
 				tmp = append(tmp, rows[size*i+k])
 			}
-			sqlR, err = ins.getDatabase().Exec(NewSqlState(ins.parseM(tmp)))
+			sqlR, err = ins.GetDatabase().Exec(ins.parseM(tmp))
 			if err != nil {
 				return sqlR, err
 			}
@@ -195,38 +199,38 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 
 // TxInsert return sql.Result transation
 func (ins *InsertBuilder) TxInsert(tx *Tx, data interface{}) (sql.Result, error) {
-	s := ins.SqlState(data)
-	cdb := ins.getDatabase()
-	if ins.isReturnID && cdb.Driver.DriverName() == "postgres" {
-		s.SetSql(append(s.GetSql(), b_PG_RETURNING...))
+	sql, vals := ins.parse(data)
+	if ins.isReturnID && tx.GetDatabase().Driver.Name() == "postgres" {
+		// s.SetSql(append(s.GetSql(), bPGReturning...))
+		sql = sql + sPGReturning
 
-		r, err := tx.Query(s)
+		r, err := tx.Query(sql, vals...)
 		if err != nil {
 			return nil, err
 		}
 		return &insResult{r[0].Int64("id"), 1}, nil
 	}
 	if ins.isPrepare {
-		return tx.ExecPrepare(s)
+		return tx.ExecPrepare(sql, vals...)
 	}
-	return tx.Exec(s)
+	return tx.Exec(sql, vals...)
 }
 
 // LastInsertId return int
 // func (ins *InsertBuilder) LastInsertId(pkey string) int {
 // 	if ins.conn == nil {
-// 		ins.getDatabase().Log.Warn("InsertBuider conn is nil")
+// 		ins.GetDatabase().Log.Warn("InsertBuider conn is nil")
 // 		return -1
 // 	}
 //
 // 	dataset, err := Query(ins.conn, "SELECT LAST_INSERT_ID() as count")
 // 	if err != nil || dataset.IsEmpty() {
-// 		ins.getDatabase().Log.Error(err)
+// 		ins.GetDatabase().Log.Error(err)
 // 		return -1
 // 	}
 // 	id, err := strconv.ParseInt(dataset[0].String("count"), 10, 64)
 // 	if err != nil {
-// 		ins.getDatabase().Log.Error(err)
+// 		ins.GetDatabase().Log.Error(err)
 // 		return -1
 // 	}
 // 	return int(id)

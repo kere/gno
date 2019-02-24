@@ -190,6 +190,7 @@ func (dr DataRow) Bytes2NumericByFields(fields []string) DataRow {
 	return dr
 }
 
+// Bytes2NumericBySubfix func
 func (dr DataRow) Bytes2NumericBySubfix(subfix string) DataRow {
 	nn := len(subfix)
 	for k := range dr {
@@ -502,14 +503,17 @@ func (dr DataRow) IntsDefault(field string, v []int) []int {
 	return dr.Ints(field)
 }
 
+//ParseNumberSlice err
 func (dr DataRow) ParseNumberSlice(field string, ptr interface{}) error {
 	return Current().Driver.ParseNumberSlice(dr.Bytes(field), ptr)
 }
 
+//ParseStringSlice err
 func (dr DataRow) ParseStringSlice(field string, ptr interface{}) error {
 	return Current().Driver.ParseStringSlice(dr.Bytes(field), ptr)
 }
 
+// Floats []float64
 func (dr DataRow) Floats(field string) []float64 {
 	switch dr[field].(type) {
 	case []float64:
@@ -558,7 +562,7 @@ func (dr DataRow) Strings(field string) []string {
 		}
 
 		l := len(s)
-		if l > 0 && Current().Driver.DriverName() == drivers.DriverPSQL {
+		if l > 0 && Current().Driver.Name() == drivers.DriverPSQL {
 			if s[:1] == "{" && s[l-1:l] == "}" {
 				if arr, err := Current().Driver.StringSlice([]byte(s)); err == nil {
 					return arr
@@ -588,7 +592,7 @@ func (dr DataRow) DataRow(field string) DataRow {
 
 	case []byte, string:
 		v := make(map[string]interface{}, 0)
-		dr.JsonParse(field, &v)
+		dr.JSONParse(field, &v)
 		return DataRow(v)
 
 	default:
@@ -597,6 +601,7 @@ func (dr DataRow) DataRow(field string) DataRow {
 
 }
 
+//DataSet func
 func (dr DataRow) DataSet(field string) DataSet {
 	switch dr[field].(type) {
 	case []DataRow:
@@ -604,7 +609,7 @@ func (dr DataRow) DataSet(field string) DataSet {
 
 	case []byte, string:
 		v := make([]DataRow, 0)
-		dr.JsonParse(field, &v)
+		dr.JSONParse(field, &v)
 		return DataSet(v)
 
 	default:
@@ -613,6 +618,7 @@ func (dr DataRow) DataSet(field string) DataSet {
 
 }
 
+// Hstore dr
 func (dr DataRow) Hstore(field string) map[string]string {
 	switch dr[field].(type) {
 	case map[string]string:
@@ -631,12 +637,9 @@ func (dr DataRow) Hstore(field string) map[string]string {
 
 }
 
-// JsonParse data row to parse json field
-func (dr DataRow) JsonParse(field string, v interface{}) error {
-	if err := json.Unmarshal(dr.Bytes(field), v); err != nil {
-		return err
-	}
-	return nil
+// JSONParse data row to parse jSON field
+func (dr DataRow) JSONParse(field string, v interface{}) error {
+	return json.Unmarshal(dr.Bytes(field), v)
 }
 
 // Time default
@@ -685,7 +688,7 @@ func (dr DataRow) CopyToWithJSON(vo interface{}) error {
 	return json.Unmarshal(src, vo)
 }
 
-// CopyTo func
+// CopyToVO func
 func (dr DataRow) CopyToVO(vo interface{}) error {
 	typ := reflect.TypeOf(vo)
 	if typ.Kind() != reflect.Ptr {
@@ -716,7 +719,7 @@ func (dr DataRow) CopyToVO(vo interface{}) error {
 	for i := 0; i < n; i++ {
 		sf = typ.Field(i)
 
-		field = sf.Tag.Get("json")
+		field = sf.Tag.Get(FieldJSON)
 
 		if field == "" {
 			continue
@@ -733,7 +736,7 @@ func (dr DataRow) CopyToVO(vo interface{}) error {
 			case []byte, string:
 				// data type is json
 				v := reflect.New(sf.Type.Elem())
-				err := dr.JsonParse(field, v.Interface())
+				err := dr.JSONParse(field, v.Interface())
 				if err != nil {
 					return err
 				}
@@ -754,7 +757,7 @@ func (dr DataRow) CopyToVO(vo interface{}) error {
 				case []byte, string:
 					// data type is json
 					v := reflect.New(sf.Type)
-					err := dr.JsonParse(field, v.Interface())
+					err := dr.JSONParse(field, v.Interface())
 					if err != nil {
 						return err
 					}
@@ -771,7 +774,7 @@ func (dr DataRow) CopyToVO(vo interface{}) error {
 			case "map[string]string":
 				val.Field(i).Set(reflect.ValueOf(dr.Hstore(field)))
 
-			case "map[string]interface {}", "db.DataRow":
+			case "db.DataRow", "map[string]interface {}":
 				val.Field(i).Set(reflect.ValueOf(dr.DataRow(field)))
 
 			default:

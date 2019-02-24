@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -11,20 +12,23 @@ const (
 	subfixJSON = "_json"
 )
 
-var ivotype reflect.Type = reflect.TypeOf((*IVO)(nil)).Elem()
+var ivotype = reflect.TypeOf((*IVO)(nil)).Elem()
 
 type builder struct {
-	conn *sql.DB
+	conn     *sql.DB
+	database *Database
 }
 
-func (b *builder) getDatabase() *Database {
-	return Current()
+func (b *builder) GetDatabase() *Database {
+	if b.database != nil {
+		return b.database
+	}
+	b.database = Current()
+	return b.database
 }
 
-// CondParams condition params
-type CondParams struct {
-	Cond string
-	Args []interface{}
+func (b *builder) SetDatabase(d *Database) {
+	b.database = d
 }
 
 // keyValueList
@@ -45,31 +49,30 @@ func keyValueList(actionType string, data interface{}) (keys [][]byte, values []
 	}
 
 	l := len(d)
-	isUpdate := actionType == "update"
+	isUpdate := actionType == ActionUpdate
 	keys = make([][]byte, l)
 	values = make([]interface{}, 0)
 	stmts = make([][]byte, l)
 	database := Current()
-	i := 0
+	i, ii := 0, 1
 	for k, v := range d {
 		typ := reflect.TypeOf(v)
 
 		if isUpdate {
 			if v == nil {
 				// version=version+1
-				if strings.IndexByte(k, B_Equal[0]) > 0 {
+				if strings.IndexByte(k, BEqual[0]) > 0 {
 					keys[i] = []byte(k)
 				} else {
 					// field=NULL
-					keys[i] = []byte(database.Driver.QuoteField(k))
-					keys[i] = append(keys[i], B_Equal[0])
-					keys[i] = append(keys[i], BNull...)
+					arr := append([]byte(database.Driver.QuoteField(k)), '=')
+					keys[i] = append(arr, BNull...)
 				}
 				i++
 				continue
 			} else {
-				keys[i] = []byte(database.Driver.QuoteField(k))
-				keys[i] = append(keys[i], B_Equal[0], B_QuestionMark[0])
+				arr := append([]byte(database.Driver.QuoteField(k)), '=', '$')
+				keys[i] = append(arr, []byte(fmt.Sprint(ii))...)
 			}
 		} else {
 			keys[i] = []byte(database.Driver.QuoteField(k))
@@ -78,7 +81,8 @@ func keyValueList(actionType string, data interface{}) (keys [][]byte, values []
 		if !isUpdate && v == nil {
 			stmts[i] = BNull //insert 时为null
 		} else {
-			stmts[i] = B_QuestionMark
+			stmts[i] = append([]byte("$"), []byte(fmt.Sprint(ii))...)
+			ii++
 		}
 
 		if v != nil && typ.Kind() == reflect.Ptr {

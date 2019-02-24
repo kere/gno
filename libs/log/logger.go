@@ -10,6 +10,12 @@ import (
 	"runtime/debug"
 )
 
+const (
+	sBBreak = "\n\n"
+	backetL = "["
+	backetR = "]"
+)
+
 type emptyWriter struct{}
 
 func (e *emptyWriter) Write(p []byte) (int, error) {
@@ -97,9 +103,9 @@ func (l *Logger) writelog(prefix string, loglevel int, m ...interface{}) *Logger
 		return l
 	}
 
-	l.Logger.SetPrefix(prefix)
-	m = append(m, "\n")
-	l.Logger.Println(m...)
+	// l.Logger.SetPrefix(prefix)
+	// m = append(m, "\n")
+	l.Logger.Println(append([]interface{}{backetL + prefix + backetR}, m...)...)
 
 	return l
 	// if PrintStackLevel < loglevel {
@@ -114,8 +120,8 @@ func (l *Logger) writelogf(prefix string, loglevel int, format string, m []inter
 		return l
 	}
 
-	l.Logger.SetPrefix(prefix)
-	l.Logger.Printf(format+"\n\n", m...)
+	// l.Logger.SetPrefix(prefix)
+	l.Logger.Printf(format+sBBreak, m...)
 
 	return l
 	// if PrintStackLevel < loglevel {
@@ -151,8 +157,7 @@ func (l *Logger) Stack() *Logger {
 
 // Emerg log
 func (l *Logger) Emerg(m ...interface{}) {
-	// l.Logger.SetPrefix("[emerg]")
-	l.Logger.Print("[emerg]")
+	l.Logger.Print(LogEmergStr)
 	l.Logger.Println(m...)
 	l.Write("emergency exit(4)")
 	os.Exit(4)
@@ -160,94 +165,92 @@ func (l *Logger) Emerg(m ...interface{}) {
 
 // Emergf log
 func (l *Logger) Emergf(format string, m ...interface{}) {
-	// l.Logger.SetPrefix("[emerg]")
-
-	l.Logger.Printf("[emerg]"+format, m...)
+	l.Logger.Printf(LogEmergStr+" "+format, m...)
 	l.Write("\nemergency exit(4)")
 	os.Exit(4)
 }
 
 // Alert log
 func (l *Logger) Alert(m ...interface{}) *Logger {
-	return l.writelog("[alert]", LogAlert, m...)
+	return l.writelog(LogAlertStr, LogAlert, m...)
 }
 
 // Alertf log
 func (l *Logger) Alertf(format string, m ...interface{}) *Logger {
-	return l.writelogf("[alert]", LogAlert, format, m)
+	return l.writelogf(LogAlertStr, LogAlert, format, m)
 }
 
 // Crit log
 func (l *Logger) Crit(m ...interface{}) *Logger {
-	return l.writelog("[crit]", LogCrit, m...)
+	return l.writelog(LogCritStr, LogCrit, m...)
 }
 
 // Critf log
 func (l *Logger) Critf(format string, m ...interface{}) *Logger {
-	return l.writelog("[crit]", LogCrit, format, m)
+	return l.writelog(LogCritStr, LogCrit, format, m)
 }
 
 func (l *Logger) Error(m ...interface{}) *Logger {
-	return l.writelog("[err]", LogErr, m...)
+	return l.writelog(LogErrStr, LogErr, m...)
 }
 
 // Errorf log
 func (l *Logger) Errorf(format string, m ...interface{}) *Logger {
-	return l.writelogf("[err]", LogErr, format, m)
+	return l.writelogf(LogErrStr, LogErr, format, m)
 }
 
 // Warn log
 func (l *Logger) Warn(m ...interface{}) *Logger {
-	return l.writelog("[warn]", LogWarning, m...)
+	return l.writelog(LogWarnStr, LogWarn, m...)
 }
 
 // Warnf log
 func (l *Logger) Warnf(format string, m ...interface{}) *Logger {
-	return l.writelogf("[warn]", LogWarning, format, m)
+	return l.writelogf(LogWarnStr, LogWarn, format, m)
 }
 
 // Notice log
 func (l *Logger) Notice(m ...interface{}) *Logger {
-	return l.writelog("[notice]", LogNotice, m...)
+	return l.writelog(LogNoticeStr, LogNotice, m...)
 }
 
 // Noticef log
 func (l *Logger) Noticef(format string, m ...interface{}) *Logger {
-	return l.writelogf("[notice]", LogNotice, format, m)
+	return l.writelogf(LogNoticeStr, LogNotice, format, m)
 }
 
 // Info log
 func (l *Logger) Info(m ...interface{}) *Logger {
-	return l.writelog("[info]", LogInfo, m...)
+	return l.writelog(LogInfoStr, LogInfo, m...)
 }
 
 // Infof log
 func (l *Logger) Infof(format string, m ...interface{}) *Logger {
-	return l.writelogf("[info]", LogInfo, format, m)
+	return l.writelogf(LogInfoStr, LogInfo, format, m)
 }
 
 // Debug log
 func (l *Logger) Debug(m ...interface{}) *Logger {
-	return l.writelog("[debug]", LogDebug, m...)
+	return l.writelog(LogDebugStr, LogDebug, m...)
 }
 
 // Debugf log
 func (l *Logger) Debugf(format string, m ...interface{}) *Logger {
-	return l.writelogf("[debug]", LogDebug, format, m)
+	return l.writelogf(LogDebugStr, LogDebug, format, m)
 }
 
 // Sql log
-func (l *Logger) Sql(sqlstr []byte, args []interface{}) *Logger {
-	if l.level < LogSQL {
-		return l
-	}
+func (l *Logger) Sql(dbname, sqlstr string, args []interface{}) *Logger {
+	// if l.level < LogSQL {
+	// 	return l
+	// }
 
-	for i, item := range args {
-		switch item.(type) {
-		case []byte, []int8:
-			args[i] = string(item.([]byte))
-		}
-	}
+	// for i, item := range args {
+	// 	switch item.(type) {
+	// 	case []byte, []int8:
+	// 		args[i] = string(item.([]byte))
+	// 	}
+	// }
 
-	return l.writelog("[sql]", LogSQL, string(sqlstr), args)
+	return l.writelog(LogSQLStr, LogSQL, backetL+dbname+backetR, sqlstr, args)
 }

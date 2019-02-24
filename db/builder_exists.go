@@ -4,71 +4,72 @@ import (
 	"bytes"
 )
 
-// Query builder
+// ExistsBuilder class
 type ExistsBuilder struct {
 	table string
-	where *CondParams
+	where string
+	args  []interface{}
 	builder
 	isPrepare bool
 }
 
+// NewExistsBuilder new
 func NewExistsBuilder(t string) *ExistsBuilder {
 	return &ExistsBuilder{table: t}
 }
 
+// Table f
 func (e *ExistsBuilder) Table(t string) *ExistsBuilder {
 	e.table = t
 	return e
 }
 
-func (e *ExistsBuilder) IsPrepare(v bool) *ExistsBuilder {
+// SetIsPrepare prepare sql
+func (e *ExistsBuilder) SetIsPrepare(v bool) *ExistsBuilder {
 	e.isPrepare = v
 	return e
 }
 
+// GetIsPrepare f
 func (e *ExistsBuilder) GetIsPrepare(v bool) bool {
 	return e.isPrepare
 }
 
+// Where statement
 func (e *ExistsBuilder) Where(s string, args ...interface{}) *ExistsBuilder {
 	if s == "" {
 		return e
 	}
-	e.where = &CondParams{s, args}
+	e.where = s
+	e.args = args
 	return e
 }
 
-func (e *ExistsBuilder) SqlState() *SqlState {
-	sql, args := e.parse()
-	return NewSqlState(sql, args...)
-}
-
-func (e *ExistsBuilder) parse() ([]byte, []interface{}) {
-	var args []interface{}
+func (e *ExistsBuilder) parse() string {
 	s := bytes.Buffer{}
 	s.WriteString("SELECT 1 as field FROM ")
 	s.WriteString(Current().Driver.QuoteField(e.table))
 
-	if e.where != nil {
+	if e.where != "" {
 		s.WriteString(" WHERE ")
-		s.WriteString(e.where.Cond)
-		args = e.where.Args
+		s.WriteString(e.GetDatabase().Driver.Adapt(e.where, 0))
 	}
 
 	s.WriteString(" LIMIT 1")
-	return s.Bytes(), args
+	return s.String()
 }
 
+// Exists db
 func (e *ExistsBuilder) Exists() bool {
-	r, err := e.getDatabase().QueryPrepare(e.SqlState())
-
+	r, err := e.GetDatabase().QueryPrepare(e.parse(), e.args...)
 	if err != nil {
+		e.GetDatabase().log.Alert(err).Stack()
 		panic(err)
-	} else {
-		return len(r) > 0
 	}
+	return len(r) > 0
 }
 
+// TxExists trunsaction
 func (e *ExistsBuilder) TxExists(tx *Tx) (bool, error) {
-	return tx.Exists(e.SqlState())
+	return tx.Exists(e.parse(), e.args...)
 }

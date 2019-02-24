@@ -8,35 +8,47 @@ import (
 	"github.com/kere/gno/libs/log"
 )
 
-type SqlState struct {
-	sql  []byte
-	args []interface{}
-}
+// // SqlState class
+// type SqlState struct {
+// 	sql  []byte
+// 	args []interface{}
+// }
+//
+// // NewSqlState new
+// func NewSqlState(sql []byte, args ...interface{}) *SqlState {
+// 	ss := &SqlState{}
+// 	ss.sql = Current().Driver.AdaptSql(sql)
+// 	// for i, _ := range args {
+// 	// 	args[i] = Current().Driver.FlatData(args[i])
+// 	// }
+// 	ss.args = args
+//
+// 	return ss
+// }
+//
+// // SetSql methed
+// func (s *SqlState) SetSql(b []byte) {
+// 	s.sql = b
+// }
+//
+// // GetSql methed
+// func (s *SqlState) GetSql() []byte {
+// 	return s.sql
+// }
+//
+// // GetArgs methed
+// func (s *SqlState) GetArgs() []interface{} {
+// 	return s.args
+// }
+//
+// // GetSqlStr bytes convert to string
+// func (s *SqlState) GetSqlStr() string {
+// 	return *(*string)(unsafe.Pointer(&s.sql))
+// }
 
-func NewSqlState(sql []byte, args ...interface{}) *SqlState {
-	ss := &SqlState{}
-	ss.sql = Current().Driver.AdaptSql(sql)
-	// for i, _ := range args {
-	// 	args[i] = Current().Driver.FlatData(args[i])
-	// }
-	ss.args = args
-
-	return ss
-}
-
-func (s *SqlState) SetSql(b []byte) {
-	s.sql = b
-}
-
-func (s *SqlState) GetSql() []byte {
-	return s.sql
-}
-func (s *SqlState) GetArgs() []interface{} {
-	return s.args
-}
-
+// IDriver interface
 type IDriver interface {
-	AdaptSql([]byte) []byte
+	Adapt(string, int) string
 	ConnectString() string
 	SetConnectString(string)
 	QuoteField(string) string
@@ -47,9 +59,10 @@ type IDriver interface {
 	ParseNumberSlice([]byte, interface{}) error
 	ParseStringSlice([]byte, interface{}) error
 	HStore([]byte) (map[string]string, error)
-	DriverName() string
+	Name() string
 }
 
+// Connection class
 type Connection struct {
 	Driver IDriver
 	// counter int
@@ -59,10 +72,12 @@ type Connection struct {
 	ConnMaxLifetime int
 }
 
+// NewConnection new
 func NewConnection(driver IDriver) *Connection {
 	return &Connection{Driver: driver}
 }
 
+// Close conn
 func (c *Connection) Close() error {
 	if c.conn != nil {
 		return c.conn.Close()
@@ -70,6 +85,7 @@ func (c *Connection) Close() error {
 	return nil
 }
 
+// Conn sql.DB
 func (c *Connection) Conn() *sql.DB {
 	if c.conn == nil {
 		c.conn = c.Connect()
@@ -82,8 +98,9 @@ func (c *Connection) Conn() *sql.DB {
 	return c.conn
 }
 
+// Connect db
 func (c *Connection) Connect() *sql.DB {
-	conn, err := sql.Open(c.Driver.DriverName(), c.Driver.ConnectString())
+	conn, err := sql.Open(c.Driver.Name(), c.Driver.ConnectString())
 	if err != nil {
 		panic(err)
 	}
@@ -95,14 +112,16 @@ func (c *Connection) Connect() *sql.DB {
 	return conn
 }
 
+//Database class
 type Database struct {
 	Name       string
 	Driver     IDriver
-	Log        *log.Logger
+	log        *log.Logger
 	Connection *Connection
 	// Location   *time.Location
 }
 
+// NewDatabase new
 func NewDatabase(name string, driver IDriver, lg *log.Logger) *Database {
 	conn := NewConnection(driver)
 
@@ -110,43 +129,42 @@ func NewDatabase(name string, driver IDriver, lg *log.Logger) *Database {
 	conn.MaxIdleConns = dbConf.DefaultInt("max_idle_conns", 10)
 	conn.ConnMaxLifetime = dbConf.DefaultInt("conn_max_life_time", 30)
 
-	return &Database{Name: name, Driver: driver, Log: lg, Connection: conn}
+	return &Database{Name: name, Driver: driver, log: lg, Connection: conn}
 }
 
-func (this *Database) isError(err error) bool {
+func (d *Database) isError(err error) bool {
 	if err != nil {
-		this.Log.Error("[sql]", err.Error())
+		d.log.Error(d.Name, err.Error())
 		return true
 	}
 	return false
 }
 
-func (this *Database) QueryPrepare(s *SqlState) (DataSet, error) {
-	return CQueryPrepare(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
+// Log db
+func (d *Database) Log(sql string, args []interface{}) {
+	d.log.Sql(d.Name, sql, args)
 }
 
-// func (this *Database) FindPrepare(cls IVO, s *SqlState) (VODataSet, error) {
-// 	return FindPrepare(this.Connection.Conn(), cls, s.GetSql(), s.GetArgs()...)
-// }
-
-func (this *Database) Query(s *SqlState) (DataSet, error) {
-	return CQuery(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
+// QueryPrepare db
+func (d *Database) QueryPrepare(sql string, args ...interface{}) (DataSet, error) {
+	d.Log(sql, args)
+	return CQueryPrepare(d.Connection.Conn(), sql, args...)
 }
 
-// func (this *Database) Find(cls IVO, s *SqlState) (VODataSet, error) {
-// 	return Find(this.Connection.Conn(), cls, s.GetSql(), s.GetArgs()...)
-// }
-
-func (this *Database) ExecPrepare(s *SqlState) (sql.Result, error) {
-	return ExecPrepare(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
+//Query db
+func (d *Database) Query(sql string, args ...interface{}) (DataSet, error) {
+	d.Log(sql, args)
+	return CQuery(d.Connection.Conn(), sql, args...)
 }
 
-func (this *Database) Exec(s *SqlState) (sql.Result, error) {
-	return Exec(this.Connection.Conn(), s.GetSql(), s.GetArgs()...)
+// ExecPrepare db
+func (d *Database) ExecPrepare(sql string, args ...interface{}) (sql.Result, error) {
+	d.Log(sql, args)
+	return ExecPrepare(d.Connection.Conn(), sql, args...)
 }
 
-// ExecStr
-// Exec by string
-func (this *Database) ExecStr(sqlstr string, args ...interface{}) (sql.Result, error) {
-	return this.Exec(NewSqlState([]byte(sqlstr), args...))
+//Exec db
+func (d *Database) Exec(sql string, args ...interface{}) (sql.Result, error) {
+	d.Log(sql, args)
+	return Exec(d.Connection.Conn(), sql, args...)
 }

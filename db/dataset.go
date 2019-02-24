@@ -3,6 +3,7 @@ package db
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
 )
@@ -299,6 +300,7 @@ func (s *DataSetSorted) FindOfInt(v int) (DataRow, bool) {
 
 func getSortedI(field string, val int, arr DataSet, b, e int, isdesc bool) int {
 	if b == e {
+		fmt.Println("b==e", val)
 		if arr[b].Int(field) == val {
 			return b
 		}

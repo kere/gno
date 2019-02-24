@@ -50,7 +50,7 @@ func (this *Mysql) LastInsertId(table, id string) string {
 	return "SELECT LAST_INSERT_ID() as count"
 }
 
-func (this *Mysql) DriverName() string {
+func (this *Mysql) Name() string {
 	return DriverMySQL
 }
 

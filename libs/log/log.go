@@ -22,46 +22,56 @@ import (
 // all=10
 // -100=NotFound
 const (
-	LogEmerg   = 1  //* system is unusable */
-	LogAlert   = 2  //* action must be taken immediately */
-	LogCrit    = 3  //* critical conditions */
-	LogErr     = 4  //* error conditions */
-	LogWarning = 5  //* warning conditions */
-	LogNotice  = 6  //* normal but significant condition */
-	LogInfo    = 7  //* informational */
-	LogDebug   = 8  //* debug-level messages */
-	LogSQL     = 8  //* SQL messages */
-	LogFmt     = 9  //* Fmt messages */
-	LogAll     = 10 //* all messages */
-	ConstNone  = "none"
+	LogEmerg  = 1  //* system is unusable */
+	LogAlert  = 2  //* action must be taken immediately */
+	LogCrit   = 3  //* critical conditions */
+	LogErr    = 4  //* error conditions */
+	LogWarn   = 5  //* warning conditions */
+	LogNotice = 6  //* normal but significant condition */
+	LogInfo   = 7  //* informational */
+	LogDebug  = 8  //* debug-level messages */
+	LogSQL    = 8  //* SQL messages */
+	LogFmt    = 9  //* Fmt messages */
+	LogAll    = 10 //* all messages */
+
+	LogEmergStr  = "emerg"  //* system is unusable */
+	LogAlertStr  = "alert"  //* action must be taken immediately */
+	LogCritStr   = "crit"   //* critical conditions */
+	LogErrStr    = "err"    //* error conditions */
+	LogWarnStr   = "warn"   //* warning conditions */
+	LogNoticeStr = "notice" //* normal but significant condition */
+	LogInfoStr   = "info"   //* informational */
+	LogDebugStr  = "debug"  //* debug-level messages */
+	LogSQLStr    = "sql"    //* SQL messages */
+	LogFmtStr    = "fmt"    //* Fmt messages */
+	LogAllStr    = "all"    //* all messages */
+	ConstNone    = "none"
 )
 
 // IntLevel func
 func IntLevel(s string) int {
 	switch s {
-	case "emerg":
+	case LogEmergStr:
 		return LogEmerg
-	case "alert":
+	case LogAlertStr:
 		return LogAlert
-	case "crit":
+	case LogCritStr:
 		return LogCrit
-	case "err", "error":
+	case LogErrStr:
 		return LogErr
-	case "warn", "warning":
-		return LogWarning
-	case "notice":
+	case LogWarnStr:
+		return LogWarn
+	case LogNoticeStr:
 		return LogNotice
-	case "info":
+	case LogInfoStr:
 		return LogInfo
-	case "debug":
+	case LogDebugStr:
 		return LogDebug
-	case "fmt":
+	case LogFmtStr:
 		return LogFmt
-	case "all":
+	case LogAllStr:
 		return LogAll
-	case "close":
-		return 0
-	case ConstNone, "nil", "empty":
+	case ConstNone:
 		return -1
 	}
 
@@ -73,9 +83,9 @@ var (
 	// PrintStackLevel = 4
 
 	// App default log
-	App      *Logger
-	Location *time.Location
-	pool     loggers
+	App *Logger
+	// Location *time.Location
+	pool loggers
 )
 
 type loggers map[string]*Logger
@@ -112,10 +122,12 @@ func Init(folder, names, storeType, levelStr string) {
 
 }
 
+//Get Logger
 func Get(name string) *Logger {
 	return pool[name]
 }
 
+// New logger
 func New(folder, name, storeType, levelStr string) *Logger {
 	// if _, isOK := pool[name]; isOK {
 	// 	return pool[name]

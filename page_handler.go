@@ -12,7 +12,7 @@ func pageHandle(p IPage) error {
 	uri, err := p.Auth()
 	if uri != "" || err != nil {
 		if uri != "" && err != nil {
-			// add msg=? after url
+			// add msg after url
 			var u *url.URL
 			u, err = url.Parse(uri)
 			if err != nil {

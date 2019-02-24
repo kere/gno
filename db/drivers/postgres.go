@@ -14,6 +14,7 @@ var (
 	b_r_JSON   = []byte("\":\"")
 )
 
+//Postgres class
 type Postgres struct {
 	Common
 	DBName   string
@@ -24,64 +25,67 @@ type Postgres struct {
 	Port     string
 }
 
-func (this *Postgres) DriverName() string {
+// Name f
+func (p *Postgres) Name() string {
 	return DriverPSQL
 }
 
-func (this *Postgres) AdaptSql(bSQL []byte) []byte {
-	arr := bytes.Split(bSQL, B_QuestionMark)
+// Adapt f
+func (p *Postgres) Adapt(sql string, n int) string {
+	arr := strings.Split(sql, sQuestionMark)
 	l := len(arr)
-	s := bytes.Buffer{}
-	s.Write(arr[0])
-
-	for i := 1; i < l; i++ {
-		if bytes.HasPrefix(arr[i], b_Dollar) {
-			s.Write(B_QuestionMark)
-			s.Write(arr[i][1:])
-		} else {
-			s.Write(b_Dollar)
-			s.WriteString(fmt.Sprint(i))
-			s.Write(arr[i])
-		}
+	if l == 0 {
+		return sql
 	}
-	return s.Bytes()
+	var s strings.Builder
+	for i := 0; i < l-1; i++ {
+		if arr[i] == "" {
+			continue
+		}
+		s.WriteString(arr[i])
+		s.Write(bDollar)
+		s.WriteString(fmt.Sprint(i + 1 + n))
+	}
+
+	return s.String()
 }
 
-func (this *Postgres) ConnectString() string {
-	if this.Host == "" {
-		this.Host = "127.0.0.1"
+// ConnectString f
+func (p *Postgres) ConnectString() string {
+	if p.Host == "" {
+		p.Host = "127.0.0.1"
 	}
-	if this.Port == "" {
-		this.Port = "5432"
+	if p.Port == "" {
+		p.Port = "5432"
 	}
 
-	if this.HostAddr != "" {
+	if p.HostAddr != "" {
 		return fmt.Sprintf("dbname=%s user=%s password=%s hostaddr=%s sslmode=disable",
-			this.DBName,
-			this.User,
-			this.Password,
-			this.HostAddr)
+			p.DBName,
+			p.User,
+			p.Password,
+			p.HostAddr)
 
 	} else {
 		return fmt.Sprintf("dbname=%s user=%s password=%s host=%s port=%s sslmode=disable",
-			this.DBName,
-			this.User,
-			this.Password,
-			this.Host,
-			this.Port)
+			p.DBName,
+			p.User,
+			p.Password,
+			p.Host,
+			p.Port)
 	}
 }
 
-func (this *Postgres) QuoteField(s string) string {
+func (p *Postgres) QuoteField(s string) string {
 	return fmt.Sprint("\"", s, "\"")
 }
 
-func (this *Postgres) LastInsertId(table, pkey string) string {
+func (p *Postgres) LastInsertId(table, pkey string) string {
 	// return "select currval(pg_get_serial_sequence('" + table + "','" + pkey + "'))"
 	return fmt.Sprint("select currval(pg_get_serial_sequence('", table, "','", pkey, "')) as count")
 }
 
-func (this *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
+func (p *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
 	switch typ.Kind() {
 	case reflect.Slice, reflect.Array:
 		value := reflect.ValueOf(v)
@@ -94,7 +98,7 @@ func (this *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
 		var tmpV reflect.Value
 		for i := 0; i < l; i++ {
 			tmpV = value.Index(i)
-			arr[i] = this.sliceToStore(tmpV.Type(), tmpV.Interface())
+			arr[i] = p.sliceToStore(tmpV.Type(), tmpV.Interface())
 		}
 		return fmt.Sprint("{", strings.Join(arr, ","), "}")
 
@@ -109,7 +113,7 @@ func (this *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
 }
 
 // FlatData for value
-func (this *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
+func (p *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
 	if v == nil {
 		return "NULL"
 	}
@@ -127,14 +131,14 @@ func (this *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
 		}
 
 	case reflect.Array:
-		return this.sliceToStore(typ, v)
+		return p.sliceToStore(typ, v)
 
 	case reflect.Slice:
 		switch v.(type) {
 		case []byte:
 			return v
 		default:
-			return this.sliceToStore(typ, v)
+			return p.sliceToStore(typ, v)
 		}
 
 	case reflect.Map:
@@ -176,7 +180,7 @@ func (this *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
 
 }
 
-func (this *Postgres) StringSlice(src []byte) ([]string, error) {
+func (p *Postgres) StringSlice(src []byte) ([]string, error) {
 	if len(src) == 0 {
 		return []string{}, nil
 	}
@@ -197,19 +201,19 @@ func (this *Postgres) StringSlice(src []byte) ([]string, error) {
 	return v, nil
 }
 
-func (this *Postgres) Int64Slice(src []byte) ([]int64, error) {
+func (p *Postgres) Int64Slice(src []byte) ([]int64, error) {
 	if len(src) == 0 {
 		return []int64{}, nil
 	}
 	var arr = make([]int64, 0)
-	if err := this.ParseNumberSlice(src, &arr); err != nil {
+	if err := p.ParseNumberSlice(src, &arr); err != nil {
 		return nil, err
 	}
 
 	return arr, nil
 }
 
-func (this *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
+func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
 	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
 	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
 	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
@@ -221,7 +225,8 @@ func (this *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-func (this *Postgres) HStore(src []byte) (map[string]string, error) {
+// HStore db
+func (p *Postgres) HStore(src []byte) (map[string]string, error) {
 	src = bytes.Replace(src, b_r_HSTORE, b_r_JSON, -1)
 	src = append(b_BRACE_LEFT, src...)
 	v := make(map[string]string)
@@ -232,7 +237,8 @@ func (this *Postgres) HStore(src []byte) (map[string]string, error) {
 	return v, nil
 }
 
-func (this *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
+// ParseNumberSlice db number slice
+func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 	if len(src) == 0 {
 		return nil
 	}

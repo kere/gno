@@ -6,11 +6,13 @@ import (
 	"time"
 )
 
+// StructField class
 type StructField struct {
 	Field string
 	Name  string
 }
 
+// StructConverter class
 // Example: sc := NewStructConvert(UserVO{})
 // dataset, err := db.NewQueryBuilder("users").Where("id=?",1).Query()
 // result := cs.DataSet2Struct(datarow)
@@ -23,6 +25,7 @@ type StructConverter struct {
 	dbfields [][]byte
 }
 
+// NewStructConvert func
 func NewStructConvert(cls interface{}) *StructConverter {
 	s := &StructConverter{}
 	s.SetTarget(cls)
@@ -33,6 +36,7 @@ func NewStructConvert(cls interface{}) *StructConverter {
 // 	sc.excludes = s
 // }
 
+// SetTarget f
 func (sc *StructConverter) SetTarget(cls interface{}) {
 	sc.target = cls
 	sc.typ = reflect.TypeOf(cls)
@@ -43,20 +47,20 @@ func (sc *StructConverter) SetTarget(cls interface{}) {
 	// }
 }
 
+// GetTypeElem f
 func (sc *StructConverter) GetTypeElem() reflect.Type {
 	if sc.typ.Kind() == reflect.Ptr {
 		return sc.typ.Elem()
-	} else {
-		return sc.typ
 	}
+	return sc.typ
 }
 
-// GetType reflect.Type
+// GetType get reflect.Type
 func (sc *StructConverter) GetType() reflect.Type {
 	return sc.typ
 }
 
-// GetType reflect.Value
+// GetValue reflect.Value
 func (sc *StructConverter) GetValue() reflect.Value {
 	return sc.val
 }
@@ -182,7 +186,7 @@ func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 
 const (
 	tagSkip      = "skip"
-	tagJson      = "json"
+	tagJSON      = "json"
 	tagSkipEmpty = "skipempty"
 	tagType      = "type"
 	typTime      = "time"
@@ -210,7 +214,7 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 
 	for n := 0; n < l; n++ {
 		field := typ.Field(n)
-		dbField := field.Tag.Get(tagJson)
+		dbField := field.Tag.Get(tagJSON)
 
 		if dbField == "" {
 			if field.Name == vBaseVO {

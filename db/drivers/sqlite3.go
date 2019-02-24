@@ -17,6 +17,6 @@ func (this *Sqlite3) LastInsertId(table, id string) string {
 	return "SELECT last_insert_rowid()"
 }
 
-func (this *Sqlite3) DriverName() string {
+func (this *Sqlite3) Name() string {
 	return DriverSqlite
 }

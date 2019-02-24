@@ -11,14 +11,15 @@ var (
 	DefaultQueryCacheExpire = 300
 )
 
-// Querybuilder class
+// QueryBuilder class
 type QueryBuilder struct {
 	builder
 
 	table      string
 	field      string
 	leftJoin   string
-	where      *CondParams
+	where      string
+	args       []interface{}
 	order      string
 	limit      int
 	offset     int
@@ -45,61 +46,66 @@ func (q *QueryBuilder) GetTable() string {
 	return q.table
 }
 
-// IsPrepare prepare sql
-func (q *QueryBuilder) IsPrepare(v bool) *QueryBuilder {
+// SetIsPrepare prepare sql
+func (q *QueryBuilder) SetIsPrepare(v bool) *QueryBuilder {
 	q.isPrepare = v
 	return q
 }
 
+// GetIsPrepare get
 func (q *QueryBuilder) GetIsPrepare() bool {
 	return q.isPrepare
 }
 
+// Select fields
 func (q *QueryBuilder) Select(s string) *QueryBuilder {
 	q.field = s
 	return q
 }
 
+// LeftJoin sql
 func (q *QueryBuilder) LeftJoin(s string) *QueryBuilder {
 	q.leftJoin = s
 	return q
 }
 
+// Where sql
 func (q *QueryBuilder) Where(s string, args ...interface{}) *QueryBuilder {
 	if s == "" {
 		return q
 	}
 
-	q.where = &CondParams{s, args}
+	q.where = s
+	q.args = args
 	return q
 }
 
+// Order sql
 func (q *QueryBuilder) Order(s string) *QueryBuilder {
 	q.order = s
 	return q
 }
 
+// Page pagation
 func (q *QueryBuilder) Page(page int, pageSize int) *QueryBuilder {
 	q.offset = (page - 1) * pageSize
 	q.limit = pageSize
 	return q
 }
 
+// Limit sql
 func (q *QueryBuilder) Limit(n int) *QueryBuilder {
 	q.limit = n
 	return q
 }
 
+// Offset sql
 func (q *QueryBuilder) Offset(n int) *QueryBuilder {
 	q.offset = n
 	return q
 }
 
-func (q *QueryBuilder) Struct(cls IVO) *QueryBuilder {
-	q.cls = cls
-	return q
-}
-
+// Cache property
 func (q *QueryBuilder) Cache() *QueryBuilder {
 	if cacheIns == nil {
 		q.cache = false
@@ -111,12 +117,13 @@ func (q *QueryBuilder) Cache() *QueryBuilder {
 	return q
 }
 
+// DisableCache property
 func (q *QueryBuilder) DisableCache() *QueryBuilder {
 	q.cache = false
 	return q
 }
 
-// Set query cache
+//CacheExpire Set query cache
 // if expire value is 0, the cache expire will use DefaultQueryCacheExpire as cache expire.
 // if expire valie low than 0, it will disable cache.
 func (q *QueryBuilder) CacheExpire(expire int) *QueryBuilder {
@@ -141,14 +148,15 @@ func (q *QueryBuilder) cachekey() string {
 	q.writeField(&s)
 	s.WriteString(fmt.Sprintf("%d%d", q.limit, q.offset))
 	// s.WriteString(strconv.FormatInt(q.limit, 10) + strconv.Formart(q.offset, 10))
-
 	s.WriteString(q.order)
-	if q.where != nil {
-		s.WriteString(fmt.Sprintf("%s%v", q.where.Cond, q.where.Args))
+	if q.where != "" {
+		s.WriteString(q.where)
+		s.WriteString(fmt.Sprint(q.args))
 	}
 	return string(MD5(s.Bytes()))
 }
 
+// ClearCache func
 func (q *QueryBuilder) ClearCache() error {
 	if cacheIns == nil {
 		return nil
@@ -156,14 +164,8 @@ func (q *QueryBuilder) ClearCache() error {
 	return cacheDel(q.cachekey())
 }
 
-func (q *QueryBuilder) parse() ([]byte, []interface{}) {
+func (q *QueryBuilder) parse() string {
 	s := bytes.Buffer{}
-	var args []interface{}
-	if q.getDatabase() == nil {
-		panic("database is nil, check db Configuration!")
-	}
-	// driver := q.getDatabase().Driver
-
 	s.Write(bSQLSelect)
 
 	q.writeField(&s)
@@ -176,10 +178,9 @@ func (q *QueryBuilder) parse() ([]byte, []interface{}) {
 		s.WriteString(q.leftJoin)
 	}
 
-	if q.where != nil {
+	if q.where != "" {
 		s.Write(bSQLWhere)
-		s.WriteString(q.where.Cond)
-		args = q.where.Args
+		s.WriteString(q.GetDatabase().Driver.Adapt(q.where, 0))
 	}
 	if q.order != "" {
 		s.Write(bSQLOrder)
@@ -203,13 +204,11 @@ func (q *QueryBuilder) parse() ([]byte, []interface{}) {
 		s.Write(bSQLOffset)
 		s.WriteString(strconv.FormatInt(int64(q.offset), 10))
 	}
-	return s.Bytes(), args
+	return s.String()
 }
 
 // Query return DataSet
 func (q *QueryBuilder) Query() (DataSet, error) {
-	database := q.getDatabase()
-
 	var key string
 	if q.cache {
 		key = q.cachekey()
@@ -219,18 +218,17 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 	}
 	var r DataSet
 	var err error
-	sql, args := q.parse()
 	if q.isPrepare {
-		r, err = database.QueryPrepare(NewSqlState(sql, args...))
+		r, err = q.GetDatabase().QueryPrepare(q.parse(), q.args...)
 	} else {
-		r, err = database.Query(NewSqlState(sql, args...))
+		r, err = q.GetDatabase().Query(q.parse(), q.args...)
 	}
 
 	if err != nil {
 		return r, err
 	}
 	if q.cache {
-		r.Bytes2String()
+		// r.Bytes2String()
 		cacheSet(key, r, q.expire)
 	}
 
@@ -239,9 +237,7 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 
 // QueryOne limit=1
 func (q *QueryBuilder) QueryOne() (DataRow, error) {
-	q.isQueryOne = true
 	r, err := q.Query()
-	q.isQueryOne = false
 	if err != nil {
 		return nil, err
 	}
@@ -305,12 +301,12 @@ func (q *QueryBuilder) writeField(s *bytes.Buffer) {
 	s.Write(field)
 }
 
+// TxQuery transction
 func (q *QueryBuilder) TxQuery(tx *Tx) (DataSet, error) {
-	sql, args := q.parse()
-	return tx.Query(NewSqlState(sql, args...))
+	return tx.Query(q.parse(), q.args...)
 }
 
+// TxQueryOne transction
 func (q *QueryBuilder) TxQueryOne(tx *Tx) (DataRow, error) {
-	sql, args := q.parse()
-	return tx.QueryOne(NewSqlState(sql, args...))
+	return tx.QueryOne(q.parse(), q.args...)
 }

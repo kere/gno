@@ -7,12 +7,14 @@ import (
 	"strings"
 )
 
+// MD5 func
 func MD5(b []byte) []byte {
 	h := md5.New()
 	h.Write(b)
 	return h.Sum(nil)
 }
 
+// InStrings f
 func InStrings(arr []string, val string) bool {
 	for _, v := range arr {
 		if v == val {
@@ -22,6 +24,7 @@ func InStrings(arr []string, val string) bool {
 	return false
 }
 
+// Arr2InCondition f
 func Arr2InCondition(arr []string) string {
 	if len(arr) == 0 {
 		return ""

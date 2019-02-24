@@ -8,6 +8,7 @@ import (
 	"github.com/kere/gno/libs/log"
 )
 
+// NewLogger func
 func NewLogger(dbConf map[string]string) *log.Logger {
 	conf := conf.Conf(dbConf)
 	levelStr := conf.Get("level")

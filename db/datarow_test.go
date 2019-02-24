@@ -52,16 +52,19 @@ func TestDataRow(t *testing.T) {
 }
 
 func TestDataSet(t *testing.T) {
-	row := DataRow{"id": 1, "name": "tom1", "age": 22}
-	arr := DataSet{row}
-
-	row = DataRow{"id": 2, "name": "tom2", "age": 23}
+	var row DataRow
+	arr := DataSet{}
+	row = DataRow{"id": 0, "name": "tom1", "age": 20}
 	arr = append(arr, row)
-	row = DataRow{"id": 3, "name": "tom3", "age": 24}
+	row = DataRow{"id": 1, "name": "tom1", "age": 21}
 	arr = append(arr, row)
-	row = DataRow{"id": 4, "name": "tom4", "age": 25}
+	row = DataRow{"id": 2, "name": "tom2", "age": 22}
 	arr = append(arr, row)
-	row = DataRow{"id": 5, "name": "tom5", "age": 26}
+	row = DataRow{"id": 3, "name": "tom3", "age": 23}
+	arr = append(arr, row)
+	row = DataRow{"id": 4, "name": "tom4", "age": 24}
+	arr = append(arr, row)
+	row = DataRow{"id": 5, "name": "tom5", "age": 25}
 	arr = append(arr, row)
 
 	s := NewDataSetSorted(arr, "id")
@@ -69,8 +72,8 @@ func TestDataSet(t *testing.T) {
 	if !sort.IsSorted(&s) {
 		t.Fatal()
 	}
-	i := s.IndexOfInt(4)
+	i := s.IndexOfInt(3)
 	if i != 3 {
-		t.Fatal()
+		t.Fatal(i)
 	}
 }

@@ -33,8 +33,9 @@ func TestIsEmpty(t *testing.T) {
 	vo := VO{}
 	cv := NewStructConvert(vo)
 	row := cv.Struct2DataRow(ActionInsert)
-	if len(row) != 0 {
-		t.Fatal("is empty failed")
+
+	if row.IsEmpty() {
+		t.Fatal("is empty failed", row)
 	}
 
 	vo.Name = "tom"
@@ -42,8 +43,8 @@ func TestIsEmpty(t *testing.T) {
 	cv = NewStructConvert(vo)
 	row = cv.Struct2DataRow(ActionUpdate)
 
-	if len(row) != 2 {
-		t.Fatal("is empty failed")
+	if len(row) != 3 {
+		t.Fatal("is empty failed", row)
 	}
 
 }

@@ -1,10 +1,8 @@
 package db
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"strconv"
 
 	"github.com/kere/gno/db/drivers"
@@ -17,42 +15,46 @@ var (
 	dbConf conf.Conf
 )
 
+func init() {
+	dbpool = &databasePool{dblist: make(map[string]*Database)}
+}
+
 type databasePool struct {
 	dblist  map[string]*Database
 	current *Database
 }
 
-func (this *databasePool) Current() *Database {
-	return this.current
+// Current database
+func (dp *databasePool) Current() *Database {
+	return dp.current
 }
 
-func (this *databasePool) SetCurrent(d *Database) {
-	this.current = d
+// SetCurrent database
+func (dp *databasePool) SetCurrent(d *Database) {
+	dp.current = d
 }
 
-func (this *databasePool) Use(name string) {
-	c := this.GetDatabase(name)
+// Use database
+func (dp *databasePool) Use(name string) {
+	c := dp.GetDatabase(name)
 	if c == nil {
 		fmt.Println(name, " database is not found!")
 		return
-	} else {
-		this.current = c
 	}
+	dp.current = c
 }
 
-func (this *databasePool) SetDatabase(name string, d *Database) {
-	this.dblist[name] = d
+// SetDatabase by name
+func (dp *databasePool) SetDatabase(name string, d *Database) {
+	dp.dblist[name] = d
 }
 
-func (this *databasePool) GetDatabase(name string) *Database {
-	if v, ok := this.dblist[name]; ok {
+// GetDatabase by name
+func (dp *databasePool) GetDatabase(name string) *Database {
+	if v, ok := dp.dblist[name]; ok {
 		return v
 	}
 	return nil
-}
-
-func init() {
-	dbpool = &databasePool{dblist: make(map[string]*Database)}
 }
 
 // Init it
@@ -141,16 +143,13 @@ func New(name string, conf map[string]string) *Database {
 // CQuery from database on prepare mode
 // This function use the current database from database bool
 // You can set another database use Use(i) or create an new database use New(name, conf)
-func CQuery(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
-	sqlstring := string(sqlstr)
-	Current().Log.Sql(sqlstr, args)
-
+func CQuery(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
 	var rows *sql.Rows
 	var err error
 	if len(args) == 0 {
-		rows, err = conn.Query(sqlstring)
+		rows, err = conn.Query(sqlstr)
 	} else {
-		rows, err = conn.Query(sqlstring, args...)
+		rows, err = conn.Query(sqlstr, args...)
 	}
 
 	if err != nil {
@@ -169,14 +168,11 @@ func CQuery(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
 // In prepare mode, the sql command will be cached by database
 // This function use the current database from database bool
 // You can set another database by Use(i) or New(name, conf) an new database
-func CQueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, error) {
-	sqlstring := string(sqlstr)
-	Current().Log.Sql(sqlstr, args)
-
+func CQueryPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
 	var rows *sql.Rows
 	var err error
 
-	s, err := conn.Prepare(sqlstring)
+	s, err := conn.Prepare(sqlstr)
 	if err != nil {
 		return nil, myerr.New(err).Log().Stack()
 	}
@@ -219,52 +215,46 @@ func CQueryPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (DataSet, e
 // 	return NewStructConvert(cls).DataSet2Struct(dataset)
 // }
 
-// ExecFromFile sql from a file
-// This function run sql under not transaction mode and use the current database from database bool
-func ExecFromFile(file string) error {
-	var filebytes []byte
-	var err error
-
-	if filebytes, err = ioutil.ReadFile(file); err != nil {
-		return myerr.New(err).Log().Stack()
-	}
-	conn := Current().Connection.Connect()
-	b := bytes.Split(filebytes, []byte(";"))
-	for _, i := range b {
-		if len(bytes.TrimSpace(i)) == 0 {
-			continue
-		}
-
-		_, err = Exec(conn, i)
-		if err != nil {
-			return myerr.New(err).Log().Stack()
-		}
-	}
-	return nil
-}
+// // ExecFromFile sql from a file
+// // This function run sql under not transaction mode and use the current database from database bool
+// func ExecFromFile(file string) error {
+// 	var filebytes []byte
+// 	var err error
+//
+// 	if filebytes, err = ioutil.ReadFile(file); err != nil {
+// 		return myerr.New(err).Log().Stack()
+// 	}
+// 	conn := Current().Connection.Connect()
+// 	b := bytes.Split(filebytes, []byte(";"))
+// 	for _, i := range b {
+// 		if len(bytes.TrimSpace(i)) == 0 {
+// 			continue
+// 		}
+//
+// 		_, err = Exec(conn, i)
+// 		if err != nil {
+// 			return myerr.New(err).Log().Stack()
+// 		}
+// 	}
+// 	return nil
+// }
 
 // Exec sql.
 // If your has more than on sql command, it will only excute the first.
 // This function use the current database from database bool
-func Exec(conn *sql.DB, sqlstr []byte, args ...interface{}) (result sql.Result, err error) {
-	sqlstring := string(sqlstr)
-	Current().Log.Sql(sqlstr, args)
-
+func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, err error) {
 	if len(args) == 0 {
-		result, err = conn.Exec(sqlstring)
+		result, err = conn.Exec(sqlstr)
 	} else {
-		result, err = conn.Exec(sqlstring, args...)
+		result, err = conn.Exec(sqlstr, args...)
 	}
 	return result, myerr.New(err).Log().Stack()
 }
 
 // ExecPrepare sql on prepare mode
 // This function use the current database from database bool
-func ExecPrepare(conn *sql.DB, sqlstr []byte, args ...interface{}) (result sql.Result, err error) {
-	sqlstring := string(sqlstr)
-	Current().Log.Sql(sqlstr, args)
-
-	s, err := conn.Prepare(sqlstring)
+func ExecPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, err error) {
+	s, err := conn.Prepare(sqlstr)
 	if err != nil {
 		return nil, myerr.New(err).Log().Stack()
 	}
@@ -292,12 +282,12 @@ func Current() *Database {
 	return dbpool.Current()
 }
 
-// Set current database by index
+// Use current database by name
 func Use(name string) {
 	dbpool.Use(name)
 }
 
-// Get database count
+// DatabaseCount Get database count
 func DatabaseCount() int {
 	return len(dbpool.dblist)
 }
