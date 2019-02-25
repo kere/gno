@@ -19,15 +19,15 @@ type DataRow map[string]interface{}
 
 // Insert datarow item
 func (dr DataRow) Insert(table string) error {
-	ins := NewInsertBuilder(table)
-	_, err := ins.Insert(dr)
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).Insert(dr)
 	return err
 }
 
 // TxInsert datarow item
 func (dr DataRow) TxInsert(tx *Tx, table string) error {
-	ins := NewInsertBuilder(table)
-	_, err := ins.TxInsert(tx, dr)
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).TxInsert(tx, dr)
 	return err
 }
 
@@ -107,8 +107,8 @@ func (dr DataRow) Save(table string, where string, params ...interface{}) error 
 		_, err := e.Where(where, params...).Update(dr)
 		return err
 	}
-	ins := NewInsertBuilder(table)
-	_, err := ins.Insert(dr)
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).Insert(dr)
 	return err
 }
 
@@ -118,8 +118,8 @@ func (dr DataRow) InsertIfNotFound(table string, where string, params ...interfa
 	if e.Where(where, params...).Exists() {
 		return true, nil
 	}
-	ins := NewInsertBuilder(table)
-	_, err := ins.Insert(dr)
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).Insert(dr)
 	return false, err
 }
 

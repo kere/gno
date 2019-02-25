@@ -16,8 +16,8 @@ func (ds DataSet) Insert(table string) error {
 	if ds.Len() == 0 {
 		return nil
 	}
-	ins := NewInsertBuilder(table)
-	_, err := ins.InsertM(ds)
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).InsertM(ds)
 	return err
 }
 

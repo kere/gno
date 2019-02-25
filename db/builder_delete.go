@@ -14,8 +14,8 @@ type DeleteBuilder struct {
 }
 
 // NewDeleteBuilder func
-func NewDeleteBuilder(t string) *DeleteBuilder {
-	return &DeleteBuilder{table: t}
+func NewDeleteBuilder(t string) DeleteBuilder {
+	return DeleteBuilder{table: t}
 }
 
 //Table string

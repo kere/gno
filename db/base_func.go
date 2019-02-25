@@ -6,36 +6,35 @@ import (
 
 // QueryOne f
 func QueryOne(table string, where string, params ...interface{}) (DataRow, error) {
-	q := NewQueryBuilder(table)
-	return q.Where(where, params...).QueryOne()
+	q := QueryBuilder{}
+	return q.Table(table).Where(where, params...).QueryOne()
 }
 
 // Query f
 func Query(table string, where string, params ...interface{}) (DataSet, error) {
-	q := NewQueryBuilder(table)
-	return q.Where(where, params...).Query()
+	q := QueryBuilder{}
+	return q.Table(table).Where(where, params...).Query()
 }
 
 // Create f
 func Create(table string, row DataRow) error {
-	ins := NewInsertBuilder(table)
-	_, err := ins.Insert(row)
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).Insert(row)
 	return err
 }
 
 // TxCreate func
 func TxCreate(tx *Tx, table string, row DataRow) error {
-	ins := NewInsertBuilder(table)
-	_, err := ins.TxInsert(tx, row)
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).TxInsert(tx, row)
 
 	return err
 }
 
 // TxCreateAndReturnID func
 func TxCreateAndReturnID(tx *Tx, table string, row DataRow) (sql.Result, error) {
-	ins := NewInsertBuilder(table)
-	ins.ReturnID()
-	return ins.TxInsert(tx, row)
+	ins := InsertBuilder{}
+	return ins.Table(table).ReturnID().TxInsert(tx, row)
 }
 
 // CreateIfNotFound insert data if not found

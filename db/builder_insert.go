@@ -26,30 +26,30 @@ type InsertBuilder struct {
 	table string
 	builder
 	excludeFields []string
-	isPrepare     bool
+	isExec        bool
 	isReturnID    bool
 }
 
-// NewInsertBuilder func
-func NewInsertBuilder(t string) *InsertBuilder {
-	return &InsertBuilder{table: t, isPrepare: true}
+// // NewInsertBuilder func
+// func NewInsertBuilder(t string) InsertBuilder {
+// 	return InsertBuilder{table: t, isExec: false}
+// }
+
+// SetIsPrepare func
+func (ins *InsertBuilder) SetIsPrepare(v bool) *InsertBuilder {
+	ins.isExec = !v
+	return ins
 }
 
-// IsPrepare func
-func (ins *InsertBuilder) IsPrepare(v bool) *InsertBuilder {
-	ins.isPrepare = v
-	return ins
+// GetIsPrepare get
+func (ins *InsertBuilder) GetIsPrepare() bool {
+	return !ins.isExec
 }
 
 // ReturnID func
 func (ins *InsertBuilder) ReturnID() *InsertBuilder {
 	ins.isReturnID = true
 	return ins
-}
-
-// GetIsPrepare get
-func (ins *InsertBuilder) GetIsPrepare() bool {
-	return ins.isPrepare
 }
 
 // AddSkipFields skip fields
@@ -150,10 +150,10 @@ func (ins *InsertBuilder) parse(data interface{}) (string, []interface{}) {
 func (ins *InsertBuilder) Insert(data interface{}) (sql.Result, error) {
 	cdb := ins.GetDatabase()
 	sql, vals := ins.parse(data)
-	if ins.isPrepare {
-		return cdb.ExecPrepare(sql, vals...)
+	if ins.isExec {
+		return cdb.Exec(sql, vals...)
 	}
-	return cdb.Exec(sql, vals...)
+	return cdb.ExecPrepare(sql, vals...)
 }
 
 // InsertM func
@@ -210,10 +210,10 @@ func (ins *InsertBuilder) TxInsert(tx *Tx, data interface{}) (sql.Result, error)
 		}
 		return &insResult{r[0].Int64("id"), 1}, nil
 	}
-	if ins.isPrepare {
-		return tx.ExecPrepare(sql, vals...)
+	if ins.isExec {
+		return tx.Exec(sql, vals...)
 	}
-	return tx.Exec(sql, vals...)
+	return tx.ExecPrepare(sql, vals...)
 }
 
 // LastInsertId return int

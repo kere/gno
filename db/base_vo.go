@@ -75,8 +75,8 @@ func (b *BaseVO) Create() error {
 	if b.target == nil {
 		panic("vo.target is nil")
 	}
-	ins := NewInsertBuilder(b.Table)
-	_, err := ins.Insert(b.target)
+	ins := InsertBuilder{}
+	_, err := ins.Table(b.Table).Insert(b.target)
 
 	if err != nil {
 		return err
@@ -90,8 +90,8 @@ func (b *BaseVO) TxCreate(tx *Tx) error {
 	if b.target == nil {
 		panic("vo.target is nil")
 	}
-	ins := NewInsertBuilder(b.Table)
-	_, err := ins.TxInsert(tx, b.target)
+	ins := InsertBuilder{}
+	_, err := ins.Table(b.Table).TxInsert(tx, b.target)
 	tx.DoError(err)
 	return err
 }
@@ -101,23 +101,24 @@ func (b *BaseVO) TxCreateAndReturnID(tx *Tx) (sql.Result, error) {
 	if b.target == nil {
 		panic("vo.target is nil")
 	}
-	ins := NewInsertBuilder(b.Table)
-	ins.ReturnID()
-	r, err := ins.TxInsert(tx, b.target)
+	ins := InsertBuilder{}
+	r, err := ins.Table(b.Table).ReturnID().TxInsert(tx, b.target)
 	tx.DoError(err)
 	return r, err
 }
 
 // TxExists is found
 func (b *BaseVO) TxExists(tx *Tx, where string, params ...interface{}) (bool, error) {
-	isok, err := NewExistsBuilder(b.Table).Where(where, params...).TxExists(tx)
+	e := ExistsBuilder{}
+	isok, err := e.Table(b.Table).Where(where, params...).TxExists(tx)
 	tx.DoError(err)
 	return isok, err
 }
 
 // Exists is found
 func (b *BaseVO) Exists(where string, params ...interface{}) bool {
-	return NewExistsBuilder(b.Table).Where(where, params...).Exists()
+	e := NewExistsBuilder(b.Table)
+	return e.Where(where, params...).Exists()
 }
 
 // CreateIfNotFound insert data if not found
@@ -134,7 +135,8 @@ func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, er
 // TxCreateIfNotFound insert data if not found
 // return true if insert
 func (b *BaseVO) TxCreateIfNotFound(tx *Tx, where string, params ...interface{}) (bool, error) {
-	if exists, err := NewExistsBuilder(b.Table).Where(where, params...).TxExists(tx); exists || tx.DoError(err) {
+	e := NewExistsBuilder(b.Table)
+	if exists, err := e.Where(where, params...).TxExists(tx); exists || tx.DoError(err) {
 		return false, err
 	}
 
@@ -197,7 +199,8 @@ func (b *BaseVO) getQueryBuilder() *QueryBuilder {
 	if b.querybuild != nil {
 		return b.querybuild
 	}
-	b.querybuild = NewQueryBuilder(b.Table)
+	e := QueryBuilder{}
+	b.querybuild = e.Table(b.Table)
 	return b.querybuild
 }
 

@@ -26,14 +26,14 @@ type QueryBuilder struct {
 	cache      bool
 	expire     int
 	cls        IVO
-	isPrepare  bool
+	isExec     bool
 	isQueryOne bool
 }
 
-// NewQueryBuilder new
-func NewQueryBuilder(t string) *QueryBuilder {
-	return &QueryBuilder{table: t, isPrepare: true}
-}
+// // NewQueryBuilder new
+// func NewQueryBuilder(t string) QueryBuilder {
+// 	return QueryBuilder{table: t, isExec: true}
+// }
 
 // Table return string
 func (q *QueryBuilder) Table(t string) *QueryBuilder {
@@ -48,13 +48,13 @@ func (q *QueryBuilder) GetTable() string {
 
 // SetIsPrepare prepare sql
 func (q *QueryBuilder) SetIsPrepare(v bool) *QueryBuilder {
-	q.isPrepare = v
+	q.isExec = !v
 	return q
 }
 
 // GetIsPrepare get
 func (q *QueryBuilder) GetIsPrepare() bool {
-	return q.isPrepare
+	return !q.isExec
 }
 
 // Select fields
@@ -220,10 +220,10 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 	}
 	var r DataSet
 	var err error
-	if q.isPrepare {
-		r, err = q.GetDatabase().QueryPrepare(q.parse(), q.args...)
-	} else {
+	if q.isExec {
 		r, err = q.GetDatabase().Query(q.parse(), q.args...)
+	} else {
+		r, err = q.GetDatabase().QueryPrepare(q.parse(), q.args...)
 	}
 
 	if err != nil {
@@ -263,7 +263,7 @@ func (q *QueryBuilder) QueryOne() (DataRow, error) {
 // 	}
 // 	var r VODataSet
 // 	var err error
-// 	if q.isPrepare {
+// 	if q.isExec {
 // 		r, err = database.FindPrepare(q.cls, NewSqlState(q.parse()))
 // 	} else {
 // 		r, err = database.Find(q.cls, NewSqlState(q.parse()))

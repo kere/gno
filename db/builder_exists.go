@@ -14,8 +14,8 @@ type ExistsBuilder struct {
 }
 
 // NewExistsBuilder new
-func NewExistsBuilder(t string) *ExistsBuilder {
-	return &ExistsBuilder{table: t}
+func NewExistsBuilder(t string) ExistsBuilder {
+	return ExistsBuilder{table: t}
 }
 
 // Table f
