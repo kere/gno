@@ -153,7 +153,8 @@ func (q *QueryBuilder) cachekey() string {
 		s.WriteString(q.where)
 		s.WriteString(fmt.Sprint(q.args))
 	}
-	return string(MD5(s.Bytes()))
+
+	return fmt.Sprintf("db-%s:%x", q.GetDatabase().Name, MD5(s.Bytes()))
 }
 
 // ClearCache func
@@ -210,6 +211,7 @@ func (q *QueryBuilder) parse() string {
 // Query return DataSet
 func (q *QueryBuilder) Query() (DataSet, error) {
 	var key string
+
 	if q.cache {
 		key = q.cachekey()
 		if exi, _ := cacheIns.IsExists(key); exi {

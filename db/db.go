@@ -12,7 +12,7 @@ import (
 
 var (
 	dbpool *databasePool
-	dbConf conf.Conf
+	// dbConf conf.Conf
 )
 
 func init() {
@@ -60,13 +60,11 @@ func (dp *databasePool) GetDatabase(name string) *Database {
 // Init it
 func Init(name string, config map[string]string) {
 	fmt.Println("Init Database", config)
-	dbConf = conf.Conf(config)
-
 	dbpool.SetCurrent(New(name, config))
 }
 
-func confGet(conf map[string]string, key string) string {
-	if v, ok := conf[key]; ok {
+func confGet(config map[string]string, key string) string {
+	if v, ok := config[key]; ok {
 		return v
 	}
 	return ""
@@ -74,39 +72,39 @@ func confGet(conf map[string]string, key string) string {
 
 // New func
 // create a database instance
-func New(name string, conf map[string]string) *Database {
+func New(name string, c map[string]string) *Database {
 	if dbpool.GetDatabase(name) != nil {
 		panic(name + " this database is already exists!")
 	}
 
-	if conf == nil {
+	if c == nil {
 		return nil
 	}
 
-	driverName := confGet(conf, "driver")
-	logger := NewLogger(conf)
+	driverName := confGet(c, "driver")
+	logger := NewLogger(c)
 
 	var driver IDriver
 	switch driverName {
 	case "postgres", "psql":
-		driver = &drivers.Postgres{DBName: confGet(conf, "dbname"),
-			User:     confGet(conf, "user"),
-			Password: confGet(conf, "password"),
-			Host:     confGet(conf, "host"),
-			HostAddr: confGet(conf, "hostaddr"),
-			Port:     confGet(conf, "port"),
+		driver = &drivers.Postgres{DBName: confGet(c, "dbname"),
+			User:     confGet(c, "user"),
+			Password: confGet(c, "password"),
+			Host:     confGet(c, "host"),
+			HostAddr: confGet(c, "hostaddr"),
+			Port:     confGet(c, "port"),
 		}
 
 	case "mysql":
-		driver = &drivers.Mysql{DBName: confGet(conf, "dbname"),
-			User:       confGet(conf, "user"),
-			Password:   confGet(conf, "password"),
-			Protocol:   confGet(conf, "protocol"),
-			Parameters: confGet(conf, "parameters"),
-			Addr:       confGet(conf, "addr")}
+		driver = &drivers.Mysql{DBName: confGet(c, "dbname"),
+			User:       confGet(c, "user"),
+			Password:   confGet(c, "password"),
+			Protocol:   confGet(c, "protocol"),
+			Parameters: confGet(c, "parameters"),
+			Addr:       confGet(c, "addr")}
 
 	case "sqlite3":
-		driver = &drivers.Sqlite3{File: confGet(conf, "file")}
+		driver = &drivers.Sqlite3{File: confGet(c, "file")}
 
 	default:
 		logger.Println("you may need regist a custom driver: db.RegistDriver(Mysql{})")
@@ -114,17 +112,17 @@ func New(name string, conf map[string]string) *Database {
 
 	}
 
-	driver.SetConnectString(confGet(conf, "connect"))
-	poolSize, err := strconv.Atoi(confGet(conf, "pool_size"))
+	driver.SetConnectString(confGet(c, "connect"))
+	poolSize, err := strconv.Atoi(confGet(c, "pool_size"))
 	if poolSize == 0 || err != nil {
 		poolSize = 3
 	}
-	maxCount, err := strconv.Atoi(confGet(conf, "max_count"))
+	maxCount, err := strconv.Atoi(confGet(c, "max_count"))
 	if maxCount == 0 || err != nil {
 		maxCount = 10
 	}
 
-	d := NewDatabase(name, driver, logger)
+	d := NewDatabase(name, driver, conf.Conf(c), logger)
 
 	// ------- time zone --------
 	// if confGet(conf, "timezone") != "" {
@@ -248,7 +246,10 @@ func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, 
 	} else {
 		result, err = conn.Exec(sqlstr, args...)
 	}
-	return result, myerr.New(err).Log().Stack()
+	if err != nil {
+		return result, myerr.New(err).Log().Stack()
+	}
+	return result, nil
 }
 
 // ExecPrepare sql on prepare mode
@@ -266,7 +267,10 @@ func ExecPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.R
 	} else {
 		result, err = s.Exec(args...)
 	}
-	return result, myerr.New(err).Log().Stack()
+	if err != nil {
+		return result, myerr.New(err).Log().Stack()
+	}
+	return result, nil
 }
 
 // Get a database instance by name from database pool

@@ -149,6 +149,7 @@ func Init() *SiteServer {
 
 	if config.IsSet("cache") {
 		cache.Init(config.GetConf("cache"))
+		db.SetCache(cache.CurrentCache())
 	}
 
 	return s

@@ -27,6 +27,7 @@ func pageHandle(p IPage) error {
 		} else if err != nil {
 			uri = "/error?msg=" + url.PathEscape(err.Error())
 		}
+
 		http.Redirect(p.GetResponseWriter(), p.GetRequest(), uri, http.StatusSeeOther)
 		return nil
 	}

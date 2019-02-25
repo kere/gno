@@ -10,7 +10,7 @@ import (
 	"github.com/kere/gno/websock"
 )
 
-type openAPIExec func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error)
+type openAPIExec func(args util.MapData, prepareDat interface{}) (interface{}, error)
 
 type openapiItem struct {
 	Exec openAPIExec
@@ -27,10 +27,11 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 	for i := 0; i < l; i++ {
 		m := typ.Method(i)
 		name := m.Name
-		if name == "Auth" || name == "Reply" {
+		if name == "Prepare" || name == "Reply" {
 			continue
 		}
-		f := v.Method(i).Interface().(func(req *http.Request, ps httprouter.Params, args util.MapData) (interface{}, error))
+
+		f := v.Method(i).Interface().(func(args util.MapData, dat interface{}) (interface{}, error))
 		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
 
 		// s.Router.POST(rule+"/"+name, openAPIHandle)

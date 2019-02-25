@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
 )
 
@@ -122,7 +123,7 @@ type Database struct {
 }
 
 // NewDatabase new
-func NewDatabase(name string, driver IDriver, lg *log.Logger) *Database {
+func NewDatabase(name string, driver IDriver, dbConf conf.Conf, lg *log.Logger) *Database {
 	conn := NewConnection(driver)
 
 	conn.MaxOpenConns = dbConf.DefaultInt("max_open_conns", 100)

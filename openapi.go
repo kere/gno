@@ -32,7 +32,7 @@ const (
 
 // IOpenAPI interface
 type IOpenAPI interface {
-	Auth(req *http.Request, ps httprouter.Params) (require bool, err error)
+	Prepare(req *http.Request, ps httprouter.Params) (opt interface{}, err error)
 	Reply(rw http.ResponseWriter, data interface{}) error
 }
 
@@ -41,10 +41,10 @@ type OpenAPI struct {
 	ReplyType int //json, xml, text
 }
 
-// Auth page auth
+// Prepare page auth
 // if require is true then do auth
-func (w OpenAPI) Auth(req *http.Request, ps httprouter.Params) (require bool, err error) {
-	return require, nil
+func (w OpenAPI) Prepare(req *http.Request, ps httprouter.Params) (interface{}, error) {
+	return nil, nil
 }
 
 // Reply response

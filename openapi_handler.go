@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kere/gno/libs/myerr"
 	"github.com/kere/gno/libs/util"
 )
 
@@ -32,7 +33,8 @@ func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Para
 		}()
 	}
 
-	if isReq, err := item.API.Auth(req, ps); isReq && err != nil {
+	prepareDat, err := item.API.Prepare(req, ps)
+	if err != nil {
 		return err
 	}
 
@@ -42,7 +44,7 @@ func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Para
 	if str != "" {
 		err := json.Unmarshal(src, &args)
 		if err != nil {
-			return err
+			return myerr.New(err, str)
 		}
 	}
 
@@ -51,7 +53,7 @@ func openAPIHandle(rw http.ResponseWriter, req *http.Request, ps httprouter.Para
 		return err
 	}
 
-	data, err := item.Exec(req, ps, args)
+	data, err := item.Exec(args, prepareDat)
 	if err != nil {
 		return err
 	}
