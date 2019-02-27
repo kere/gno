@@ -186,6 +186,7 @@ func (s *SiteServer) Start() {
 		}
 
 		if err := server.Close(); err != nil {
+			pool.Release()
 			fmt.Println(err)
 			os.Exit(0)
 		}

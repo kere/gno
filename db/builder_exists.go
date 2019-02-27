@@ -13,10 +13,10 @@ type ExistsBuilder struct {
 	isPrepare bool
 }
 
-// NewExistsBuilder new
-func NewExistsBuilder(t string) ExistsBuilder {
-	return ExistsBuilder{table: t}
-}
+// // NewExistsBuilder new
+// func NewExistsBuilder(t string) ExistsBuilder {
+// 	return ExistsBuilder{table: t}
+// }
 
 // Table f
 func (e *ExistsBuilder) Table(t string) *ExistsBuilder {

@@ -40,8 +40,8 @@ func TxCreateAndReturnID(tx *Tx, table string, row DataRow) (sql.Result, error) 
 // CreateIfNotFound insert data if not found
 // return true if insert
 func CreateIfNotFound(table string, row DataRow, where string, params ...interface{}) (bool, error) {
-	e := NewExistsBuilder(table)
-	if e.Where(where, params...).Exists() {
+	e := ExistsBuilder{}
+	if e.Table(table).Where(where, params...).Exists() {
 		return false, nil
 	}
 

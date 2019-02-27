@@ -1,6 +1,7 @@
 package gno
 
 import (
+	"errors"
 	"net/http"
 	"reflect"
 
@@ -38,11 +39,10 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 
 		s.Router.POST(rule+"/"+name, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 			// err := openAPIHandle(rw, req, ps)
-			arg := PoolParams{Typ: 2, RW: rw, Req: req, Params: ps, Error: make(chan error, 1)}
-			pool.Serve(&arg)
-			err := <-arg.Error
+			arg := PoolParams{Typ: 2, RW: rw, Req: req, Params: ps}
+			err := pool.Invoke(&arg)
 			if err != nil {
-				doAPIError(err, rw, req)
+				doAPIError(errors.New("Throttle limit error"), rw, req)
 			}
 		})
 	}
@@ -54,11 +54,10 @@ func (s *SiteServer) RegistGet(rule string, factory func() IPage) {
 		p := factory()
 		p.Init("GET", rw, req, ps)
 		// err := pageHandle(p)
-		arg := PoolParams{Typ: 1, Page: p, Error: make(chan error, 1)}
-		pool.Serve(&arg)
-		err := <-arg.Error
+		arg := PoolParams{Typ: 1, Page: p}
+		err := pool.Invoke(&arg)
 		if err != nil {
-			doPageError(s.ErrorURL, err, rw, req)
+			doAPIError(errors.New("Throttle limit error"), rw, req)
 		}
 	})
 }
@@ -70,11 +69,10 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 		p.Init("POST", rw, req, ps)
 		// err := pageHandle(p, rw, req, ps)
 
-		arg := PoolParams{Typ: 1, Page: p, Error: make(chan error, 1)}
-		pool.Serve(&arg)
-		err := <-arg.Error
+		arg := PoolParams{Typ: 1, Page: p}
+		err := pool.Invoke(&arg)
 		if err != nil {
-			doPageError(s.ErrorURL, err, rw, req)
+			doPageError(s.ErrorURL, errors.New("Throttle limit error"), rw, req)
 		}
 	})
 }
@@ -82,23 +80,22 @@ func (s *SiteServer) RegistPost(rule string, factory func() IPage) {
 // RegistPostAPI api router
 func (s *SiteServer) RegistPostAPI(rule string, webapi IWebAPI) {
 	s.Router.POST(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-		arg := PoolParams{Typ: 3, RW: rw, Req: req, Params: ps, WebAPI: webapi, Error: make(chan error, 1)}
-		pool.Serve(&arg)
-		err := <-arg.Error
+		arg := PoolParams{Typ: 3, RW: rw, Req: req, Params: ps, WebAPI: webapi}
+		err := pool.Invoke(&arg)
 		if err != nil {
-			doAPIError(err, rw, req)
+			doAPIError(errors.New("Throttle limit error"), rw, req)
 		}
+
 	})
 }
 
 // RegistGetAPI api router
 func (s *SiteServer) RegistGetAPI(rule string, webapi IWebAPI) {
 	s.Router.GET(rule, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-		arg := PoolParams{Typ: 3, RW: rw, Req: req, Params: ps, WebAPI: webapi, Error: make(chan error, 1)}
-		pool.Serve(&arg)
-		err := <-arg.Error
+		arg := PoolParams{Typ: 3, RW: rw, Req: req, Params: ps, WebAPI: webapi}
+		err := pool.Invoke(&arg)
 		if err != nil {
-			doAPIError(err, rw, req)
+			doAPIError(errors.New("Throttle limit error"), rw, req)
 		}
 	})
 }

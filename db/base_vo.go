@@ -117,15 +117,15 @@ func (b *BaseVO) TxExists(tx *Tx, where string, params ...interface{}) (bool, er
 
 // Exists is found
 func (b *BaseVO) Exists(where string, params ...interface{}) bool {
-	e := NewExistsBuilder(b.Table)
-	return e.Where(where, params...).Exists()
+	e := ExistsBuilder{}
+	return e.Table(b.Table).Where(where, params...).Exists()
 }
 
 // CreateIfNotFound insert data if not found
 // return true if insert
 func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, error) {
-	e := NewExistsBuilder(b.Table)
-	if e.Where(where, params...).Exists() {
+	e := ExistsBuilder{}
+	if e.Table(b.Table).Where(where, params...).Exists() {
 		return false, nil
 	}
 
@@ -135,8 +135,8 @@ func (b *BaseVO) CreateIfNotFound(where string, params ...interface{}) (bool, er
 // TxCreateIfNotFound insert data if not found
 // return true if insert
 func (b *BaseVO) TxCreateIfNotFound(tx *Tx, where string, params ...interface{}) (bool, error) {
-	e := NewExistsBuilder(b.Table)
-	if exists, err := e.Where(where, params...).TxExists(tx); exists || tx.DoError(err) {
+	e := ExistsBuilder{}
+	if exists, err := e.Table(b.Table).Where(where, params...).TxExists(tx); exists || tx.DoError(err) {
 		return false, err
 	}
 

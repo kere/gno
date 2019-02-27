@@ -101,8 +101,8 @@ func (dr DataRow) Update(table string, where string, params ...interface{}) erro
 // If exists then update
 // If not found then insert
 func (dr DataRow) Save(table string, where string, params ...interface{}) error {
-	e := NewExistsBuilder(table)
-	if e.Where(where, params...).Exists() {
+	e := ExistsBuilder{}
+	if e.Table(table).Where(where, params...).Exists() {
 		e := NewUpdateBuilder(table)
 		_, err := e.Where(where, params...).Update(dr)
 		return err
@@ -114,8 +114,8 @@ func (dr DataRow) Save(table string, where string, params ...interface{}) error 
 
 // InsertIfNotFound inert data
 func (dr DataRow) InsertIfNotFound(table string, where string, params ...interface{}) (bool, error) {
-	e := NewExistsBuilder(table)
-	if e.Where(where, params...).Exists() {
+	e := ExistsBuilder{}
+	if e.Table(table).Where(where, params...).Exists() {
 		return true, nil
 	}
 	ins := InsertBuilder{}

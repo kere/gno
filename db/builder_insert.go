@@ -161,8 +161,8 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 	size := 500
 	n := len(rows)
 	if n <= size {
-		sql, vals := ins.parse(rows)
-		return ins.GetDatabase().Exec(sql, vals...)
+		sql := ins.parseM(rows)
+		return ins.GetDatabase().Exec(sql)
 	}
 
 	// pagination

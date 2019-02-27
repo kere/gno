@@ -202,7 +202,6 @@ const (
 // Struct2DataRow to datarow
 func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 	typ := sc.GetTypeElem()
-
 	l := typ.NumField()
 
 	var skipTag, skipEmpty, tagtyp string
