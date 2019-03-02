@@ -3,9 +3,7 @@ package db
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"reflect"
-	"sort"
 )
 
 // DataSet datarow list
@@ -236,94 +234,4 @@ func (ds VODataSet) Encode() [][]interface{} {
 	}
 
 	return values
-}
-
-// DataSetSorted class
-type DataSetSorted struct {
-	dataset DataSet
-	Field   string
-	Method  string
-}
-
-// NewDataSetSorted func
-func NewDataSetSorted(dataset DataSet, field string) DataSetSorted {
-	return DataSetSorted{dataset: dataset, Field: field, Method: "int"}
-}
-
-// Sort sort.Interface.
-func (s *DataSetSorted) Sort() {
-	sort.Sort(s)
-}
-
-// Reverse sort.Interface.
-func (s *DataSetSorted) Reverse() {
-	sort.Reverse(s)
-}
-
-// Len is part of sort.Interface.
-func (s *DataSetSorted) Len() int {
-	return len(s.dataset)
-}
-
-// Swap is part of sort.Interface.
-func (s *DataSetSorted) Swap(i, j int) {
-	s.dataset[i], s.dataset[j] = s.dataset[j], s.dataset[i]
-}
-
-// Less func.
-func (s *DataSetSorted) Less(i, j int) bool {
-	if s.Method == "int" {
-		return s.dataset[i].Int(s.Field) < s.dataset[j].Int(s.Field)
-	}
-	return s.dataset[i].Float(s.Field) < s.dataset[j].Float(s.Field)
-}
-
-// IndexOfInt func.
-func (s *DataSetSorted) IndexOfInt(v int) int {
-	isdesc := false
-	if s.dataset.Len() > 2 {
-		if s.dataset[0].Int(s.Field) < s.dataset[1].Int(s.Field) {
-			isdesc = true
-		}
-	}
-	return getSortedI(s.Field, v, s.dataset, 0, s.dataset.Len()-1, isdesc)
-}
-
-// FindOfInt func.
-func (s *DataSetSorted) FindOfInt(v int) (DataRow, bool) {
-	i := s.IndexOfInt(v)
-	if i < 0 {
-		return nil, false
-	}
-	return s.dataset[i], true
-}
-
-func getSortedI(field string, val int, arr DataSet, b, e int, isdesc bool) int {
-	if b == e {
-		fmt.Println("b==e", val)
-		if arr[b].Int(field) == val {
-			return b
-		}
-		return -1
-	} else if b > e {
-		return -1
-	}
-	l := e - b + 1
-	i := b + l/2
-	v := arr[i].Int(field)
-
-	if v == val {
-		return i
-	} else if v > val {
-		if isdesc {
-			return getSortedI(field, val, arr, i+1, e, isdesc)
-		}
-		// small zone
-		return getSortedI(field, val, arr, b, i-1, isdesc)
-	}
-	// v < val
-	if isdesc {
-		return getSortedI(field, val, arr, b, i-1, isdesc)
-	}
-	return getSortedI(field, val, arr, i+1, e, isdesc)
 }

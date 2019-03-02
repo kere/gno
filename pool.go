@@ -23,7 +23,7 @@ type PoolParams struct {
 // NewPool new
 func NewPool(n int) *ants.PoolWithFunc {
 	po, err := ants.NewPoolWithFunc(n, func(a interface{}) {
-		ps := a.(*PoolParams)
+		ps := a.(PoolParams)
 
 		var err error
 		switch ps.Typ {

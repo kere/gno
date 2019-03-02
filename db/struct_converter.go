@@ -207,7 +207,7 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 	var skipTag, skipEmpty, tagtyp string
 	var value interface{}
 	var fieldVal reflect.Value
-	isupdate := actionType == "update"
+	isupdate := actionType == ActionUpdate
 
 	datarow := DataRow{}
 
