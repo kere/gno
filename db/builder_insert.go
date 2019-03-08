@@ -30,10 +30,10 @@ type InsertBuilder struct {
 	isReturnID    bool
 }
 
-// // NewInsertBuilder func
-// func NewInsertBuilder(t string) InsertBuilder {
-// 	return InsertBuilder{table: t, isExec: false}
-// }
+// NewInsert func
+func NewInsert(t string) *InsertBuilder {
+	return &InsertBuilder{table: t, isExec: false}
+}
 
 // SetIsPrepare func
 func (ins *InsertBuilder) SetIsPrepare(v bool) *InsertBuilder {

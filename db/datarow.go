@@ -92,7 +92,7 @@ func (dr DataRow) ChangedData(newRow DataRow) DataRow {
 
 // Update datarow item
 func (dr DataRow) Update(table string, where string, params ...interface{}) error {
-	u := NewUpdateBuilder(table)
+	u := UpdateBuilder{table: table}
 	_, err := u.Where(where, params...).Update(dr)
 	return err
 }
@@ -103,7 +103,7 @@ func (dr DataRow) Update(table string, where string, params ...interface{}) erro
 func (dr DataRow) Save(table string, where string, params ...interface{}) error {
 	e := ExistsBuilder{}
 	if e.Table(table).Where(where, params...).Exists() {
-		e := NewUpdateBuilder(table)
+		e := UpdateBuilder{table: table}
 		_, err := e.Where(where, params...).Update(dr)
 		return err
 	}
@@ -299,6 +299,9 @@ func (dr DataRow) StringDefault(field string, v string) string {
 
 // Uint64 return
 func (dr DataRow) Uint64(field string) uint64 {
+	if dr[field] == nil {
+		return 0
+	}
 	// return dr[field].(int64)
 	switch dr[field].(type) {
 	case int, int64, int32, int16, int8:
@@ -337,6 +340,9 @@ func (dr DataRow) Uint64(field string) uint64 {
 
 // Int64 return
 func (dr DataRow) Int64(field string) int64 {
+	if dr[field] == nil {
+		return 0
+	}
 	// return dr[field].(int64)
 	switch dr[field].(type) {
 	case float64, float32:
@@ -393,6 +399,9 @@ func (dr DataRow) Int64Default(field string, v int64) int64 {
 
 // Int return
 func (dr DataRow) Int(field string) int {
+	if dr[field] == nil {
+		return 0
+	}
 	return int(dr.Int64(field))
 }
 
@@ -406,6 +415,10 @@ func (dr DataRow) IntDefault(field string, v int) int {
 
 // Float float64
 func (dr DataRow) Float(field string) float64 {
+	if dr[field] == nil {
+		return 0
+	}
+
 	switch dr[field].(type) {
 	case []byte:
 		f, err := strconv.ParseFloat(string(dr[field].([]byte)), 64)

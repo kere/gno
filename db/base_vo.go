@@ -145,14 +145,14 @@ func (b *BaseVO) TxCreateIfNotFound(tx *Tx, where string, params ...interface{})
 
 // Update func
 func (b *BaseVO) Update(where string, params ...interface{}) error {
-	u := NewUpdateBuilder(b.Table)
+	u := UpdateBuilder{table: b.Table}
 	_, err := u.Where(where, params...).Update(b.target)
 	return err
 }
 
 // TxUpdate func
 func (b *BaseVO) TxUpdate(tx *Tx, where string, params ...interface{}) error {
-	u := NewUpdateBuilder(b.Table)
+	u := UpdateBuilder{table: b.Table}
 	_, err := u.Where(where, params...).TxUpdate(tx, b.target)
 	tx.DoError(err)
 	return err
@@ -174,21 +174,21 @@ func (b *BaseVO) UpdateFields(fields []string, where string, params ...interface
 		}
 	}
 
-	u := NewUpdateBuilder(b.Table)
+	u := UpdateBuilder{table: b.Table}
 	_, err := u.Where(where, params...).Update(dat)
 	return err
 }
 
 // Delete func
 func (b *BaseVO) Delete(where string, params ...interface{}) error {
-	d := NewDeleteBuilder(b.Table)
+	d := DeleteBuilder{table: b.Table}
 	_, err := d.Where(where, params...).Delete()
 	return err
 }
 
 // TxDelete func
 func (b *BaseVO) TxDelete(tx *Tx, where string, params ...interface{}) error {
-	d := NewDeleteBuilder(b.Table)
+	d := DeleteBuilder{table: b.Table}
 	_, err := d.Where(where, params...).TxDelete(tx)
 	tx.DoError(err)
 	return err

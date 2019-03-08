@@ -10,9 +10,9 @@ type CounterBuilder struct {
 	builder
 }
 
-// NewCounterBuilder new
-func NewCounterBuilder(t string) CounterBuilder {
-	return CounterBuilder{table: t}
+// NewCounter new
+func NewCounter(t string) *CounterBuilder {
+	return &CounterBuilder{table: t}
 }
 
 // Table string

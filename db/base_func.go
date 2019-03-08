@@ -50,28 +50,28 @@ func CreateIfNotFound(table string, row DataRow, where string, params ...interfa
 
 // Update func
 func Update(table string, row DataRow, where string, params ...interface{}) error {
-	u := NewUpdateBuilder(table)
+	u := UpdateBuilder{table: table}
 	_, err := u.Where(where, params...).Update(row)
 	return err
 }
 
 // TxUpdate func
 func TxUpdate(tx *Tx, table string, row DataRow, where string, params ...interface{}) error {
-	u := NewUpdateBuilder(table)
+	u := UpdateBuilder{table: table}
 	_, err := u.Where(where, params...).TxUpdate(tx, row)
 	return err
 }
 
 // Delete func
 func Delete(table string, where string, params ...interface{}) error {
-	d := NewDeleteBuilder(table)
-	_, err := d.Where(where, params...).Delete()
+	d := DeleteBuilder{}
+	_, err := d.Table(table).Where(where, params...).Delete()
 	return err
 }
 
 // TxDelete func
 func TxDelete(tx *Tx, table string, where string, params ...interface{}) error {
-	d := NewDeleteBuilder(table)
-	_, err := d.Where(where, params...).TxDelete(tx)
+	d := DeleteBuilder{}
+	_, err := d.Table(table).Where(where, params...).TxDelete(tx)
 	return err
 }

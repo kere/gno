@@ -30,10 +30,10 @@ type QueryBuilder struct {
 	isQueryOne bool
 }
 
-// // NewQueryBuilder new
-// func NewQueryBuilder(t string) QueryBuilder {
-// 	return QueryBuilder{table: t, isExec: true}
-// }
+// NewQuery new
+func NewQuery(t string) *QueryBuilder {
+	return &QueryBuilder{table: t, isExec: true}
+}
 
 // Table return string
 func (q *QueryBuilder) Table(t string) *QueryBuilder {

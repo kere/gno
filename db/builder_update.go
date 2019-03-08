@@ -13,9 +13,9 @@ type UpdateBuilder struct {
 	builder
 }
 
-// NewUpdateBuilder func
-func NewUpdateBuilder(t string) UpdateBuilder {
-	return UpdateBuilder{table: t}
+// NewUpdate func
+func NewUpdate(t string) *UpdateBuilder {
+	return &UpdateBuilder{table: t}
 }
 
 // Table string
