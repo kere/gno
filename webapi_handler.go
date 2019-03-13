@@ -10,7 +10,7 @@ import (
 )
 
 func webAPIHandle(webapi IWebAPI, rw http.ResponseWriter, req *http.Request, ps httprouter.Params) (err error) {
-	if isReq, err := webapi.Auth(req, ps); isReq && err != nil {
+	if err := webapi.Auth(req, ps); err != nil {
 		return err
 	}
 

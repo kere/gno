@@ -248,7 +248,7 @@ func SetCookie(w http.ResponseWriter, name, value string, age int, path, domain 
 }
 
 // Render page
-func Render(w io.Writer, p *Page) error {
+func (p *Page) Render(w io.Writer) error {
 	lyt := layout.NewPage()
 	lyt.Lang = p.Lang
 
