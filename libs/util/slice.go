@@ -6,6 +6,28 @@ import (
 	"strings"
 )
 
+// CopyStrings copy
+func CopyStrings(arr []string) []string {
+	l := len(arr)
+	if l == 0 {
+		return []string{}
+	}
+	src := make([]string, l)
+	copy(arr, src)
+	return src
+}
+
+// CopyInts copy
+func CopyInts(arr []int) []int {
+	l := len(arr)
+	if l == 0 {
+		return []int{}
+	}
+	src := make([]int, l)
+	copy(arr, src)
+	return src
+}
+
 // SplitStr2Floats split string to []float64
 func SplitStr2Floats(s, sep string) ([]float64, error) {
 	arr := strings.Split(s, sep)
