@@ -134,9 +134,23 @@ func TestSort(t *testing.T) {
 	fmt.Println("---- 48")
 }
 
-// func Test_Sync(t *testing.T) {
-// 	cpt := NewComputation(20)
-// 	cpt.Run(100, func(i int) {
-// 		fmt.Println("Sync:", i)
-// 	})
-// }
+func Test_Sync(t *testing.T) {
+	cpt := NewComputation(20)
+	arr := make([]int, 100)
+
+	counter := 0
+	cpt.Run(100, func(i int) (interface{}, error) {
+		arr[i] = i + 1
+		return i, nil
+	}, func(i int, dat interface{}) {
+		counter++
+	})
+	// fmt.Println(counter, "===========")
+	// fmt.Println(arr, "===========")
+
+	if counter != 100 {
+		fmt.Println(counter, "===========")
+		fmt.Println(arr, "===========")
+		t.Fatal(counter)
+	}
+}
