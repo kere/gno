@@ -133,3 +133,10 @@ func TestSort(t *testing.T) {
 	}
 	fmt.Println("---- 48")
 }
+
+// func Test_Sync(t *testing.T) {
+// 	cpt := NewComputation(20)
+// 	cpt.Run(100, func(i int) {
+// 		fmt.Println("Sync:", i)
+// 	})
+// }
