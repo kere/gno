@@ -20,8 +20,9 @@ func NewComputation(num int) *Computation {
 	return &Computation{NumProcess: num, dataChan: make(chan interface{}, num), errChan: make(chan error, num)}
 }
 
-// Run f
-func (c *Computation) Run(l int, execFunc func(i int, c *Computation) (interface{}, error), resultFunc func(dat interface{}, c *Computation)) {
+// Run 并行性计算
+// l：循环数量
+func (c *Computation) Run(l int, execFunc func(i int) (interface{}, error), resultFunc func(dat interface{})) {
 	if l == 0 {
 		return
 	}
@@ -32,12 +33,12 @@ func (c *Computation) Run(l int, execFunc func(i int, c *Computation) (interface
 		}
 	}
 	startTime := time.Now()
-	chanA := make(chan int, c.NumProcess)
+	chanA := make(chan int8, c.NumProcess)
 	go func() {
 		for i := 0; i < l; i++ {
 			chanA <- 1
 			go func(i int) {
-				dat, err := execFunc(i, c)
+				dat, err := execFunc(i)
 				if err != nil {
 					c.errChan <- err
 					return
@@ -50,7 +51,7 @@ func (c *Computation) Run(l int, execFunc func(i int, c *Computation) (interface
 	for c.counter < l {
 		select {
 		case dat := <-c.dataChan:
-			resultFunc(dat, c)
+			resultFunc(dat)
 			c.counter++
 			<-chanA
 

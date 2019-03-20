@@ -21,7 +21,7 @@ func (s *DataSetSorted) Sort() {
 
 // Reverse sort.Interface.
 func (s *DataSetSorted) Reverse() {
-	sort.Reverse(s)
+	sort.Sort(sort.Reverse(s))
 }
 
 // Len is part of sort.Interface.

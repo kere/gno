@@ -76,7 +76,7 @@ var (
 	insBracketR = []byte(")")
 )
 
-func (ins *InsertBuilder) parseM(rows DataSet) string {
+func parseInsertM(ins *InsertBuilder, rows DataSet) string {
 	size := len(rows)
 	if size == 0 {
 		return ""
@@ -129,7 +129,7 @@ func (ins *InsertBuilder) parseM(rows DataSet) string {
 	return s.String()
 }
 
-func (ins *InsertBuilder) parse(data interface{}) (string, []interface{}) {
+func parseInsert(ins *InsertBuilder, data interface{}, hasReturnID bool) (string, []interface{}) {
 	keys, values, stmts := keyValueList(ActionInsert, data)
 
 	s := bytes.Buffer{}
@@ -143,13 +143,17 @@ func (ins *InsertBuilder) parse(data interface{}) (string, []interface{}) {
 	s.Write(bytes.Join(stmts, BCommaSplit))
 	s.Write(insBracketR)
 
+	if hasReturnID {
+		s.Write(bPGReturning)
+	}
+
 	return s.String(), values
 }
 
 // Insert db
 func (ins *InsertBuilder) Insert(data interface{}) (sql.Result, error) {
 	cdb := ins.GetDatabase()
-	sql, vals := ins.parse(data)
+	sql, vals := parseInsert(ins, data, false)
 	if ins.isExec {
 		return cdb.Exec(sql, vals...)
 	}
@@ -161,13 +165,13 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 	size := 500
 	n := len(rows)
 	if n <= size {
-		sql := ins.parseM(rows)
+		sql := parseInsertM(ins, rows)
 		return ins.GetDatabase().Exec(sql)
 	}
 
 	// pagination
 	p := int(math.Ceil(float64(n) / float64(size)))
-	var k = 0
+	var k int
 	var err error
 	var tmp DataSet
 	var sqlR sql.Result
@@ -179,7 +183,7 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 				tmp = append(tmp, rows[k])
 			}
 
-			sqlR, err = ins.GetDatabase().Exec(ins.parseM(tmp))
+			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
 			if err != nil {
 				return sqlR, err
 			}
@@ -187,7 +191,7 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 			for k = 0; k < size; k++ {
 				tmp = append(tmp, rows[size*i+k])
 			}
-			sqlR, err = ins.GetDatabase().Exec(ins.parseM(tmp))
+			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
 			if err != nil {
 				return sqlR, err
 			}
@@ -199,11 +203,9 @@ func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
 
 // TxInsert return sql.Result transation
 func (ins *InsertBuilder) TxInsert(tx *Tx, data interface{}) (sql.Result, error) {
-	sql, vals := ins.parse(data)
-	if ins.isReturnID && tx.GetDatabase().Driver.Name() == "postgres" {
-		// s.SetSql(append(s.GetSql(), bPGReturning...))
-		sql = sql + sPGReturning
-
+	hasReturnID := ins.isReturnID && tx.GetDatabase().Driver.Name() == "postgres"
+	sql, vals := parseInsert(ins, data, hasReturnID)
+	if hasReturnID {
 		r, err := tx.Query(sql, vals...)
 		if err != nil {
 			return nil, err

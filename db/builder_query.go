@@ -142,10 +142,10 @@ func (q *QueryBuilder) CacheExpire(expire int) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) cachekey() string {
+func querybuildCacheKey(q *QueryBuilder) string {
 	s := bytes.Buffer{}
 	s.WriteString(q.table)
-	q.writeField(&s)
+	setQueryFields(q, &s)
 	s.WriteString(fmt.Sprintf("%d%d", q.limit, q.offset))
 	// s.WriteString(strconv.FormatInt(q.limit, 10) + strconv.Formart(q.offset, 10))
 	s.WriteString(q.order)
@@ -162,14 +162,14 @@ func (q *QueryBuilder) ClearCache() error {
 	if cacheIns == nil {
 		return nil
 	}
-	return cacheDel(q.cachekey())
+	return cacheDel(querybuildCacheKey(q))
 }
 
-func (q *QueryBuilder) parse() string {
+func parseQuery(q *QueryBuilder) string {
 	s := bytes.Buffer{}
 	s.Write(bSQLSelect)
 
-	q.writeField(&s)
+	setQueryFields(q, &s)
 
 	s.Write(bSQLFrom)
 	s.WriteString(q.table)
@@ -213,7 +213,7 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 	var key string
 
 	if q.cache {
-		key = q.cachekey()
+		key = querybuildCacheKey(q)
 		if exi, _ := cacheIns.IsExists(key); exi {
 			return cacheGet(key)
 		}
@@ -221,9 +221,9 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 	var r DataSet
 	var err error
 	if q.isExec {
-		r, err = q.GetDatabase().Query(q.parse(), q.args...)
+		r, err = q.GetDatabase().Query(parseQuery(q), q.args...)
 	} else {
-		r, err = q.GetDatabase().QueryPrepare(q.parse(), q.args...)
+		r, err = q.GetDatabase().QueryPrepare(parseQuery(q), q.args...)
 	}
 
 	if err != nil {
@@ -264,9 +264,9 @@ func (q *QueryBuilder) QueryOne() (DataRow, error) {
 // 	var r VODataSet
 // 	var err error
 // 	if q.isExec {
-// 		r, err = database.FindPrepare(q.cls, NewSqlState(q.parse()))
+// 		r, err = database.FindPrepare(q.cls, NewSqlState(parseQuery(q)))
 // 	} else {
-// 		r, err = database.Find(q.cls, NewSqlState(q.parse()))
+// 		r, err = database.Find(q.cls, NewSqlState(parseQuery(q)))
 // 	}
 // 	if err != nil {
 // 		return nil, err
@@ -291,7 +291,7 @@ func (q *QueryBuilder) QueryOne() (DataRow, error) {
 // 	return nil, nil
 // }
 
-func (q *QueryBuilder) writeField(s *bytes.Buffer) {
+func setQueryFields(q *QueryBuilder, s *bytes.Buffer) {
 	field := BStarKey
 	if q.field != "" {
 		field = []byte(q.field)
@@ -305,10 +305,10 @@ func (q *QueryBuilder) writeField(s *bytes.Buffer) {
 
 // TxQuery transction
 func (q *QueryBuilder) TxQuery(tx *Tx) (DataSet, error) {
-	return tx.Query(q.parse(), q.args...)
+	return tx.Query(parseQuery(q), q.args...)
 }
 
 // TxQueryOne transction
 func (q *QueryBuilder) TxQueryOne(tx *Tx) (DataRow, error) {
-	return tx.QueryOne(q.parse(), q.args...)
+	return tx.QueryOne(parseQuery(q), q.args...)
 }

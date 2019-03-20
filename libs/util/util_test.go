@@ -108,14 +108,14 @@ func TestSort(t *testing.T) {
 	var isok bool
 	arr = []int64{3, 10, 20, 30, 43, 44, 45, 56, 65, 76, 230, 322, 430, 659}
 	fmt.Println(arr)
-	index, isok = SearchInt64s(arr, 50)
+	index, _ = SearchInt64s(arr, 50)
 	// if index != 7 || isok {
 	// 	t.Fatal(index)
 	// }
 	fmt.Println("index:", index)
 	fmt.Println("---- 50")
 
-	index, isok = SearchInt64s(arr, 57)
+	index, _ = SearchInt64s(arr, 57)
 	fmt.Println("index:", index)
 	fmt.Println("---- 57")
 

@@ -24,7 +24,7 @@ func (u *UpdateBuilder) Table(t string) *UpdateBuilder {
 	return u
 }
 
-func (u *UpdateBuilder) parse(data interface{}) (string, []interface{}) {
+func parseUpdate(u *UpdateBuilder, data interface{}) (string, []interface{}) {
 	keys, values, _ := keyValueList(ActionUpdate, data)
 
 	s := bytes.Buffer{}
@@ -53,7 +53,7 @@ func (u *UpdateBuilder) Where(cond string, args ...interface{}) *UpdateBuilder {
 
 // Update db
 func (u *UpdateBuilder) Update(data interface{}) (sql.Result, error) {
-	sql, vals := u.parse(data)
+	sql, vals := parseUpdate(u, data)
 	return u.GetDatabase().ExecPrepare(sql, vals...)
 }
 
@@ -95,6 +95,6 @@ func (u *UpdateBuilder) Update(data interface{}) (sql.Result, error) {
 
 // TxUpdate trunsaction
 func (u *UpdateBuilder) TxUpdate(tx *Tx, data interface{}) (sql.Result, error) {
-	sql, vals := u.parse(data)
+	sql, vals := parseUpdate(u, data)
 	return tx.ExecPrepare(sql, vals...)
 }

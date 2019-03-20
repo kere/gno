@@ -24,7 +24,7 @@ func (d *DeleteBuilder) Table(t string) *DeleteBuilder {
 	return d
 }
 
-func (d *DeleteBuilder) parse() string {
+func parseDelete(d *DeleteBuilder) string {
 	s := bytes.Buffer{}
 	driver := Current().Driver
 	s.Write(bSQLDelete)
@@ -49,10 +49,10 @@ func (d *DeleteBuilder) Where(cond string, args ...interface{}) *DeleteBuilder {
 
 // Delete delete
 func (d *DeleteBuilder) Delete() (sql.Result, error) {
-	return d.GetDatabase().ExecPrepare(d.parse(), d.args...)
+	return d.GetDatabase().ExecPrepare(parseDelete(d), d.args...)
 }
 
 // TxDelete trunsaction delete
 func (d *DeleteBuilder) TxDelete(tx *Tx) (sql.Result, error) {
-	return tx.ExecPrepare(d.parse(), d.args...)
+	return tx.ExecPrepare(parseDelete(d), d.args...)
 }

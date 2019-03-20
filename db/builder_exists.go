@@ -45,7 +45,7 @@ func (e *ExistsBuilder) Where(s string, args ...interface{}) *ExistsBuilder {
 	return e
 }
 
-func (e *ExistsBuilder) parse() string {
+func parseExists(e *ExistsBuilder) string {
 	s := bytes.Buffer{}
 	s.WriteString("SELECT 1 as field FROM ")
 	s.WriteString(Current().Driver.QuoteField(e.table))
@@ -61,7 +61,7 @@ func (e *ExistsBuilder) parse() string {
 
 // Exists db
 func (e *ExistsBuilder) Exists() bool {
-	r, err := e.GetDatabase().QueryPrepare(e.parse(), e.args...)
+	r, err := e.GetDatabase().QueryPrepare(parseExists(e), e.args...)
 	if err != nil {
 		e.GetDatabase().log.Alert(err).Stack()
 		panic(err)
@@ -71,5 +71,5 @@ func (e *ExistsBuilder) Exists() bool {
 
 // TxExists trunsaction
 func (e *ExistsBuilder) TxExists(tx *Tx) (bool, error) {
-	return tx.Exists(e.parse(), e.args...)
+	return tx.Exists(parseExists(e), e.args...)
 }

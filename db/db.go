@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	"github.com/kere/gno/db/drivers"
 	"github.com/kere/gno/libs/conf"
@@ -113,14 +112,14 @@ func New(name string, c map[string]string) *Database {
 	}
 
 	driver.SetConnectString(confGet(c, "connect"))
-	poolSize, err := strconv.Atoi(confGet(c, "pool_size"))
-	if poolSize == 0 || err != nil {
-		poolSize = 3
-	}
-	maxCount, err := strconv.Atoi(confGet(c, "max_count"))
-	if maxCount == 0 || err != nil {
-		maxCount = 10
-	}
+	// poolSize, err := strconv.Atoi(confGet(c, "pool_size"))
+	// if poolSize == 0 || err != nil {
+	// 	poolSize = 3
+	// }
+	// maxCount, err := strconv.Atoi(confGet(c, "max_count"))
+	// if maxCount == 0 || err != nil {
+	// 	maxCount = 10
+	// }
 
 	d := NewDatabase(name, driver, conf.Conf(c), logger)
 
