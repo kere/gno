@@ -74,7 +74,7 @@ func (m *Map) Get(args ...interface{}) interface{} {
 	// not found
 	m.Lock.Lock()
 	if v, isok := m.Data[key]; isok && v.isNotExpired() {
-		m.Lock.RUnlock()
+		m.Lock.Unlock()
 		return v.Value
 	}
 
