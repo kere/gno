@@ -84,7 +84,7 @@ func (m *Map) Get(args ...interface{}) interface{} {
 		m.Lock.Unlock()
 		return nil
 	}
-	log.App.Debug("cache build", key, m.GetExpires())
+	log.App.Debug("cache build key:", key, m.GetExpires())
 
 	if obj == nil || !m.target.Validate(obj) {
 		m.Lock.Unlock()

@@ -49,7 +49,6 @@ func (c *Computation) Run(l int, execFunc func(i int) (interface{}, error), resu
 
 	var result CptResult
 	for i := 0; i < l; i++ {
-		fmt.Println("--==--", i, l)
 		result = <-chanA
 		if result.Error != nil && c.ErrHandler != nil {
 			c.ErrHandler(result.Error)

@@ -15,7 +15,7 @@ func NewLogger(dbConf map[string]string) *log.Logger {
 	level := log.IntLevel(levelStr)
 
 	if level < 0 {
-		return log.New("", "", "none", levelStr)
+		return log.New("", "", "std", log.LogAlertStr)
 	}
 
 	name := conf.Get("logname")

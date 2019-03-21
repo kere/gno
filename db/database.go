@@ -9,44 +9,6 @@ import (
 	"github.com/kere/gno/libs/log"
 )
 
-// // SqlState class
-// type SqlState struct {
-// 	sql  []byte
-// 	args []interface{}
-// }
-//
-// // NewSqlState new
-// func NewSqlState(sql []byte, args ...interface{}) *SqlState {
-// 	ss := &SqlState{}
-// 	ss.sql = Current().Driver.AdaptSql(sql)
-// 	// for i, _ := range args {
-// 	// 	args[i] = Current().Driver.FlatData(args[i])
-// 	// }
-// 	ss.args = args
-//
-// 	return ss
-// }
-//
-// // SetSql methed
-// func (s *SqlState) SetSql(b []byte) {
-// 	s.sql = b
-// }
-//
-// // GetSql methed
-// func (s *SqlState) GetSql() []byte {
-// 	return s.sql
-// }
-//
-// // GetArgs methed
-// func (s *SqlState) GetArgs() []interface{} {
-// 	return s.args
-// }
-//
-// // GetSqlStr bytes convert to string
-// func (s *SqlState) GetSqlStr() string {
-// 	return *(*string)(unsafe.Pointer(&s.sql))
-// }
-
 // IDriver interface
 type IDriver interface {
 	Adapt(string, int) string
@@ -144,6 +106,11 @@ func (d *Database) isError(err error) bool {
 // Log db
 func (d *Database) Log(sql string, args []interface{}) {
 	d.log.Sql(d.Name, sql, args)
+}
+
+// SetLogLevel db
+func (d *Database) SetLogLevel(level string) {
+	d.log.SetLevel(level)
 }
 
 // QueryPrepare db

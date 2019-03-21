@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 )
 
 const (
@@ -103,16 +104,20 @@ func (l *Logger) writelog(prefix string, loglevel int, m ...interface{}) *Logger
 		return l
 	}
 
-	// l.Logger.SetPrefix(prefix)
-	// m = append(m, "\n")
-	l.Logger.Println(append([]interface{}{backetL + prefix + backetR}, m...)...)
+	var s strings.Builder
+	s.WriteString(backetL)
+	s.WriteString(prefix)
+	s.WriteString(backetR)
+	n := len(m)
+	arr := make([]interface{}, 2+n)
+	arr[0] = s.String()
+	arr[n+1] = "\n"
+	for i := 0; i < n; i++ {
+		arr[i+1] = m[i]
+	}
 
+	l.Logger.Println(arr...)
 	return l
-	// if PrintStackLevel < loglevel {
-	// 	return l
-	// }
-	//
-	// return l.Stack()
 }
 
 func (l *Logger) writelogf(prefix string, loglevel int, format string, m []interface{}) *Logger {
@@ -124,11 +129,6 @@ func (l *Logger) writelogf(prefix string, loglevel int, format string, m []inter
 	l.Logger.Printf(format+sBBreak, m...)
 
 	return l
-	// if PrintStackLevel < loglevel {
-	// 	return l
-	// }
-	//
-	// return l.Stack()
 }
 
 var bBreak = []byte{'\n'}
@@ -241,16 +241,5 @@ func (l *Logger) Debugf(format string, m ...interface{}) *Logger {
 
 // Sql log
 func (l *Logger) Sql(dbname, sqlstr string, args []interface{}) *Logger {
-	// if l.level < LogSQL {
-	// 	return l
-	// }
-
-	// for i, item := range args {
-	// 	switch item.(type) {
-	// 	case []byte, []int8:
-	// 		args[i] = string(item.([]byte))
-	// 	}
-	// }
-
 	return l.writelog(LogSQLStr, LogSQL, backetL+dbname+backetR, sqlstr, args)
 }
