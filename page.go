@@ -275,32 +275,9 @@ func (p *Page) Render(w io.Writer) error {
 	return err
 }
 
-// // AddBefore page
-// func (p *Page) AddBefore(e PageExec) {
-// 	p.BeforeExecs = append(p.BeforeExecs, e)
-// }
-
-// // AddAfter page
-// func (p *Page) AddAfter(e PageExec) {
-// 	p.AfterExecs = append(p.AfterExecs, e)
-// }
-
 // RunAfter page
 func (p *Page) RunAfter() {
-	// l := len(p.AfterExecs)
-	// for i := 0; i < l; i++ {
-	// 	p.AfterExecs[i](p)
-	// }
-
-	p.Params = nil
-	p.Request = nil
-	p.ResponseWriter = nil
+	// p.Params = nil
+	// p.Request = nil
+	// p.ResponseWriter = nil
 }
-
-// // RunBefore page
-// func (p *Page) RunBefore() {
-// 	l := len(p.BeforeExecs)
-// 	for i := 0; i < l; i++ {
-// 		p.BeforeExecs[i](p)
-// 	}
-// }

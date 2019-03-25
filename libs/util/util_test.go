@@ -139,7 +139,7 @@ func Test_Sync(t *testing.T) {
 	arr := make([]int, 100)
 
 	counter := 0
-	cpt.Run(100, func(i int) (interface{}, error) {
+	cpt.RunA(100, func(i int) (interface{}, error) {
 		arr[i] = i + 1
 		return i, nil
 	}, func(i int, dat interface{}) {

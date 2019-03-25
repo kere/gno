@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -15,6 +13,7 @@ import (
 	"github.com/kere/gno/libs/cache"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
+	"github.com/kere/gno/libs/util"
 	"github.com/kere/gno/render"
 )
 
@@ -177,19 +176,22 @@ func (s *SiteServer) Start() {
 	// go http.ListenAndServe(s.Listen, s.Router)
 	server := &http.Server{Addr: s.Listen, Handler: s.Router}
 
-	signal.Notify(quitChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	util.ListenSignal(func(sign os.Signal) {
+		if sign == os.Interrupt {
+			if s.PID != "" {
+				os.Remove(s.PID)
+			}
+
+			if err := server.Close(); err != nil {
+				pool.Release()
+				fmt.Println(err)
+			}
+		}
+		os.Exit(0)
+	})
 
 	go func() {
 		<-quitChan
-		if s.PID != "" {
-			os.Remove(s.PID)
-		}
-
-		if err := server.Close(); err != nil {
-			pool.Release()
-			fmt.Println(err)
-			os.Exit(0)
-		}
 	}()
 
 	if err := server.ListenAndServe(); err != nil {

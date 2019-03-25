@@ -60,7 +60,7 @@ func New(m ...interface{}) *Error {
 			return err
 		}
 	}
-	return &Error{IsStack: true, message: fmt.Sprint(m...)}
+	return &Error{IsStack: true, message: fmt.Sprintln(m...)}
 }
 
 // NewVersion new

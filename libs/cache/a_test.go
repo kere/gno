@@ -2,42 +2,41 @@ package cache
 
 import (
 	"fmt"
+	"sync"
 	"testing"
-	"time"
 )
 
-type cacheMap struct {
+type cacheMapSync struct {
 	Map
 }
 
 var counter int
+var counterSync int
 
-func (c *cacheMap) Build(args ...interface{}) (interface{}, error) {
+func (c *cacheMapSync) Build(args ...interface{}) (interface{}, error) {
 	str := args[0].(string)
-	counter++
-	fmt.Println("build cache ", str, counter)
-	return counter, nil
+	counterSync++
+	fmt.Println("build cache ", str)
+	return str, nil
 }
 
-func Test_map(t *testing.T) {
-	c := &cacheMap{}
-	c.Init(c, 3)
-
-	v := c.Get("a")
-	if v.(int) != 1 {
-		fmt.Println(v)
+func Test_MapSync(t *testing.T) {
+	c := &cacheMapSync{}
+	c.Init(c, 0)
+	var wg sync.WaitGroup
+	f := func() {
+		c.Get("a")
+		wg.Done()
 	}
-
-	time.Sleep(2 * time.Second)
-	v = c.Get("a")
-	if v.(int) != 1 {
-		fmt.Println(v)
+	for i := 0; i < 20; i++ {
+		go func() {
+			wg.Add(1)
+			f()
+		}()
 	}
-
-	time.Sleep(1 * time.Second)
-	v = c.Get("a")
-	if v.(int) != 2 {
-		fmt.Println(v)
+	wg.Wait()
+	if counterSync != 1 {
+		t.Fatal()
 	}
 }
 

@@ -28,16 +28,18 @@ type ExpiresVal struct {
 type Map struct {
 	target ICachedMap
 	Lock   sync.RWMutex
-	// Data        map[string]interface{}
-	Data    map[string]ExpiresVal
+	// Lock   sync.Mutex
+	Data map[string]ExpiresVal
+	// Data    sync.Map
 	expires time.Duration
 }
 
 // Init class
 func (m *Map) Init(t ICachedMap, expires int) {
-	m.Data = make(map[string]ExpiresVal, 0)
 	m.target = t
 	m.expires = time.Duration(expires) * time.Second
+	m.Data = make(map[string]ExpiresVal, 0)
+	// m.Data = sync.Map{}
 }
 
 // SetExpires func
@@ -62,21 +64,26 @@ func (m *Map) Validate(v interface{}) bool {
 
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
+	// 读取数据
 	key := m.buildKey(args...)
 	m.Lock.RLock()
-	// key = market+code:dtype
-	if v, isok := m.Data[key]; isok && v.isNotExpired() {
+	// v, isok := m.Data.Load(key)
+	v, isok := m.Data[key]
+	if isok && v.isNotExpired() {
 		m.Lock.RUnlock()
 		return v.Value
 	}
 	m.Lock.RUnlock()
 
-	// not found
+	// 同步读取数据
 	m.Lock.Lock()
-	if v, isok := m.Data[key]; isok && v.isNotExpired() {
+	// v, isok := m.Data.Load(key)
+	v, isok = m.Data[key]
+	if isok && v.isNotExpired() {
 		m.Lock.Unlock()
 		return v.Value
 	}
+	// debug.PrintStack()
 
 	obj, err := m.target.Build(args...)
 	if err != nil {
@@ -84,7 +91,8 @@ func (m *Map) Get(args ...interface{}) interface{} {
 		m.Lock.Unlock()
 		return nil
 	}
-	log.App.Debug("cache build key:", key, m.GetExpires())
+
+	log.App.Debug("[map cache] build", key, "expires:", m.GetExpires())
 
 	if obj == nil || !m.target.Validate(obj) {
 		m.Lock.Unlock()
@@ -92,69 +100,58 @@ func (m *Map) Get(args ...interface{}) interface{} {
 	}
 
 	ex := time.Now().Add(m.expires)
-	v := ExpiresVal{Value: obj, Expires: m.expires, ExpiresAt: ex}
-
+	v = ExpiresVal{Value: obj, Expires: m.expires, ExpiresAt: ex}
+	// m.Data.Store(key, val)
 	m.Data[key] = v
-
 	m.Lock.Unlock()
-	return v.Value
+	return obj
 }
 
 // ClearAll release all
 func (m *Map) ClearAll() {
 	m.Lock.Lock()
-	// for k, v := range m.Data {
-	// 	v.Value = nil
-	// 	m.Data[k] = nil
-	// }
 	m.Data = make(map[string]ExpiresVal, 0)
+	// m.Data = sync.Map{}
 	m.Lock.Unlock()
 }
 
 // Release 释放缓存
 func (m *Map) Release(args ...interface{}) {
-	key := m.buildKey(args...)
-	m.Lock.RLock()
-	// key = market+code:dtype
-	if _, isok := m.Data[key]; !isok {
-		m.Lock.RUnlock()
-		return
-	}
-	m.Lock.RUnlock()
-
 	m.Lock.Lock()
-	if _, isok := m.Data[key]; !isok {
-		m.Lock.Unlock()
-		return
-	}
-
+	key := m.buildKey(args...)
+	// m.Data.Delete(key)
 	delete(m.Data, key)
 	m.Lock.Unlock()
 }
 
 // IsCached bool
 func (m *Map) IsCached(args ...interface{}) bool {
+	m.Lock.Lock()
 	key := m.buildKey(args...)
-	m.Lock.RLock()
-	// key = market+code:dtype
+	// _, isok := m.Data.Load(key)
 	_, isok := m.Data[key]
-	m.Lock.RUnlock()
+	m.Lock.Unlock()
 	return isok
 }
 
 // Print 打印缓存的buildKey
 func (m *Map) Print() {
 	count := 0
-	for k := range m.Data {
+	// m.Data.Range(func(k interface{}, value interface{}) bool {
+	// 	count++
+	// 	fmt.Println(count, ":", k, ":", value)
+	// 	return true
+	// })
+	for k, v := range m.Data {
 		count++
-		fmt.Println(count, ":", k)
+		fmt.Println(count, ":", k, ":", v)
 	}
 }
 
 // isExpired value is expired
 func (e ExpiresVal) isExpired() bool {
 	if e.Expires == 0 {
-		return true
+		return false
 	}
 	return e.ExpiresAt.Before(time.Now())
 }
@@ -162,7 +159,7 @@ func (e ExpiresVal) isExpired() bool {
 // isNotExpired value is expired
 func (e ExpiresVal) isNotExpired() bool {
 	if e.Expires == 0 {
-		return false
+		return true
 	}
 	return e.ExpiresAt.After(time.Now())
 }

@@ -9,6 +9,11 @@ import (
 // DataSet datarow list
 type DataSet []DataRow
 
+// NewDataSet by length
+func NewDataSet(l int) DataSet {
+	return make([]DataRow, l)
+}
+
 // Insert current dataset
 func (ds DataSet) Insert(table string) error {
 	if ds.Len() == 0 {
