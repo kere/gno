@@ -3,6 +3,8 @@ package db
 import (
 	"database/sql"
 
+	"github.com/lib/pq"
+
 	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/myerr"
 )
@@ -19,6 +21,11 @@ type Tx struct {
 // NewTx tx
 func NewTx() *Tx {
 	return &Tx{}
+}
+
+// GetTx tx
+func (t *Tx) GetTx() *sql.Tx {
+	return t.tx
 }
 
 // Begin tx
@@ -55,7 +62,7 @@ func (t *Tx) Begin() error {
 // QueryOne tx
 func (t *Tx) QueryOne(sql string, args ...interface{}) (DataRow, error) {
 	r, err := t.Query(sql, args...)
-	if t.DoError(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -68,7 +75,7 @@ func (t *Tx) QueryOne(sql string, args ...interface{}) (DataRow, error) {
 // Exists db
 func (t *Tx) Exists(sql string, args ...interface{}) (bool, error) {
 	r, err := t.Query(sql, args...)
-	if t.DoError(err) {
+	if err != nil {
 		return false, err
 	}
 	return len(r) > 0, nil
@@ -82,19 +89,19 @@ func (t *Tx) Query(sqlstr string, args ...interface{}) (DataSet, error) {
 
 	t.GetDatabase().Log(sqlstr, args)
 	st, err := t.tx.Prepare(sqlstr)
-	if t.DoError(err) {
+	if err != nil {
 		return nil, err
 	}
 
 	rows, err := st.Query(args...)
-	if t.DoError(err) {
+	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
 
 	dataset, err := ScanRows(rows)
-	if t.DoError(err) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -127,7 +134,7 @@ func (t *Tx) Exec(sqlstr string, args ...interface{}) (sql.Result, error) {
 	t.GetDatabase().Log(sqlstr, args)
 
 	r, err := t.tx.Exec(sqlstr, args...)
-	if t.DoError(err) {
+	if err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -142,7 +149,7 @@ func (t *Tx) LastInsertID(table, pkey string) int64 {
 
 	var count int64
 	err := r.Scan(&count)
-	if t.DoError(err) {
+	if err != nil {
 		return -1
 	}
 	return count
@@ -156,15 +163,60 @@ func (t *Tx) ExecPrepare(sqlstr string, args ...interface{}) (sql.Result, error)
 	t.GetDatabase().Log(sqlstr, args)
 	// sqlstr := string(t.database.AdaptSql(item.Sql))
 	st, err := t.tx.Prepare(sqlstr)
-	if t.DoError(err) {
+	if err != nil {
 		return nil, err
 	}
 	r, err := st.Exec(args...)
-	if t.DoError(err) {
+	if err != nil {
 		return nil, err
 	}
 
 	return r, nil
+}
+
+// PGCopyIn db
+func (t *Tx) PGCopyIn(table string, fields []string, rows []DataRow) (int, error) {
+	l := len(rows)
+	step := 200
+	n := l/step + 1
+	count := 0
+	for i := 0; i < n; i++ {
+		b := i * step
+		if b >= l {
+			break
+		}
+		e := b + step
+		if e > l {
+			e = l
+		}
+		err := t.pgCopyIn(table, fields, rows[b:e])
+		if err != nil {
+			return count, err
+		}
+		count += e - b
+	}
+	return count, nil
+}
+
+func (t *Tx) pgCopyIn(table string, fields []string, rows []DataRow) error {
+	stmt, err := t.tx.Prepare(pq.CopyIn(table, fields...))
+	if err != nil {
+		return err
+	}
+	n := len(fields)
+	l := len(rows)
+	for i := 0; i < l; i++ {
+		arr := make([]interface{}, n)
+		for k := 0; k < n; k++ {
+			arr[k] = rows[i][fields[k]]
+		}
+		_, err := stmt.Exec(arr...)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = stmt.Exec()
+	return err
 }
 
 func (t *Tx) close() error {

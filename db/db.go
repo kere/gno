@@ -3,9 +3,11 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/kere/gno/db/drivers"
 	"github.com/kere/gno/libs/conf"
+	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/myerr"
 )
 
@@ -150,6 +152,7 @@ func CQuery(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
 	}
 
 	if err != nil {
+		logSQLErr(sqlstr, args)
 		return nil, myerr.New(err).Log().Stack()
 	}
 	dataset, err := ScanRows(rows)
@@ -159,6 +162,27 @@ func CQuery(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
 
 	return dataset, nil
 	// return Current().Query(NewSqlState([]byte(sqlstr), args))
+}
+
+func logSQLErr(sqlstr string, args []interface{}) {
+	sep := ": "
+	var s strings.Builder
+	s.WriteString(sqlstr)
+	s.WriteString(SLineBreak)
+	l := len(args)
+	for i := 0; i < l; i++ {
+		s.WriteString(fmt.Sprint(i, sep))
+
+		switch args[i].(type) {
+		case []byte:
+			s.Write(args[i].([]byte))
+		default:
+			s.WriteString(fmt.Sprint(args[i]))
+		}
+		s.WriteString(SLineBreak)
+	}
+	s.WriteString(SLineBreak)
+	log.App.Error(s.String())
 }
 
 // CQueryPrepare from database on prepare mode
@@ -171,6 +195,7 @@ func CQueryPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, e
 
 	s, err := conn.Prepare(sqlstr)
 	if err != nil {
+		logSQLErr(sqlstr, args)
 		return nil, myerr.New(err).Log().Stack()
 	}
 
@@ -182,6 +207,7 @@ func CQueryPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, e
 		rows, err = s.Query(args...)
 	}
 	if err != nil {
+		logSQLErr(sqlstr, args)
 		return nil, myerr.New(err).Log().Stack()
 	}
 
@@ -246,6 +272,7 @@ func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, 
 		result, err = conn.Exec(sqlstr, args...)
 	}
 	if err != nil {
+		logSQLErr(sqlstr, args)
 		return result, myerr.New(err).Log().Stack()
 	}
 	return result, nil
@@ -267,6 +294,7 @@ func ExecPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.R
 		result, err = s.Exec(args...)
 	}
 	if err != nil {
+		logSQLErr(sqlstr, args)
 		return result, myerr.New(err).Log().Stack()
 	}
 	return result, nil

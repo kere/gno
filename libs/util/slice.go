@@ -46,6 +46,17 @@ func SplitStr2Floats(s, sep string) ([]float64, error) {
 	return result, nil
 }
 
+// StringsI 在数组中出现的index
+func StringsI(val string, arr []string) int {
+	l := len(arr)
+	for i := 0; i < l; i++ {
+		if arr[i] == val {
+			return i
+		}
+	}
+	return -1
+}
+
 // InStrings 是否在数组中出现
 func InStrings(val string, arr []string) bool {
 	l := len(arr)

@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/kere/gno/libs/conf"
@@ -33,6 +34,7 @@ type Connection struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime int
+	Mutex           sync.Mutex
 }
 
 // NewConnection new
@@ -54,10 +56,10 @@ func (c *Connection) Conn() *sql.DB {
 		c.conn = c.Connect()
 	}
 
-	// if err := c.conn.Ping(); err != nil {
-	// 	c.conn.Close()
-	// 	c.conn = c.Connect()
-	// }
+	if err := c.conn.Ping(); err != nil {
+		c.conn.Close()
+		c.conn = c.Connect()
+	}
 	return c.conn
 }
 
@@ -95,13 +97,13 @@ func NewDatabase(name string, driver IDriver, dbConf conf.Conf, lg *log.Logger) 
 	return &Database{Name: name, Driver: driver, log: lg, Connection: conn}
 }
 
-func (d *Database) isError(err error) bool {
-	if err != nil {
-		d.log.Error(d.Name, err.Error())
-		return true
-	}
-	return false
-}
+// func (d *Database) isError(err error) bool {
+// 	if err != nil {
+// 		d.log.Error(d.Name, err.Error())
+// 		return true
+// 	}
+// 	return false
+// }
 
 // Log db
 func (d *Database) Log(sql string, args []interface{}) {

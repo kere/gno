@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 )
@@ -110,8 +109,10 @@ func parseInsertM(ins *InsertBuilder, rows DataSet) string {
 					switch values2[k].(type) {
 					case time.Time:
 						values = append(values, SQuot+(values2[k].(time.Time)).Format(time.RFC1123)+SQuot)
-					case string, []byte:
-						values = append(values, SQuot+fmt.Sprint(values2[k])+SQuot)
+					case string:
+						values = append(values, SQuot+values2[k].(string)+SQuot)
+					case []byte:
+						values = append(values, SQuot+string(values2[k].([]byte))+SQuot)
 					default:
 						values = append(values, fmt.Sprint(values2[k]))
 					}
@@ -161,45 +162,76 @@ func (ins *InsertBuilder) Insert(data interface{}) (sql.Result, error) {
 }
 
 // InsertM func
-func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
-	size := 500
-	n := len(rows)
-	if n <= size {
+func (ins *InsertBuilder) InsertM(rows DataSet) (int, error) {
+	l := len(rows)
+	step := 500
+
+	if l <= step {
 		sql := parseInsertM(ins, rows)
-		return ins.GetDatabase().Exec(sql)
+		_, err := ins.GetDatabase().Exec(sql)
+		return l, err
 	}
 
-	// pagination
-	p := int(math.Ceil(float64(n) / float64(size)))
-	var k int
-	var err error
-	var tmp DataSet
-	var sqlR sql.Result
-	for i := 0; i < p; i++ {
-		tmp = DataSet{}
-		if i+1 == p {
-			//last page
-			for k = size * i; k < n; k++ {
-				tmp = append(tmp, rows[k])
-			}
-
-			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
-			if err != nil {
-				return sqlR, err
-			}
-		} else {
-			for k = 0; k < size; k++ {
-				tmp = append(tmp, rows[size*i+k])
-			}
-			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
-			if err != nil {
-				return sqlR, err
-			}
+	n := l/step + 1
+	count := 0
+	for i := 0; i < n; i++ {
+		b := i * step
+		if b >= l {
+			break
 		}
+		e := b + step
+		if e > l {
+			e = l
+		}
+		_, err := ins.GetDatabase().Exec(parseInsertM(ins, rows[b:e]))
+		if err != nil {
+			return count, err
+		}
+		count += e - b
 	}
-
-	return sqlR, nil
+	return count, nil
 }
+
+// // InsertM func
+// func (ins *InsertBuilder) InsertM(rows DataSet) (sql.Result, error) {
+// 	size := 500
+// 	n := len(rows)
+// 	if n <= size {
+// 		sql := parseInsertM(ins, rows)
+// 		return ins.GetDatabase().Exec(sql)
+// 	}
+//
+// 	// pagination
+// 	p := int(math.Ceil(float64(n) / float64(size)))
+// 	var k int
+// 	var err error
+// 	var tmp DataSet
+// 	var sqlR sql.Result
+// 	for i := 0; i < p; i++ {
+// 		tmp = DataSet{}
+// 		if i+1 == p {
+// 			//last page
+// 			for k = size * i; k < n; k++ {
+// 				tmp = append(tmp, rows[k])
+// 			}
+//
+// 			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
+// 			if err != nil {
+// 				return sqlR, err
+// 			}
+// 		} else {
+// 			for k = 0; k < size; k++ {
+// 				tmp = append(tmp, rows[size*i+k])
+// 			}
+// 			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
+// 			if err != nil {
+// 				return sqlR, err
+// 			}
+// 		}
+// 	}
+//
+// 	return sqlR, nil
+// }
 
 // TxInsert return sql.Result transation
 func (ins *InsertBuilder) TxInsert(tx *Tx, data interface{}) (sql.Result, error) {

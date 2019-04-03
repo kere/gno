@@ -22,6 +22,12 @@ const (
 	FieldCount = "count"
 	//FieldJSON json
 	FieldJSON = "json"
+
+	// SQuot ''
+	SQuot = "'"
+
+	// SLineBreak = "\n"
+	SLineBreak = "\n"
 )
 
 var (
@@ -63,6 +69,4 @@ var (
 	BStarKey = []byte("*")
 	//BSpace ' '
 	BSpace = []byte(" ")
-	// SQuot ''
-	SQuot = "'"
 )

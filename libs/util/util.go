@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 	"unsafe"
@@ -24,8 +25,25 @@ func PathToURL(items ...string) string {
 }
 
 // BytesToStr bytes convert to string
-func BytesToStr(s []byte) string {
-	return *(*string)(unsafe.Pointer(&s))
+func BytesToStr(b []byte) string {
+	// return *(*string)(unsafe.Pointer(&s))
+	var s string
+	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	pstring.Data = pbytes.Data
+	pstring.Len = pbytes.Len
+	return s
+}
+
+// StrToBytes bytes convert to string
+func StrToBytes(s string) []byte {
+	var b []byte
+	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	pbytes.Data = pstring.Data
+	pbytes.Len = pstring.Len
+	pbytes.Cap = pstring.Len
+	return b
 }
 
 // RandStr 生成任意长度的字符串
