@@ -1,7 +1,8 @@
 package gno
 
 var (
-
+	// JSDateFormart for javascript
+	JSDateFormart = "Mon Jan 02 2006 15:04:05 GMT-0700"
 	// BDot dot
 	BDot = []byte(".")
 	//BComma comma

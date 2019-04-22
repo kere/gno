@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+// Object util mapdata
+type Object map[string]interface{}
+
 // MapData util mapdata
 type MapData map[string]interface{}
 
@@ -26,19 +29,6 @@ func (dr MapData) IsSet(field string) bool {
 // IsNull nil
 func (dr MapData) IsNull(field string) bool {
 	return dr[field] == nil
-}
-
-//Bytes2String convert all to string if type is []byte
-func (dr MapData) Bytes2String() MapData {
-	for k, v := range dr {
-
-		switch v.(type) {
-		case []byte:
-			dr[k] = string(v.([]byte))
-		}
-	}
-
-	return dr
 }
 
 // Bool bool
@@ -521,34 +511,4 @@ func (dr MapData) Clone() MapData {
 		row[k] = v
 	}
 	return row
-}
-
-// ArgMult func
-func (dr MapData) ArgMult(field string, v float64) MapData {
-	if !dr.IsSet(field) {
-		return dr
-	}
-
-	dr[field] = dr.Float(field) * v
-	return dr
-}
-
-// ArgPlus func
-func (dr MapData) ArgPlus(field string, v float64) MapData {
-	if !dr.IsSet(field) {
-		return dr
-	}
-
-	dr[field] = dr.Float(field) + v
-	return dr
-}
-
-// ArgDiv func
-func (dr MapData) ArgDiv(field string, v float64) MapData {
-	if !dr.IsSet(field) {
-		return dr
-	}
-
-	dr[field] = dr.Float(field) / v
-	return dr
 }

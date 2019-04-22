@@ -72,22 +72,6 @@ func Test_MapData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	mapData = MapData{}
-	mapData["a1"] = 1
-	mapData["a2"] = 1
-
-	mapData.ArgPlus("a2", 1)
-	if mapData.Float("a2") != 2 {
-		t.Fatal("ArgPlus failed")
-	}
-
-	mapDataCloned := mapData.Clone()
-	mapDataCloned.ArgPlus("a2", 1)
-
-	if mapDataCloned.Int("a2")-mapData.Int("a2") != 1 {
-		t.Fatal("clone failed")
-	}
 }
 
 func TestSort(t *testing.T) {

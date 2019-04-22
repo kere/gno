@@ -35,10 +35,7 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		f := v.Method(i).Interface().(func(args util.MapData, dat interface{}) (interface{}, error))
 		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
 
-		// s.Router.POST(rule+"/"+name, openAPIHandle)
-
 		s.Router.POST(rule+"/"+name, func(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-			// err := openAPIHandle(rw, req, ps)
 			arg := PoolParams{Typ: 2, RW: rw, Req: req, Params: ps}
 			if RunMode == ModeDev {
 				InvokeExec(arg)
