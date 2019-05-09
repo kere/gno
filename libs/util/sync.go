@@ -103,11 +103,11 @@ type Computation struct {
 }
 
 // NewComputation f
-func NewComputation(num int) *Computation {
+func NewComputation() *Computation {
 	f := func(err error) {
 		fmt.Println(err)
 	}
-	return &Computation{NumProcess: num, ErrHandler: f}
+	return &Computation{NumProcess: 50, ErrHandler: f}
 }
 
 // Run 并行性计算

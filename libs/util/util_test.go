@@ -118,8 +118,8 @@ func TestSort(t *testing.T) {
 	fmt.Println("---- 48")
 }
 
-func Test_Sync(t *testing.T) {
-	cpt := NewComputation(20)
+func TestSync(t *testing.T) {
+	cpt := NewComputation()
 	arr := make([]int, 100)
 
 	counter := 0

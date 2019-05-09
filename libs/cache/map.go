@@ -62,6 +62,18 @@ func (m *Map) Validate(v interface{}) bool {
 	return true
 }
 
+// Set func
+func (m *Map) Set(obj interface{}, args ...interface{}) {
+	if obj == nil || !m.target.Validate(obj) {
+		return
+	}
+	key := m.buildKey(args...)
+	ex := time.Now().Add(m.expires)
+	m.Lock.Lock()
+	m.Data[key] = ExpiresVal{Value: obj, Expires: m.expires, ExpiresAt: ex}
+	m.Lock.Unlock()
+}
+
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
 	// 读取数据
