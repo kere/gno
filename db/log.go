@@ -14,13 +14,13 @@ func NewLogger(dbConf map[string]string) *log.Logger {
 	levelStr := conf.Get("level")
 	level := log.IntLevel(levelStr)
 
-	if level < 0 {
-		return log.New("", "", "std", log.LogAlertStr)
-	}
-
 	name := conf.Get("logname")
 	if name == "" {
 		name = "db"
+	}
+
+	if level < 0 {
+		return log.New("", name, "std", log.LogAlertStr)
 	}
 
 	folder := filepath.Join(filepath.Dir(os.Args[0]), "/var/log/")
