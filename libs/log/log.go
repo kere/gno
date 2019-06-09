@@ -22,17 +22,18 @@ import (
 // all=10
 // -100=NotFound
 const (
-	LogEmerg  = 1  //* system is unusable */
-	LogAlert  = 2  //* action must be taken immediately */
-	LogCrit   = 3  //* critical conditions */
-	LogErr    = 4  //* error conditions */
-	LogWarn   = 5  //* warning conditions */
-	LogNotice = 6  //* normal but significant condition */
-	LogInfo   = 7  //* informational */
-	LogDebug  = 8  //* debug-level messages */
-	LogSQL    = 8  //* SQL messages */
-	LogFmt    = 9  //* Fmt messages */
-	LogAll    = 10 //* all messages */
+	defaultLogName = "app"
+	LogEmerg       = 1  //* system is unusable */
+	LogAlert       = 2  //* action must be taken immediately */
+	LogCrit        = 3  //* critical conditions */
+	LogErr         = 4  //* error conditions */
+	LogWarn        = 5  //* warning conditions */
+	LogNotice      = 6  //* normal but significant condition */
+	LogInfo        = 7  //* informational */
+	LogDebug       = 8  //* debug-level messages */
+	LogSQL         = 8  //* SQL messages */
+	LogFmt         = 9  //* Fmt messages */
+	LogAll         = 10 //* all messages */
 
 	LogEmergStr  = "emerg"  //* system is unusable */
 	LogAlertStr  = "alert"  //* action must be taken immediately */
@@ -112,8 +113,8 @@ func Init(folder, names, storeType, levelStr string) {
 	}
 
 	arr := strings.Split(names, ",")
-	for i, name := range arr {
-		if i == 0 {
+	for _, name := range arr {
+		if name == defaultLogName {
 			App = New(folder, name, storeType, levelStr)
 		} else {
 			New(folder, name, storeType, levelStr)
@@ -139,7 +140,7 @@ func New(folder, name, storeType, levelStr string) *Logger {
 	}
 
 	if name == "" {
-		name = "app"
+		name = defaultLogName
 	}
 
 	fmt.Println("Prepare logger:", name)
