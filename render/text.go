@@ -37,3 +37,21 @@ func (t String) Render(w io.Writer) error {
 	w.Write([]byte(t.Source))
 	return nil
 }
+
+// Script return string
+func Script(src string, data map[string]string) IRender {
+	str := "<script"
+
+	var s string
+	if len(data) > 0 {
+		s = " "
+		for k, v := range data {
+			s += k + "=\"" + v + "\" "
+		}
+	} else {
+		s = " type=\"text/javascript\""
+	}
+
+	str += s + ">" + src + "</script>"
+	return NewString(str)
+}
