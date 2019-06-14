@@ -1,13 +1,17 @@
 package httpd
 
 import (
+	"bytes"
 	"crypto/md5"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"reflect"
+	"strings"
+	"time"
 
 	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/myerr"
@@ -29,13 +33,15 @@ const (
 	APIFieldMethod = "method"
 	// APIFieldToken post field
 	APIFieldToken = "Accto"
+	// APIFieldPageToken post field
+	APIFieldPageToken = "AccPage"
+
 	// PageAccessTokenField 页面访问token的名称
 	PageAccessTokenField = "accpt" //access page token
 )
 
 // IOpenAPI interface
 type IOpenAPI interface {
-	ReplyType() int
 	Auth(ctx *fasthttp.RequestCtx) (err error)
 }
 
@@ -45,18 +51,7 @@ func OpenAPIReply(ctx *fasthttp.RequestCtx, api IOpenAPI, data interface{}) erro
 		ctx.SetStatusCode(http.StatusOK)
 		return nil
 	}
-
-	var src []byte
-	var err error
-	switch api.ReplyType() {
-	case ReplyTypeJSON:
-		src, err = json.Marshal(data)
-
-	case ReplyTypeText:
-		src = []byte(fmt.Sprint(data))
-
-	}
-
+	src, err := json.Marshal(data)
 	if err != nil {
 		Site.Log.Warn(err)
 		return err
@@ -67,10 +62,10 @@ func OpenAPIReply(ctx *fasthttp.RequestCtx, api IOpenAPI, data interface{}) erro
 	return nil
 }
 
-type openAPIExec func(args util.MapData) (interface{}, error)
+type apiExec func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error)
 
 type openapiItem struct {
-	Exec openAPIExec
+	Exec apiExec
 	API  IOpenAPI
 }
 
@@ -83,19 +78,17 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 	l := typ.NumMethod()
 	for i := 0; i < l; i++ {
 		m := typ.Method(i)
-		name := m.Name
-		if name == "Auth" || name == "ReplyType" {
+		if m.Name == "Auth" || m.Name == "ReplyType" {
 			continue
 		}
 
-		f := v.Method(i).Interface().(func(args util.MapData) (interface{}, error))
-		openapiMap[rule+"/"+name] = openapiItem{Exec: f, API: openapi}
+		f := v.Method(i).Interface().(func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error))
+		openapiMap[rule+"/"+m.Name] = openapiItem{Exec: f, API: openapi}
 
-		s.Router.POST(rule+"/"+name, func(ctx *fasthttp.RequestCtx) {
+		s.Router.POST(rule+"/"+m.Name, func(ctx *fasthttp.RequestCtx) {
 			uri := string(ctx.URI().Path())
 			item, isok := openapiMap[uri]
 			if !isok {
-				// doAPIError(errors.New(uri+" openapi not found"), rw, req)
 				doAPIError(ctx, errors.New(uri+" openapi not found"))
 				return
 			}
@@ -115,25 +108,25 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 				}()
 			}
 
-			var args util.MapData
 			pArgs := ctx.Request.PostArgs()
 			src := pArgs.Peek(APIFieldSrc)
 
+			var params util.MapData
 			if len(src) > 0 {
-				err := json.Unmarshal(src, &args)
+				err := json.Unmarshal(src, &params)
 				if err != nil {
 					doAPIError(ctx, myerr.New(err, string(src)))
 					return
 				}
 			}
 
-			err := authAPIToken(&ctx.Request, src)
+			err := authAPIToken(s, &ctx.Request, src)
 			if err != nil {
 				doAPIError(ctx, err)
 				return
 			}
 
-			data, err := item.Exec(args)
+			data, err := item.Exec(ctx, params)
 			if err != nil {
 				doAPIError(ctx, err)
 				return
@@ -155,31 +148,90 @@ func doAPIError(ctx *fasthttp.RequestCtx, err error) {
 	ctx.Error(err.Error(), http.StatusInternalServerError)
 }
 
-func authAPIToken(req *fasthttp.Request, src []byte) error {
-	token := req.Header.Peek(APIFieldToken)
-	u32 := generateAPIToken(req, src)
-	if string(u32) != string(token) {
+func authAPIToken(site *SiteServer, req *fasthttp.Request, src []byte) error {
+	pToken := req.Header.Peek(APIFieldPageToken)
+	bPath := req.Header.Referer()
+	u, _ := url.Parse(string(bPath))
+
+	pToken2 := BuildToken([]byte(u.Path), site.Secret, site.Salt)
+	// auth page token
+	if string(pToken) != string(pToken2) {
+		return errors.New("page token failed")
+	}
+
+	apiToken := req.Header.Peek(APIFieldToken)
+	u32 := buildAPIToken(site, req, src, pToken)
+	// auth api token
+	if u32 != string(apiToken) {
 		return errors.New("api token failed")
 	}
 
 	return nil
 }
 
-func generateAPIToken(req *fasthttp.Request, src []byte) string {
+// ts+method+ts+jsonStr + token;
+func buildAPIToken(site *SiteServer, req *fasthttp.Request, src, pToken []byte) string {
 	ts := req.Header.Peek(APIFieldTS)
 	method := req.PostArgs().Peek(APIFieldMethod)
-
-	pageToken := req.Header.Cookie(PageAccessTokenField)
 
 	// ts + method + ts + jsonStr + ptoken
 	s := append([]byte{}, ts...)
 	s = append(s, method...)
 	s = append(s, ts...)
 	s = append(s, src...)
-	if len(pageToken) > 0 {
-		b64, _ := base64.StdEncoding.DecodeString(string(pageToken))
-		s = append(s, b64...)
-	}
+	s = append(s, pToken...)
 
 	return fmt.Sprintf("%x", md5.Sum(s))
+}
+
+// SendAPI send api method
+func SendAPI(uri string, method string, dat util.MapData) (util.MapData, error) {
+	// data:       {'_src': jsonStr, 'now': now, 'token': md5(str), 'method': method},
+	// str = now+method+now+jsonStr+now;
+	src, err := json.Marshal(dat)
+	if err != nil {
+		return nil, err
+	}
+
+	vals := url.Values{}
+	vals.Add(APIFieldSrc, string(src))
+	vals.Add(APIFieldMethod, method)
+
+	// ts+method+jsonStr + token;
+	ts := fmt.Sprint(time.Now().Unix())
+
+	buf := bytes.NewBufferString(ts + method + ts)
+	buf.Write(src)
+	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+
+	req, err := http.NewRequest(http.MethodPost, uri+"/"+method, strings.NewReader(vals.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set(APIFieldTS, ts)
+	req.Header.Set(APIFieldToken, token)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+
+	resq, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resq.Body.Close()
+
+	body, err := ioutil.ReadAll(resq.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resq.StatusCode != http.StatusOK {
+		return nil, errors.New(string(body) + " " + uri + "/" + method)
+	}
+
+	var obj util.MapData
+	err = json.Unmarshal(body, &obj)
+
+	return obj, err
 }

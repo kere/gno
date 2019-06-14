@@ -2,6 +2,8 @@ package httpd
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -26,7 +28,7 @@ type IPage interface {
 	Body() []render.IRender
 	Bottom() []render.IRender
 
-	CacheOption() (mode, headExpires, expires int)
+	CacheOption() PageCacheOption
 
 	Auth(ctx *fasthttp.RequestCtx) (string, error)
 	// Before(ctx *fasthttp.RequestCtx) error
@@ -44,7 +46,7 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 			return
 		}
 
-		if TryCache(ctx, p) {
+		if TryGetCache(ctx, p) {
 			log.App.Debug("Page Cache", string(ctx.URI().Path()))
 			return
 		}
@@ -56,7 +58,9 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 		}
 
 		buf := bytes.NewBuffer(nil)
-		err = RenderPage(buf, p)
+
+		err = renderPage(s, buf, p, ctx.URI().PathOriginal())
+
 		if err != nil {
 			doPageErr(s.ErrorURL, ctx, err)
 			return
@@ -82,4 +86,22 @@ func doPageErr(errorURL string, ctx *fasthttp.RequestCtx, err error) {
 	}
 	// ErrorURL redirect to
 	ctx.Redirect(errorURL+"?msg="+err.Error(), http.StatusSeeOther)
+}
+
+// // SetPageToken token
+// func (s *SiteServer) SetPageToken(ctx *fasthttp.RequestCtx, p IPage) {
+// 	token := s.PageToken(ctx.URI().Path(), fmt.Sprint(time.Now().Unix()))
+//
+// 	token = base64.StdEncoding.EncodeToString([]byte(token))
+// 	ctx.Request.Header.SetCookie(PageAccessTokenField, url.PathEscape(token))
+// }
+
+// BuildToken 生成 用户令牌
+func BuildToken(src []byte, sn, salt string) string {
+	buf := bytes.NewBufferString(salt)
+	buf.Write(src)
+	buf.WriteString(salt)
+	buf.WriteString(sn)
+
+	return fmt.Sprintf("%x", sha1.Sum(buf.Bytes()))
 }

@@ -1,10 +1,3 @@
-require.config({
-	waitSeconds :15,
-	paths: {
-		'accto' : MYENV+'/mylib/accto'
-	}
-});
-
 define(
   'ajax',
   ['util', 'accto'],
@@ -15,31 +8,31 @@ define(
         function setData() {
           //设置对象的遍码
           function setObjData(data, parentName) {
-              function encodeData(name, value, parentName) {
-                  var items = [];
-                  name = parentName === undefined ? name : parentName + "[" + name + "]";
-                  if (typeof value === "object" && value !== null) {
-                      items = items.concat(setObjData(value, name));
-                  } else {
-                      name = encodeURIComponent(name);
-                      value = encodeURIComponent(value);
-                      items.push(name + "=" + value);
-                  }
-                  return items;
+            function encodeData(name, value, parentName) {
+              var items = [];
+              name = parentName === undefined ? name : parentName + "[" + name + "]";
+              if (typeof value === "object" && value !== null) {
+                items = items.concat(setObjData(value, name));
+              } else {
+                name = encodeURIComponent(name);
+                value = encodeURIComponent(value);
+                items.push(name + "=" + value);
               }
-              var arr = [],value;
-              if (Object.prototype.toString.call(data) == '[object Array]') {
-                  for (var i = 0, len = data.length; i < len; i++) {
-                      value = data[i];
-                      arr = arr.concat(encodeData( typeof value == "object"?i:"", value, parentName));
-                  }
-              } else if (Object.prototype.toString.call(data) == '[object Object]') {
-                  for (var key in data) {
-                      value = data[key];
-                      arr = arr.concat(encodeData(key, value, parentName));
-                  }
+              return items;
+            }
+            var arr = [],value;
+            if (Object.prototype.toString.call(data) == '[object Array]') {
+              for (var i = 0, len = data.length; i < len; i++) {
+                value = data[i];
+                arr = arr.concat(encodeData( typeof value == "object"?i:"", value, parentName));
               }
-              return arr;
+            } else if (Object.prototype.toString.call(data) == '[object Object]') {
+              for (var key in data) {
+                value = data[key];
+                arr = arr.concat(encodeData(key, value, parentName));
+              }
+            }
+            return arr;
           };
           //设置字符串的遍码，字符串的格式为：a=1&b=2;
           function setStrData(data) {
@@ -116,9 +109,9 @@ define(
             xhr.onreadystatechange = function() {
               if (xhr.readyState === 4) {
                 if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
-                  resolve(xhr.responseText);
+                  resolve(xhr.response);
                 } else {
-                  reject(xhr.status, xhr.statusText);
+                  reject(xhr);
                 }
               }
             };
@@ -148,6 +141,7 @@ define(
     }
 
     var comp  = {
+			url : "/home/openapi/data",
       NewClient : function(path, timeout){
         return new Client(path, timeout);
       },
@@ -204,13 +198,63 @@ define(
 
     // ajax.setCookie('lang', navigator.language || navigator.userLanguage);
     var Client = function(path){
-        this.path = path || "/api/web";
+        this.path = path || comp.url;
         this.isrun = false;
         this.timeout= 10;
         this.pfield = 'accpt';
+        this.verField = "_data_version";
     }
 
-    Client.prototype.errorHandler = function(r){console.log(r);};
+    Client.prototype.trySetDataVer = function(result) {
+      if(typeof(result) != "object" || !result[this.verField]){
+        return;
+      }
+      var ver = result[this.verField];
+      this[this.verField] = ver;
+      window[this.verField] = ver;
+    }
+
+    // GetData 先从local缓存里查看，如果没有、或版本不匹配，则发送ajax抓取
+    // return Promise()
+    Client.prototype.getData = function(method, args, opt) {
+      return new Promise((resolve, reject) => {
+        var key = method + (args ? JSON.stringify(args): '');
+        var doit = (resolve, reject) =>{
+          this.send(method, args, opt).then(result =>{
+            if(result[this.verField]){
+              window.localStorage.setItem(key, JSON.stringify(result));
+            }
+            resolve(result);
+          }).catch(err => {
+            reject(err)
+          });
+        }
+
+        if(!window.localStorage){
+          doit(resolve, reject);
+          return;
+        }
+
+        var src = window.localStorage.getItem(key);
+        if(!src){
+          doit(resolve, reject);
+          return;
+        }
+
+        var dat = JSON.parse(src);
+        if(!dat){
+          doit(resolve, reject);
+          return;
+        }
+        opt = opt || {ver: window[this.verField]};
+        if(dat[this.verField] != opt.ver){
+          doit(resolve, reject);
+          return;
+        }
+
+        resolve(dat);
+      });
+    };
 
     // 排他性运行
     Client.prototype.sendEx = function(method, args, opt){
@@ -218,7 +262,7 @@ define(
       return this.send(method, args, opt);
     };
 
-    Client.prototype.send = function(method, args, opt){
+    Client.prototype.send = function(method, args, opt) {
       var clas = this;
       this.isrun = true;
       opt = opt || {}
@@ -237,9 +281,8 @@ define(
 
       var ts = comp.serverTime.utctime().toString(),
         jsonStr = args ? JSON.stringify(args) : '',
-        ptoken = util.getCookie(this.pfield),
-        token = ptoken == '' ? '' : window.atob(decodeURI(ptoken)),
-        str = ts+method+ts+jsonStr + token;
+        ptoken = window[this.pfield] || '',
+        str = ts+method+ts+jsonStr + ptoken;
 
       var promise = ajaxFunc({
           url:        this.path + '/' + method,
@@ -247,10 +290,10 @@ define(
           dataType:   'json',
           cache:      false,
           data:       {'_src': jsonStr, 'method': method},
-          headers: {'Accto':accto(str), 'Accts': ts},
+          headers: {'Accto':accto(str), 'Accts': ts, 'AccPage': ptoken},
           timeout:    this.timeout * 1000
 
-        }).then(function(result){
+        }).then(result =>{
           clas.isrun = false;
           if(opt.loading){
             util.hideToast();
@@ -265,9 +308,15 @@ define(
           }
           if(result=="") return null;
 
-          return JSON.parse(result);
+					if(typeof(result)=='string'){
+          	result = JSON.parse(result);
+					}
+          clas.trySetDataVer(result);
 
-        }).catch(function (status, error){
+					return result;
+
+        }).catch(function (xhr){
+					var status = xhr.status;
           clas.isrun = false;
           if(opt.loading){
             util.hideToast();
@@ -280,30 +329,22 @@ define(
             }
             $t.removeClass('weui-btn_loading');
           }
+					var error;
           switch(status){
           case 599:
           case 500:
-            if(clas.errorHandler){
-              try{
-                clas.errorHandler(JSON.parse(error))
-              }catch(e){
-                console.log(e)
-              }
-            }
-            break;
+      			error = xhr.response;
+						break;
           case 404:
-            error = status+': api not found!'
-            console.log(error)
+            error = 'api not found';
             break;
-          default:
-            if(error){
-              console.log(status+': '+error);
-            } else{
-              console.log('请稍后再试');
-            }
+          case 502:
+            error = '内部错误';
+            break;
+					default:
+						error = status+': '+xhr.response
           }
-
-          return Promise.reject(status, error);
+          return Promise.reject(error);
         });
 
         return promise;

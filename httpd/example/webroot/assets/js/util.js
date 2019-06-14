@@ -1,14 +1,23 @@
-require.config({
-	waitSeconds :30,
-	baseUrl : "/assets/js/",
-	paths: {
-    'zepto' : MYENV+'/mylib/zepto'
-	}
-});
 define('util', ['zepto'], function(){
 	var util = {}
 
-	util.language = function(){
+  util.env = () => {
+    var o = {}
+    var agent = navigator.userAgent.toLowerCase();
+    if(/android/.test(agent)){
+      o.os = 'android';
+    }else if(/iphone|ipod|ipad|ios/.test(agent)) {
+      o.os = 'ios';
+    }else if(/windows/.test(agent)){
+      o.os = 'windows';
+    }
+    o.iswxwork = /wxwork/.test(agent);
+    o.inwx = /micromessenger/.test(agent);
+
+    return o;
+  }
+
+	util.language = () => {
 	var lang = util.getCookie('lang');
 		if(!lang){
 			lang = navigator.language || navigator.userLanguage;
@@ -16,49 +25,137 @@ define('util', ['zepto'], function(){
 		return lang.replace('_', '-').toLowerCase();
 	}
 
-  util.money = function(v){
+  util.money = (v) => {
     return util.numStr(v, 2);
   }
 
-  util.numStr = function(v, deci){
-    if(!v) return (0).toFixed(deci);
-
-    if(typeof(v)=="string"){
-      v = parseFloat(v);
+  util.getElement = ($el, name) => {
+    var arr = name.split('.')
+    if(arr.length!=2) return
+    var $t = $el.getElementsByTagName(arr[0]);
+    for (var i in $t) {
+      if($t[i].className == arr[1]){
+        return $t[i];
+      }
     }
+  }
+
+	util.arrayEq = (arr1, arr2) => {
+		if(typeof(arr1)!='object' || !arr1.length){
+			return arr1 === arr2;
+		}
+		if(arr1.length!= arr2.length) return false;
+
+		for (var i = 0; i < arr1.length; i++) {
+			if(!util.objectEq(arr1[i], arr2[i])){
+				return false;
+			}
+		}
+		return true;
+	}
+	util.objectEq = (o1, o2) => {
+		if(o1 == null && o2 == null){
+			return true;
+		}
+		if(!o1 || !o2){
+			return false;
+		}
+		if(typeof(o1)!='object'){
+			return o1 === o2;
+		}
+		if (o1.hasOwnProperty('length')) {
+			return util.arrayEq(o1, o2);
+		}
+		// 检查key是否对应
+		var k ;
+		for (k in o2) {
+			if(k.substr(0,2)=='__'){
+				continue;
+			}
+			if (!o1.hasOwnProperty(k)) {
+				return false;
+			}
+		}
+
+		for (k in o1) {
+			if(k.substr(0,2)=='__'){
+				continue;
+			}
+			if(typeof(o1[k])=='object') {
+				if(util.objectEq(o1[k], o2[k])){
+					continue;
+				}else{
+					return false;
+				}
+			}
+			if (o1[k] != o2[k]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+  util.numStr = (v, deci) => {
+		if(!v) return '';
+		if(typeof(v)== 'string') v= parseFloat(v);
+
+		var isPad = false;
+		if(deci < 0){
+			var s = v.toString(), arr = v.toString().split('.')
+			if(arr.length == 1) return s;
+			deci = -deci;
+			isPad = true;
+		}
+
     if(deci==0){
       return v.toFixed(deci);
     }
     var deciV = Math.pow(10, deci);
-    var tmp = Math.round(v * deciV)/100;
-    return tmp.toFixed(deci);
+    var s = (Math.round(v * deciV)/deciV).toFixed(deci);
+		if(!isPad) return s;
+
+		var arr = new Array(s.length);
+		for (var i = 0; i < s.length; i++) {
+			arr[i] = s[i];
+		}
+
+		for (var i = s.length-1; i > -1; i--) {
+			if(arr[i]!= '0') break;
+			arr.pop();
+		}
+		return arr.join('');
   }
 
-  util.weekCH = function(v){
+  util.weekCH = (v) => {
 		if(v==null || typeof v =='undefined') return '';
     var weeks = ['天', '一', '二', '三', '四', '五', '六' ];
     switch (typeof v) {
       case "number":
         return weeks[parseInt(v)];
       default:
-        return weeks[this.str2date(v).getDay()];
+        return weeks[util.str2date(v).getDay()];
     }
   }
 
 	util.DATE_DAY = 86400000;
 	util.DATE_HOUR = 3600000;
 
-	util.timeAgoStr = function (b, e){
-    var arr = this.timeAgo(b, e), str='';
-    var l = arr.length, isskip = true;
-    for (var i = l-1; i > -1; i--) {
+	// n 长度，年月日小时分钟
+	util.timeAgoStr = (b, e, n) => {
+		if(!n) n = 2;
+    var arr = util.timeAgo(b, e), str='';
+    var l = arr.length, isskip = true, i, k=0;
+    for (i = l-1; i > -1; i--) {
       if(isskip && arr[i].value==0) continue;
       isskip = false;
       str += arr[i].value + arr[i].label + ' ';
+			k++
+			if(k == n) break;
     }
     return str;
   }
-	util.timeAgo = function (b, e){
+
+	util.timeAgo = (b, e) => {
     var diff;
     if(typeof(b)=='number' && typeof(e) == 'undefined'){
       diff = b;
@@ -67,7 +164,7 @@ define('util', ['zepto'], function(){
     }
     var v, n, arr=[];
 
-    for(var i=0;i<5;i++) {
+    for(var i=0;i<6;i++) {
       switch (i) {
         case 0: // second
           v = diff % 60000;
@@ -104,19 +201,19 @@ define('util', ['zepto'], function(){
     return arr;
 	}
 
-	util.clone = function (obj){
+	util.clone = (obj) => {
     var newObj = {}
     for (let key in obj) {
         if (typeof obj[key] !== 'object') {
             newObj[key] = obj[key];
         } else {
-            newObj[key] = this.clone(obj[key]);
+            newObj[key] = util.clone(obj[key]);
         }
     }
     return newObj;
   }
 
-	util.str2date = function (str){
+	util.str2date = (str) => {
     if(!str) return;
     if(typeof str != 'string') return str;
 
@@ -131,7 +228,7 @@ define('util', ['zepto'], function(){
     return d;
 	}
 
-	util.date2str = function(time, ctype){
+	util.date2str = (time, ctype) => {
 		if(!time){
 			return '';
 		}
@@ -142,27 +239,27 @@ define('util', ['zepto'], function(){
 				time = new Date(time);
 				break;
 			case 'string':
-				time = this.str2date(time);
+				time = util.str2date(time);
 				break;
 		}
 		switch (ctype) {
 			case 'date':
-				return time.getFullYear()+'-'+this.lpad(time.getMonth()+1, '0', 2)+'-'+this.lpad(time.getDate(), '0', 2)
+				return time.getFullYear()+'-'+util.lpad(time.getMonth()+1, '0', 2)+'-'+util.lpad(time.getDate(), '0', 2)
       case 'date2':
-        return this.lpad(time.getMonth()+1, '0', 2)+'-'+this.lpad(time.getDate(), '0', 2)
+        return util.lpad(time.getMonth()+1, '0', 2)+'-'+util.lpad(time.getDate(), '0', 2)
       case 'dateCH':
-        return time.getFullYear()+'年'+this.lpad(time.getMonth()+1, '0', 2)+'月'+this.lpad(time.getDate(), '0', 2) + '日'
+        return time.getFullYear()+'年'+util.lpad(time.getMonth()+1, '0', 2)+'月'+util.lpad(time.getDate(), '0', 2) + '日'
       case 'date2CH':
-        return this.lpad(time.getMonth()+1, '0', 2)+'月'+this.lpad(time.getDate(), '0', 2) + '日'
+        return util.lpad(time.getMonth()+1, '0', 2)+'月'+util.lpad(time.getDate(), '0', 2) + '日'
 			case 'datetime':
-				return time.getFullYear()+'-'+this.lpad(time.getMonth()+1, '0', 2)+'-'+this.lpad(time.getDate(), '0', 2)+' '+this.lpad(time.getHours(), '0', 2)+':'+this.lpad(time.getMinutes(), '0', 2)
+				return time.getFullYear()+'-'+util.lpad(time.getMonth()+1, '0', 2)+'-'+util.lpad(time.getDate(), '0', 2)+' '+util.lpad(time.getHours(), '0', 2)+':'+util.lpad(time.getMinutes(), '0', 2)
 			case 'time':
-				return this.lpad(time.getHours(), '0', 2)+':'+this.lpad(time.getMinutes(), '0', 2)
+				return util.lpad(time.getHours(), '0', 2)+':'+util.lpad(time.getMinutes(), '0', 2)
 		}
 		return 'unknow'
 	}
 
-	util.getUrlParameter = function (sParam){
+	util.getUrlParameter = (sParam) => {
     var sPageURL = window.location.search.substring(1);
     var sURLVariables = sPageURL.split('&');
     for (var i = 0; i < sURLVariables.length; i++)
@@ -174,7 +271,8 @@ define('util', ['zepto'], function(){
       }
     }
 	};
-	util.getUrlRouterParam = function (index){
+
+	util.getUrlRouterParam = (index) => {
     var arr = window.location.pathname.split('/'),
       l = arr.length,
       i = l-1-index;
@@ -220,7 +318,7 @@ define('util', ['zepto'], function(){
 	// 	return decrypted.toString(CryptoJS.enc.Utf8)
 	// };
 
-	util.lpad = function(str, padString, l) {
+	util.lpad = (str, padString, l) => {
     if(typeof(str)!='string')
       str = str.toString();
     while (str.toString().length < l)
@@ -229,7 +327,7 @@ define('util', ['zepto'], function(){
 	};
 
 	//pads right
-	util.rpad = function(str, padString, l) {
+	util.rpad = (str, padString, l) => {
     if(typeof(str)!='string')
       str = str.toString();
     while (str.toString().length < l)
@@ -237,26 +335,102 @@ define('util', ['zepto'], function(){
     return str;
 	};
 
-  util.find = function(field, value, data){
-		if(!data)
+  util.find =(field, value, arr) => {
+		if(!arr)
 			return null;
 
-		var i,len = data.length
+		var i,len = arr.length
 		for(i=0;i<len;i++)
-			if(data[i] && data[i][field] == value){
-				return data[i];
+			if(arr[i] && arr[i][field] == value){
+				return arr[i];
 			}
 		return null;
 	}
 
-	util.inArray = function(val, arr){
+	function indexOfSortedI(val, arr, b, e, desc){
+		if(b == e){
+			return arr[b] == val ? b : -1;
+		}else if(b>e){
+			return -1
+		}
+		var l = e-b+1, i = b+Math.floor(l/2), v = arr[i];
+
+		if(v == val){
+			return i;
+		}else if(v > val){
+			if(desc){
+				return indexOfSortedI(val, arr, i+1, e)
+			}
+			// small zone
+			return indexOfSortedI(val, arr, b, i-1)
+		}else{
+			if(desc){
+				return indexOfSortedI(val, arr, b, i-1)
+			}
+			return indexOfSortedI(val, arr, i+1, e)
+		}
+	}
+
+  util.indexOfSortedI = (val, arr) => {
+		if(!arr) return -1;
+		var isdesc = false;
+		if(arr.length> 1)
+			isdesc = arr[0] > arr[1];
+		return indexOfSortedI(val, arr, 0, arr.length-1, isdesc);
+	}
+
+	// b begin; e end index
+	function getSortedI(field, val, arr, b, e, desc) {
+		if(b == e){
+			return arr[b][field] == val ? b : -1;
+		}else if(b>e){
+			return -1
+		}
+		var l = e-b+1, i = b+Math.floor(l/2), v;
+		v = arr[i][field]
+
+		if(v == val){
+			return i;
+		}else if(v > val){
+			if(desc){
+				return getSortedI(field, val, arr, i+1, e)
+			}
+			// small zone
+			return getSortedI(field, val, arr, b, i-1)
+		}else{
+			if(desc){
+				return getSortedI(field, val, arr, b, i-1)
+			}
+			return getSortedI(field, val, arr, i+1, e)
+		}
+	}
+
+  util.findSortedI = (field, val, arr) => {
+		if(!arr) return -1;
+		var isdesc = false;
+		if(arr.length> 1)
+			isdesc = arr[0][field] > arr[1][field];
+		return getSortedI(field, val, arr, 0, arr.length-1, isdesc);
+	}
+
+  util.findSorted = (field, val, arr) => {
+		if(!arr) return null;
+		var isdesc = false;
+		if(arr.length> 1)
+			isdesc = arr[0][field] > arr[1][field];
+		var i = getSortedI(field, val, arr, 0, arr.length-1, isdesc);
+		if(i < 0) return null;
+		return arr[i];
+	}
+
+	util.inArray = (val, arr) => {
 		for(var i in arr){
 			if(arr[i]==val)
 				return true;
 		}
 		return false;
 	}
-	util.in2Array = function(val, arr){
+	util.in2Array = (val, arr) => {
 		for(var i in arr){
 			if(val.toString().indexOf(arr[i].toString())>-1)
 				return true;
@@ -264,7 +438,7 @@ define('util', ['zepto'], function(){
 		return false;
 	}
 
-	util.findIndex = function(field, value, data){
+	util.findIndex = (field, value, data) => {
 		if(!data)
 			return -1;
 
@@ -276,7 +450,7 @@ define('util', ['zepto'], function(){
 		return -1;
 	}
 
-  util.setCookie = function (name,value,days) {
+  util.setCookie =  (name,value,days) => {
 		var expires = ""
       if (days) {
           var date = new Date();
@@ -286,7 +460,7 @@ define('util', ['zepto'], function(){
       document.cookie = name+"="+value+expires+"; path=/";
   };
 
-	util.getCookie = function (name) {
+	util.getCookie =  (name) => {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
     for(var i=0;i < ca.length;i++) {
@@ -303,15 +477,16 @@ define('util', ['zepto'], function(){
     return '';
   };
 
-  util.deleteCookie = function (name) {
-      this.SetCookie(name,"",-1);
+  util.deleteCookie = (name) => {
+      util.SetCookie(name,"",-1);
   };
 
-  util.randomElement = function(arr){
+  util.randomElement = (arr) => {
     return arr[Math.floor(Math.random() * arr.length)]
   }
 
-  util.shuffle = function(array) {
+	// 洗牌
+  util.shuffle = (array)  => {
     var currentIndex = array.length, temporaryValue, randomIndex;
     // While there remain elements to shuffle...
     while (0 !== currentIndex) {
@@ -329,16 +504,7 @@ define('util', ['zepto'], function(){
     return array;
   }
 
-  util.NumStr = function(v, deci){
-    var s = v.toFixed(deci);
-    var val = parseFloat(s);
-    if (val==parseInt(val)){
-      return val.toString();
-    }
-    return s;
-  }
-
-  util.showLoading = function(){
+  util.showLoading = ()=> {
     var $el;
     if($('#toast').length==0){
       $('body').append(util.toast());
@@ -352,7 +518,24 @@ define('util', ['zepto'], function(){
     setTimeout(function(){util.hideToast()}, 10000);
   }
 
-  util.toast = function(){
+  util.viewImage = (url) => {
+    if($('#viewImage').length==0){
+      var $t = $('<div id="viewImage" class="fade hide" style="z-index:1000;position:fixed;width:100%;height:100%;top:0;left:0;text-align:center;top:0;left:0;"><div style="width:100%;height:100%;background: #000;opacity: 0.6;" class="view-image fade in"></div><img src="" style="z-index:1001;max-width:98%;max-height:98%;transform: translate(-50%, -50%);top:50%;position:absolute;"></div>');
+      $('body').append($t);
+      $t[0].addEventListener('click', function(e){
+        var $t = $(e.currentTarget)
+        $t.removeClass('in');
+        setTimeout(function(){
+          $t.addClass('hide');
+        },150)
+      })
+    }
+    var $t = $('#viewImage');
+    $t.find('img').attr('src', url);
+    $t.removeClass('hide').addClass('in');
+  }
+
+  util.toast = () => {
     return $('<div id="toast" class="weui-toast fade hide">'+
       '<div class="weui-mask_bk"></div>'+
       '<div class="weui-toast">'+
@@ -363,7 +546,7 @@ define('util', ['zepto'], function(){
       '</div>'+
     '</div>');
   }
-  util.showSuccess = function(){
+  util.showSuccess = () => {
     var $el;
     if($('#toast').length==0){
       $('body').append(util.toast());
@@ -377,26 +560,13 @@ define('util', ['zepto'], function(){
     setTimeout(function(){util.hideToast()}, 10000);
   }
 
-  util.hideToast = function(){
+  util.hideToast = ()=>{
     var $el = $('#toast');
     $el.removeClass('in');
     setTimeout(function(){$el.addClass('hide');}, 150);
   }
 
-  util.perm = function(s){
-    var perm = this.getCookie('perm');
-    var arr = perm.split(','), tmp;
-    for (var i = 0; i < arr.length; i++) {
-      tmp = arr[i].split('=');
-      if (tmp.length!=2) continue;
-      if(tmp[0] == s){
-        return tmp[1] == '1';
-      }
-    }
-    return false;
-  }
-
-  util.taggle = function(e){
+  util.taggle = function(e, isCloseOther){
     var $t;
     if(e.currentTarget){
       $t = $(e.currentTarget);
@@ -423,15 +593,37 @@ define('util', ['zepto'], function(){
 
       return 'close';
     }else{
-      $t.addClass('open').siblings('.open').removeClass('open');
+      $t.addClass('open')
       setTimeout(function(){
         $box.addClass('in');
       }, 10)
-      $t.parent().siblings().find('.open').removeClass('open');
+			if(isCloseOther){
+				$t.siblings('.open').removeClass('open');
+      	$t.parent().siblings().find('.open').removeClass('open');
+			}
       return 'open';
     }
   }
 
+  util.copy = (o) => {
+    var dat = {};
+		if(typeof(o) == 'object' && o.hasOwnProperty('length')){
+			dat = new Array(o.length);
+		}
+    for (var k in o) {
+      if (!o.hasOwnProperty(k) || k.substr(0,2)=="__") continue;
+			if(o[k]== null){
+				dat[k] = null
+				continue;
+			}
+      if(typeof(o[k]) == 'object'){
+        dat[k] = util.copy(o[k])
+      }else{
+        dat[k] = o[k];
+      }
+    }
+    return dat;
+  }
 
 	return util;
 });

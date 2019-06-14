@@ -37,8 +37,7 @@ var (
 
 	config conf.Configuration
 
-	quitChan        = make(chan os.Signal)
-	contentTypePage = []byte("text/html; charset=utf-8")
+	quitChan = make(chan os.Signal)
 )
 
 // SiteServer class
@@ -57,9 +56,8 @@ type SiteServer struct {
 	Secret string
 	Salt   string
 
-	Log     *log.Logger
-	PID     string
-	HomeDir string
+	Log *log.Logger
+	PID string
 }
 
 // Init Server
@@ -68,9 +66,8 @@ func Init() *SiteServer {
 
 	a := config.GetConf("site")
 	s := &SiteServer{
-		Listen:  a.DefaultString("listen", ":8080"),
-		Router:  fasthttprouter.New(),
-		HomeDir: "./",
+		Listen: a.DefaultString("listen", ":8080"),
+		Router: fasthttprouter.New(),
 	}
 
 	//  log
@@ -118,13 +115,18 @@ func Init() *SiteServer {
 		db.SetCache(cache.CurrentCache())
 	}
 
+	err := os.MkdirAll(filepath.Dir(cacheFileStoreDir), os.ModeDir)
+	if err != nil {
+		panic(err)
+	}
+
 	return s
 }
 
 // Start server listen
 func (s *SiteServer) Start() {
 	if layout.RunMode == "dev" {
-		s.Router.NotFound = fasthttp.FSHandler(filepath.Join(s.HomeDir, WEBROOT), 0)
+		s.Router.NotFound = fasthttp.FSHandler(WEBROOT, 0)
 	}
 
 	if s.PID != "" {

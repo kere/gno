@@ -23,12 +23,14 @@ var (
 	bytesHTMLBodyEnd = []byte("\n</body>\n")
 
 	bRenderS1 = []byte("\n<script type=\"text/javascript\">var MYENV='")
-	// bRenderS2 = []byte("',THEME='")
+	bRenderS2 = []byte("'," + PageAccessTokenField + "='")
 	bRenderS3 = []byte("';</script>")
+
+	contentTypePage = []byte("text/html; charset=utf-8")
 )
 
-// RenderPage func
-func RenderPage(w io.Writer, p IPage) error {
+// renderPage func
+func renderPage(site *SiteServer, w io.Writer, p IPage, bPath []byte) error {
 	// <html>
 	w.Write(bytesHTMLBegin)
 	lang := p.Lang()
@@ -39,7 +41,6 @@ func RenderPage(w io.Writer, p IPage) error {
 	}
 	w.Write(bytesHTMLBegin2)
 
-	// RenderHead(w, p.Title(), p.Head(), p.CSS(), p.JS())
 	// head -------------------------
 	w.Write(bHeadBegin)
 	w.Write(metaCharset)
@@ -50,8 +51,12 @@ func RenderPage(w io.Writer, p IPage) error {
 
 	w.Write(bRenderS1)
 	w.Write([]byte(RunMode))
-	// w.Write(bRenderS2)
-	// w.Write([]byte(h.Theme))
+	w.Write(bRenderS2)
+
+	token := BuildToken(bPath, site.Secret, site.Salt)
+
+	w.Write([]byte(token))
+
 	w.Write(bRenderS3)
 	heads := p.Head()
 	for _, r := range heads {
