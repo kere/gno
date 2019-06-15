@@ -46,7 +46,7 @@ type IOpenAPI interface {
 }
 
 // OpenAPIReply response
-func OpenAPIReply(ctx *fasthttp.RequestCtx, api IOpenAPI, data interface{}) error {
+func OpenAPIReply(ctx *fasthttp.RequestCtx, data interface{}) error {
 	if data == nil {
 		ctx.SetStatusCode(http.StatusOK)
 		return nil
@@ -64,12 +64,7 @@ func OpenAPIReply(ctx *fasthttp.RequestCtx, api IOpenAPI, data interface{}) erro
 
 type apiExec func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error)
 
-type openapiItem struct {
-	Exec apiExec
-	API  IOpenAPI
-}
-
-var openapiMap = make(map[string]openapiItem)
+var openapiMap = make(map[string]apiExec)
 
 // RegistOpenAPI init open api
 func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
@@ -82,12 +77,11 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 			continue
 		}
 
-		f := v.Method(i).Interface().(func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error))
-		openapiMap[rule+"/"+m.Name] = openapiItem{Exec: f, API: openapi}
+		openapiMap[rule+"/"+m.Name] = v.Method(i).Interface().(func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error))
 
 		s.Router.POST(rule+"/"+m.Name, func(ctx *fasthttp.RequestCtx) {
 			uri := string(ctx.URI().Path())
-			item, isok := openapiMap[uri]
+			itemExec, isok := openapiMap[uri]
 			if !isok {
 				doAPIError(ctx, errors.New(uri+" openapi not found"))
 				return
@@ -126,13 +120,13 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 				return
 			}
 
-			data, err := item.Exec(ctx, params)
+			data, err := itemExec(ctx, params)
 			if err != nil {
 				doAPIError(ctx, err)
 				return
 			}
 
-			err = OpenAPIReply(ctx, item.API, data)
+			err = OpenAPIReply(ctx, data)
 			if err != nil {
 				doAPIError(ctx, err)
 				return

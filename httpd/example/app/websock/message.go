@@ -1,29 +1,25 @@
 package websock
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/gorilla/websocket"
 	"github.com/kere/gno/libs/util"
+	"github.com/valyala/fasthttp"
 )
 
-// Message class
-type Message struct {
+// WS class
+type WS struct {
 }
 
-// NewMessage f
-func NewMessage() Message {
-	return Message{}
+// NewWS f
+func NewWS() *WS {
+	return &WS{}
 }
 
 // Auth f
-func (u Message) Auth(req *http.Request) error {
+func (w *WS) Auth(ctx *fasthttp.RequestCtx) error {
 	return nil
 }
 
-// Exec f
-func (u Message) Exec(conn *websocket.Conn, args util.MapData) ([]byte, error) {
-	fmt.Println("receive:", args.String("content"))
-	return []byte("ni hao a..."), nil
+// SayHi f
+func (w *WS) SayHi(args util.MapData) (interface{}, error) {
+	return "ni hao a...", nil
 }

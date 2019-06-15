@@ -17,8 +17,7 @@ define(
 
     Client.prototype.path = '';
     Client.prototype.connect = function(){
-      var sign = accto(window.atob(decodeURI(util.getCookie(this.pfield))) + document.location.pathname);
-      var ws = new WebSocket(this.path+"?url="+encodeURI(document.location.pathname)+"&sign="+sign);
+      var ws = new WebSocket(this.path+"?url="+encodeURI(document.location.pathname));
       var ths = this;
       ws.onclose = this.onclose;
       ws.onmessage = function(e){

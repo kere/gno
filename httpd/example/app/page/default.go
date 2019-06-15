@@ -1,6 +1,8 @@
 package page
 
 import (
+	"fmt"
+
 	"github.com/kere/gno/httpd"
 	"github.com/kere/gno/libs/util"
 	"github.com/kere/gno/render"
@@ -38,6 +40,7 @@ func NewDefault() *Default {
 
 // Page page
 func (d *Default) Page(ctx *fasthttp.RequestCtx) error {
+	fmt.Println("rounter params:", ctx.UserValue("name"), ctx.Value("name"))
 	return nil
 }
 
