@@ -2,8 +2,6 @@ package httpd
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -95,13 +93,3 @@ func doPageErr(errorURL string, ctx *fasthttp.RequestCtx, err error) {
 // 	token = base64.StdEncoding.EncodeToString([]byte(token))
 // 	ctx.Request.Header.SetCookie(PageAccessTokenField, url.PathEscape(token))
 // }
-
-// BuildToken 生成 用户令牌
-func BuildToken(src []byte, sn, salt string) string {
-	buf := bytes.NewBufferString(salt)
-	buf.Write(src)
-	buf.WriteString(salt)
-	buf.WriteString(sn)
-
-	return fmt.Sprintf("%x", sha1.Sum(buf.Bytes()))
-}

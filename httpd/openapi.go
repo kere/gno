@@ -38,6 +38,9 @@ const (
 
 	// PageAccessTokenField 页面访问token的名称
 	PageAccessTokenField = "accpt" //access page token
+
+	// HeadOrigin http head
+	HeadOrigin = "Origin"
 )
 
 // IOpenAPI interface
@@ -114,9 +117,8 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 				}
 			}
 
-			err := authAPIToken(s, &ctx.Request, src)
-			if err != nil {
-				doAPIError(ctx, err)
+			if !isAPIOK(s, &ctx.Request, src) {
+				doAPIError(ctx, errors.New("api auth failed"))
 				return
 			}
 
@@ -140,42 +142,6 @@ func doAPIError(ctx *fasthttp.RequestCtx, err error) {
 	addr := ctx.RemoteAddr()
 	log.App.Error(err, addr)
 	ctx.Error(err.Error(), http.StatusInternalServerError)
-}
-
-func authAPIToken(site *SiteServer, req *fasthttp.Request, src []byte) error {
-	pToken := req.Header.Peek(APIFieldPageToken)
-	bPath := req.Header.Referer()
-	u, _ := url.Parse(string(bPath))
-
-	pToken2 := BuildToken([]byte(u.Path), site.Secret, site.Salt)
-	// auth page token
-	if string(pToken) != string(pToken2) {
-		return errors.New("page token failed")
-	}
-
-	apiToken := req.Header.Peek(APIFieldToken)
-	u32 := buildAPIToken(site, req, src, pToken)
-	// auth api token
-	if u32 != string(apiToken) {
-		return errors.New("api token failed")
-	}
-
-	return nil
-}
-
-// ts+method+ts+jsonStr + token;
-func buildAPIToken(site *SiteServer, req *fasthttp.Request, src, pToken []byte) string {
-	ts := req.Header.Peek(APIFieldTS)
-	method := req.PostArgs().Peek(APIFieldMethod)
-
-	// ts + method + ts + jsonStr + ptoken
-	s := append([]byte{}, ts...)
-	s = append(s, method...)
-	s = append(s, ts...)
-	s = append(s, src...)
-	s = append(s, pToken...)
-
-	return fmt.Sprintf("%x", md5.Sum(s))
 }
 
 // SendAPI send api method

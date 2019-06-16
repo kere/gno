@@ -163,11 +163,6 @@ define(
         }
       },
 
-      getHostName : function(){
-        var hostArr = window.location.host.split('.')
-        return hostArr[hostArr.length-2]+'.'+hostArr[hostArr.length-1]
-      },
-
       getUrlVar: function(sParam){
         var sPageURL = window.location.search.substring(1);
         var sURLVariables = sPageURL.split('&');
@@ -282,7 +277,8 @@ define(
       var ts = comp.serverTime.utctime().toString(),
         jsonStr = args ? JSON.stringify(args) : '',
         ptoken = window[this.pfield] || '',
-        str = ts+method+ts+jsonStr + ptoken;
+      	// method + ts + src + agent + ts + ptoken + window.location.hostname
+        str = method+ts+jsonStr+navigator.userAgent+ts+ptoken + window.location.hostname;
 
       var promise = ajaxFunc({
           url:        this.path + '/' + method,
@@ -348,6 +344,60 @@ define(
         });
 
         return promise;
+    }
+
+    var WS = function(path){
+        this.path = path;
+    }
+
+    WS.prototype.onclose = function(r){
+      if(!this.ws) return false;
+      ws.close();
+    };
+    WS.prototype.onopen = function(e){
+      console.log('open');
+    };
+    WS.prototype.receive = function(method, args, result){
+    };
+    WS.prototype.error = function(msg, e){
+      console.log(msg);
+    };
+
+    WS.prototype.path = '';
+    WS.prototype.Connect = function(){
+      if(this.conn){
+        this.conn.close();
+        this.conn = null;
+      }
+      var ths = this;
+      var sign = accto(navigator.userAgent + window.location.host),
+          ws = new WebSocket('ws://'+window.location.host+this.path+"?url="+encodeURI(document.location.pathname)+"&sign="+sign);
+
+      ws.onopen = this.onopen;
+      ws.onclose = this.onclose;
+      ws.onmessage = (e) => {
+        var obj = JSON.parse(e.data);
+        if (obj['iserror']){
+          ths.error(obj.error, e);
+          return;
+        }
+        if(obj.method){
+          ths.receive(obj.method, obj.args, obj.result);
+        }
+
+      };
+
+      this.conn = ws;
+    };
+
+    WS.prototype.Send = function(method, args){
+      if(this.conn.readyState==1){
+        this.conn.send(JSON.stringify({"method":method, "args": args}))
+      }
+    };
+
+    comp.NewWS = function(path){
+      return new WS(path);
     }
 
     return comp;

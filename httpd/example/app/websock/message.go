@@ -1,6 +1,8 @@
 package websock
 
 import (
+	"fmt"
+
 	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
@@ -21,5 +23,6 @@ func (w *WS) Auth(ctx *fasthttp.RequestCtx) error {
 
 // SayHi f
 func (w *WS) SayHi(args util.MapData) (interface{}, error) {
+	fmt.Println("Method Call: SayHi", args)
 	return "ni hao a...", nil
 }

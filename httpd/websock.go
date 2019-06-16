@@ -6,12 +6,14 @@ import (
 	"reflect"
 
 	"github.com/fasthttp/websocket"
+	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
 
 const (
 	errorMethodNotFound = "method not found"
+	wsSignField         = "sign"
 )
 
 var wsMethodMap = make(map[string]wsExec)
@@ -41,6 +43,7 @@ func buildWSExec(w IWebSock) {
 type messageRecv struct {
 	Method string       `json:"method"`
 	Args   util.MapData `json:"args"`
+	Result interface{}  `json:"result"`
 }
 
 // RegistWS router
@@ -52,13 +55,19 @@ func (s *SiteServer) RegistWS(rule string, w IWebSock) {
 	}
 
 	s.Router.GET(rule, func(ctx *fasthttp.RequestCtx) {
-		err := w.Auth(ctx)
-		if err != nil {
+		sign := ctx.QueryArgs().Peek(wsSignField)
+		sign2 := buildWSSign(&ctx.Request)
+		if string(sign) != sign2 {
+			log.App.Debug("ws sign failed:", string(sign), sign2)
+			return
+		}
+
+		if err := w.Auth(ctx); err != nil {
 			ctx.SetStatusCode(http.StatusForbidden)
 			return
 		}
 
-		err = upgrader.Upgrade(ctx, func(ws *websocket.Conn) {
+		err := upgrader.Upgrade(ctx, func(ws *websocket.Conn) {
 			defer ws.Close()
 			for {
 				var recv messageRecv
@@ -79,7 +88,8 @@ func (s *SiteServer) RegistWS(rule string, w IWebSock) {
 				}
 
 				if dat != nil {
-					if errW := ws.WriteJSON(dat); errW != nil {
+					recv.Result = dat
+					if errW := ws.WriteJSON(recv); errW != nil {
 						break
 					}
 				}
