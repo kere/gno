@@ -4,27 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/kere/gno/render"
 	"github.com/valyala/fasthttp"
 )
 
 // IPage interface
 type IPage interface {
-	Title() string
-
-	Name() string
-	Dir() string
-
-	Head() []render.IRender
-	JS() []render.IRender
-	CSS() []render.IRender
-
-	Top() []render.IRender
-	Body() []render.IRender
-	Bottom() []render.IRender
-
-	CacheOption() PageCacheOption
-
+	Data() *PageData
+	SetData(*PageData)
 	Auth(ctx *fasthttp.RequestCtx) error
 	// Before(ctx *fasthttp.RequestCtx) error
 	Page(ctx *fasthttp.RequestCtx) error
@@ -35,7 +21,7 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 	s.Router.GET(rule, func(ctx *fasthttp.RequestCtx) {
 		// pageHandle(p, ctx)
 		done := make(chan bool)
-		if err := pool.Invoke(PoolParams{Typ: 1, Page: p, Ctx: ctx, Done: done}); err != nil {
+		if err := pool.Invoke(PoolParams{Typ: invokePage, Page: p, Ctx: ctx, Done: done}); err != nil {
 			doAPIError(ctx, errors.New("Throttle limit error"))
 		}
 		<-done

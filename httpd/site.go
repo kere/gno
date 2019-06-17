@@ -57,10 +57,9 @@ type SiteServer struct {
 	Secret string
 	Nonce  string
 
-	Log   *log.Logger
-	PID   string
-	Lang  string
-	bLang []byte
+	Log  *log.Logger
+	PID  string
+	Lang []byte
 
 	Pool int
 }
@@ -112,8 +111,7 @@ func Init() *SiteServer {
 	// Pool
 	s.Pool = a.DefaultInt("pool", 20)
 	// Lang
-	s.Lang = a.DefaultString("lang", "zh")
-	s.bLang = []byte(s.Lang)
+	s.Lang = []byte(a.DefaultString("lang", "zh"))
 	initPool(s.Pool)
 
 	Site = s

@@ -31,9 +31,10 @@ var (
 
 // renderPage func
 func renderPage(w io.Writer, p IPage, bPath []byte) error {
+	pd := p.Data()
 	// <html>
 	w.Write(bytesHTMLBegin)
-	w.Write(Site.bLang)
+	w.Write(Site.Lang)
 	w.Write(bytesHTMLBegin2)
 
 	// head -------------------------
@@ -41,7 +42,7 @@ func renderPage(w io.Writer, p IPage, bPath []byte) error {
 	w.Write(metaCharset)
 
 	w.Write(bTitleBegin)
-	w.Write([]byte(p.Title()))
+	w.Write(pd.Title)
 	w.Write(bTitleEnd)
 
 	w.Write(bRenderS1)
@@ -53,20 +54,17 @@ func renderPage(w io.Writer, p IPage, bPath []byte) error {
 	w.Write([]byte(token))
 
 	w.Write(bRenderS3)
-	heads := p.Head()
-	for _, r := range heads {
+	for _, r := range pd.Head {
 		if err := r.Render(w); err != nil {
 			return err
 		}
 	}
-	css := p.CSS()
-	for _, r := range css {
+	for _, r := range pd.CSS {
 		if err := r.Render(w); err != nil {
 			return err
 		}
 	}
-	js := p.JS()
-	for _, r := range js {
+	for _, r := range pd.JS {
 		if err := r.Render(w); err != nil {
 			return err
 		}
@@ -77,29 +75,26 @@ func renderPage(w io.Writer, p IPage, bPath []byte) error {
 	w.Write(bytesHTMLBodyBegin)
 
 	var err error
-	top := p.Top()
-	for _, r := range top {
+	for _, r := range pd.Top {
 		if err = r.Render(w); err != nil {
 			return err
 		}
 	}
 
-	body := p.Body()
-	if len(body) == 0 {
-		r := render.NewTemplate(filepath.Join(p.Dir(), p.Name()+defaultTemplateSubfix))
+	if len(pd.Body) == 0 {
+		r := render.NewTemplate(filepath.Join(pd.Dir, pd.Name+defaultTemplateSubfix))
 		if err = r.Render(w); err != nil {
 			return err
 		}
 	} else {
-		for _, r := range body {
+		for _, r := range pd.Body {
 			if err = r.Render(w); err != nil {
 				return err
 			}
 		}
 	}
 
-	bottom := p.Bottom()
-	for _, r := range bottom {
+	for _, r := range pd.Bottom {
 		if err = r.Render(w); err != nil {
 			return err
 		}

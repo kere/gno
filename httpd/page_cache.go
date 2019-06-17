@@ -58,7 +58,8 @@ const (
 func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) string {
 	switch opt.Mode {
 	case CacheModePage:
-		return pagecacheKeyPrefix + p.Dir() + p.Name()
+		pdata := p.Data()
+		return pagecacheKeyPrefix + pdata.Dir + pdata.Name
 
 	case CacheModePagePath:
 		return pagecacheKeyPrefix + string(ctx.URI().Path())
@@ -77,7 +78,7 @@ func TryGetCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		return false
 	}
 
-	opt := p.CacheOption()
+	opt := p.Data().CacheOption
 	key := pageCachedKey(opt, ctx, p)
 
 	var src []byte
@@ -128,7 +129,7 @@ func TryGetCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 
 // TrySetCache TrySet cache
 func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
-	opt := p.CacheOption()
+	opt := p.Data().CacheOption
 	key := pageCachedKey(opt, ctx, p)
 	last := time.Now().Format(LastModifiedFormat)
 

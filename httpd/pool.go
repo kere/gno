@@ -5,6 +5,11 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+const (
+	invokePage = 1
+	invokeAPI  = 3
+)
+
 var pool *ants.PoolWithFunc
 
 // PoolParams for pool
@@ -19,9 +24,9 @@ type PoolParams struct {
 func InvokeExec(dat interface{}) {
 	param := dat.(PoolParams)
 	switch param.Typ {
-	case 1:
+	case invokePage:
 		pageHandle(param.Page, param.Ctx)
-	case 3:
+	case invokeAPI:
 		openAPIHandle(param.Ctx)
 	}
 	param.Done <- true

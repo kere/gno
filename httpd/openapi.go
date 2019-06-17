@@ -66,7 +66,7 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 
 		s.Router.POST(rule+"/"+m.Name, func(ctx *fasthttp.RequestCtx) {
 			done := make(chan bool)
-			if err := pool.Invoke(PoolParams{Typ: 3, Ctx: ctx, Done: done}); err != nil {
+			if err := pool.Invoke(PoolParams{Typ: invokeAPI, Ctx: ctx, Done: done}); err != nil {
 				doAPIError(ctx, errors.New("Throttle limit error"))
 			}
 			<-done
