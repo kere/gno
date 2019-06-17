@@ -10,11 +10,14 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func openAPIHandle(ctx *fasthttp.RequestCtx) error {
+func openAPIHandle(ctx *fasthttp.RequestCtx) {
 	uri := string(ctx.URI().Path())
 	itemExec, isok := openapiMap[uri]
 	if !isok {
-		return errors.New(uri + " openapi not found")
+		err := errors.New(uri + " openapi not found")
+		Site.Log.Error(err)
+		doAPIError(ctx, err)
+		return
 	}
 
 	if RunMode == ModePro {
@@ -39,32 +42,39 @@ func openAPIHandle(ctx *fasthttp.RequestCtx) error {
 	if len(src) > 0 {
 		err := json.Unmarshal(src, &params)
 		if err != nil {
-			return err
+			doAPIError(ctx, err)
+			return
 		}
 	}
 
-	if !isAPIOK(&ctx.Request, src) {
-		return errors.New("api auth failed")
-	}
+	// if !isAPIOK(&ctx.Request, src) {
+	// 	return errors.New("api auth failed")
+	// }
 
 	data, err := itemExec(ctx, params)
 	if err != nil {
-		return err
+		doAPIError(ctx, err)
+		return
 	}
 
 	if data == nil {
 		ctx.SetStatusCode(http.StatusOK)
-		return nil
+		return
 	}
 
 	result, err := json.Marshal(data)
 	if err != nil {
 		Site.Log.Warn(err)
-		return err
+		doAPIError(ctx, err)
+		return
 	}
 
 	_, err = ctx.Write(result)
-	return err
+	if err != nil {
+		Site.Log.Error(err)
+		doAPIError(ctx, err)
+		return
+	}
 }
 
 // OpenAPIReply response

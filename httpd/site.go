@@ -49,6 +49,7 @@ type SiteServer struct {
 
 	AssetsURL string
 	ErrorURL  string
+	LoginURL  string
 
 	JSVer  string
 	CSSVer string
@@ -56,10 +57,12 @@ type SiteServer struct {
 	Secret string
 	Nonce  string
 
-	Log *log.Logger
-	PID string
+	Log   *log.Logger
+	PID   string
+	Lang  string
+	bLang []byte
 
-	IsUsePool bool
+	Pool int
 }
 
 // Init Server
@@ -89,7 +92,6 @@ func Init() *SiteServer {
 	}
 	s.Log = log.Get("app")
 
-	s.IsUsePool = a.DefaultBool("use_pool", false)
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
 
@@ -97,7 +99,9 @@ func Init() *SiteServer {
 	s.AssetsURL = a.DefaultString("assets_url", "")
 
 	// ErrorURL
-	s.ErrorURL = a.DefaultString("error_url", "")
+	s.ErrorURL = a.DefaultString("error_url", "/error")
+	// LoginURL
+	s.LoginURL = a.DefaultString("login_url", "/login")
 
 	// Secret
 	s.Secret = a.DefaultString("secret", "")
@@ -105,6 +109,12 @@ func Init() *SiteServer {
 
 	// PID
 	s.PID = a.DefaultString("pid", "")
+	// Pool
+	s.Pool = a.DefaultInt("pool", 20)
+	// Lang
+	s.Lang = a.DefaultString("lang", "zh")
+	s.bLang = []byte(s.Lang)
+	initPool(s.Pool)
 
 	Site = s
 

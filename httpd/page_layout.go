@@ -30,15 +30,10 @@ var (
 )
 
 // renderPage func
-func renderPage(site *SiteServer, w io.Writer, p IPage, bPath []byte) error {
+func renderPage(w io.Writer, p IPage, bPath []byte) error {
 	// <html>
 	w.Write(bytesHTMLBegin)
-	lang := p.Lang()
-	if lang == "" {
-		w.Write([]byte("en"))
-	} else {
-		w.Write([]byte(p.Lang()))
-	}
+	w.Write(Site.bLang)
 	w.Write(bytesHTMLBegin2)
 
 	// head -------------------------
@@ -53,7 +48,7 @@ func renderPage(site *SiteServer, w io.Writer, p IPage, bPath []byte) error {
 	w.Write([]byte(RunMode))
 	w.Write(bRenderS2)
 
-	token := buildToken(bPath, site.Secret, site.Nonce)
+	token := buildToken(bPath, Site.Secret, Site.Nonce)
 
 	w.Write([]byte(token))
 

@@ -7,8 +7,9 @@ import (
 
 // PageData class
 type PageData struct {
-	Name, Dir string
-	Title     string
+	Name, Dir     string
+	Title         string
+	Secret, Nonce string
 
 	Head   []render.IRender
 	CSS    []render.IRender
@@ -27,9 +28,9 @@ func (d *PageBase) Title() string {
 	return d.Data.Title
 }
 
-// Lang page
-func (d *PageBase) Lang() string {
-	return ""
+// GetData page
+func (d *PageBase) GetData() *PageData {
+	return &d.Data
 }
 
 // Dir page

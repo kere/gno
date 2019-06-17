@@ -43,6 +43,6 @@ func (d *Default) Page(ctx *fasthttp.RequestCtx) error {
 }
 
 // Auth page
-func (d *Default) Auth(ctx *fasthttp.RequestCtx) (string, error) {
-	return "", nil
+func (d *Default) Auth(ctx *fasthttp.RequestCtx) error {
+	return nil
 }

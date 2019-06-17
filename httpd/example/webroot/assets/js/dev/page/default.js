@@ -20,6 +20,9 @@ require(
 			 ws.receive = (method, args, result) =>{
 				 console.log(method, args, result);
 			 }
+			 ws.onclose = () => {
+				 alert("closed");
+			 }
 
        window.sendTo = function(){
 				 ws.Send('SayHi', {name: "tome", msg: "hello"})
