@@ -16,5 +16,6 @@ func main() {
 
 	site.RegistWS("/ws", websock.NewWS())
 
+	httpd.RunMode = httpd.ModePro
 	site.Start()
 }

@@ -35,7 +35,7 @@ func (d *P) SetData(pd *PageData) {
 	d.D = *pd
 }
 
-// P page
+// Page do
 func (d *P) Page(ctx *fasthttp.RequestCtx) error {
 	return nil
 }

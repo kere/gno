@@ -3,7 +3,6 @@ package httpd
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,8 +15,6 @@ import (
 )
 
 const (
-	//CacheModeNone 不缓存页面
-	CacheModeNone = 0
 	//CacheModePage 按照页面名称缓存
 	CacheModePage = 1
 	//CacheModePagePath 按照URL Path缓存页面
@@ -30,6 +27,9 @@ const (
 	//CacheStoreFile to store in file
 	CacheStoreFile = 1
 
+	//CacheStoreNone 不缓存页面
+	CacheStoreNone = -1
+
 	pagecacheKeyPrefix = "c:"
 	pageCacheSubfix    = ".htm"
 
@@ -38,12 +38,16 @@ const (
 
 	// HeaderEtag etag
 	HeaderEtag = "ETag"
+
 	// HeaderCacheCtl cache
 	HeaderCacheCtl = "Cache-Control"
+
 	// HeaderIfNoneMatch If-None-Match
 	HeaderIfNoneMatch = "If-None-Match"
+
 	// HeaderLastModified Last-Modified
 	HeaderLastModified = "Last-Modified"
+
 	// HeaderIfModifiedSince = "If-Modified-Since"
 	HeaderIfModifiedSince = "If-Modified-Since"
 
@@ -52,7 +56,27 @@ const (
 	LastModifiedFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 
 	cacheFileStoreDir = "var/cache/page"
+
+	headValCacheNone = "no-cache"
+	headValCache     = "max-age="
+	headValContent   = "text/html; charset=utf-8"
 )
+
+// PageCacheOption option
+type PageCacheOption struct {
+	Mode         int // 0:
+	StoreMode    int // 0: mem 1:file
+	HeadExpires  int // http head expires
+	CacheExpires int
+}
+
+// pCacheElem class
+type pCacheElem struct {
+	LastModified string // Last-Modified: Fri, 12 May 2006 18:53:33 GMT
+	Src          []byte
+}
+
+var pageCached = &sync.Map{}
 
 // pageCachedKey key
 func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) string {
@@ -72,8 +96,8 @@ func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) strin
 	}
 }
 
-// TryGetCache try to get cache
-func TryGetCache(ctx *fasthttp.RequestCtx, p IPage) bool {
+// TryCache try to get cache
+func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	if RunMode == ModeDev {
 		return false
 	}
@@ -87,8 +111,11 @@ func TryGetCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	switch opt.StoreMode {
 	case CacheStoreMem:
 		if v, isCached := pageCached.Load(key); isCached {
-			pageElem := v.(PageCacheElem)
-			last = pageElem.LastModified
+			pe := v.(pCacheElem)
+			src = pe.Src
+			last = pe.LastModified
+		} else {
+			return false
 		}
 
 	case CacheStoreFile:
@@ -99,14 +126,15 @@ func TryGetCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		}
 		name := filepath.Join(cacheFileStoreDir, string(bstr))
 		file, err := os.OpenFile(name, os.O_RDONLY, os.ModePerm)
-		if os.IsExist(err) {
-			file.Close()
-			src, _ = ioutil.ReadAll(file)
-			stat, err := file.Stat()
-			if err != nil {
-				last = stat.ModTime().Format(LastModifiedFormat)
-			}
+		if os.IsNotExist(err) {
+			return false
 		}
+		src, _ = ioutil.ReadAll(file)
+		stat, err := file.Stat()
+		if err != nil {
+			last = gmtNowTime(stat.ModTime())
+		}
+		file.Close()
 
 	}
 
@@ -114,16 +142,13 @@ func TryGetCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	last0 := string(ctx.Request.Header.Peek(HeaderIfModifiedSince))
 
 	if last != "" && last == last0 {
-		// w.WriteHeader(http.StatusNotModified)
 		ctx.SetStatusCode(http.StatusNotModified)
 		return true
 	}
 
-	setResponseHeader(opt, ctx, p, last)
+	setHeader(p, ctx, last)
 
-	// w.Write(src)
 	ctx.Write(src)
-
 	return true
 }
 
@@ -131,10 +156,13 @@ func TryGetCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
 	opt := p.Data().CacheOption
 	key := pageCachedKey(opt, ctx, p)
-	last := time.Now().Format(LastModifiedFormat)
+
+	var last string
 
 	switch opt.StoreMode {
 	case CacheStoreMem:
+		last = gmtNowTime(time.Now())
+		pageCached.Store(key, pCacheElem{LastModified: last, Src: buf.Bytes()})
 
 	case CacheStoreFile:
 		bstr, err := base64.StdEncoding.DecodeString(key)
@@ -149,45 +177,23 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
 		}
 		_, err = f.Write(buf.Bytes())
 		if err != nil {
+			f.Close()
 			return err
 		}
+		info, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		last = gmtNowTime(info.ModTime())
 		f.Close()
 
 	}
 
-	setResponseHeader(opt, ctx, p, last)
-
+	setHeader(p, ctx, last)
 	return nil
-}
-
-func setResponseHeader(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage, lastModified string) {
-	// set response header
-	// Cache-Control: public, max-age=3600
-	if opt.HeadExpires > 0 {
-		ctx.Request.Header.Add(HeaderCacheCtl, fmt.Sprint("must-revalidate, max-age=", opt.HeadExpires))
-	} else {
-		ctx.Request.Header.Add(HeaderCacheCtl, "must-revalidate")
-	}
-	ctx.Request.Header.Set(HeaderLastModified, lastModified)
 }
 
 // ClearCache Clear cache
 func ClearCache() error {
 	return nil
 }
-
-// PageCacheOption option
-type PageCacheOption struct {
-	Mode         int // 0:
-	StoreMode    int // 0: mem 1:file
-	HeadExpires  int // http head expires
-	CacheExpires int
-}
-
-// PageCacheElem class
-type PageCacheElem struct {
-	LastModified string // Last-Modified: Fri, 12 May 2006 18:53:33 GMT
-	Src          []byte
-}
-
-var pageCached = &sync.Map{}
