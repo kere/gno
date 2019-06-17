@@ -15,7 +15,7 @@ func isPageOK(site *SiteServer, req *fasthttp.Request) bool {
 	bPath := req.Header.Referer()
 	u, _ := url.Parse(string(bPath))
 
-	pToken2 := buildToken([]byte(u.Path), site.Secret, site.Salt)
+	pToken2 := buildToken([]byte(u.Path), site.Secret, site.Nonce)
 
 	l := len(pToken)
 	if l != len(pToken2) {
@@ -29,16 +29,16 @@ func isPageOK(site *SiteServer, req *fasthttp.Request) bool {
 	return true
 }
 
-func isAPIOK(site *SiteServer, req *fasthttp.Request, src []byte) bool {
+func isAPIOK(req *fasthttp.Request, src []byte) bool {
 	apiToken := req.Header.Peek(APIFieldToken)
 	pToken := req.Header.Peek(APIFieldPageToken)
-	u32 := buildAPIToken(site, req, src, pToken)
+	u32 := buildAPIToken(req, src, pToken)
 	// auth api token
 	return u32 == string(apiToken)
 }
 
 // ts+method+ts+jsonStr + token;
-func buildAPIToken(site *SiteServer, req *fasthttp.Request, src, pToken []byte) string {
+func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 	ts := req.Header.Peek(APIFieldTS)
 	method := req.PostArgs().Peek(APIFieldMethod)
 

@@ -54,10 +54,12 @@ type SiteServer struct {
 	CSSVer string
 
 	Secret string
-	Salt   string
+	Nonce  string
 
 	Log *log.Logger
 	PID string
+
+	IsUsePool bool
 }
 
 // Init Server
@@ -87,6 +89,7 @@ func Init() *SiteServer {
 	}
 	s.Log = log.Get("app")
 
+	s.IsUsePool = a.DefaultBool("use_pool", false)
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
 
@@ -98,7 +101,7 @@ func Init() *SiteServer {
 
 	// Secret
 	s.Secret = a.DefaultString("secret", "")
-	s.Salt = fmt.Sprint(time.Now().Unix())
+	s.Nonce = fmt.Sprint(time.Now().Unix())
 
 	// PID
 	s.PID = a.DefaultString("pid", "")

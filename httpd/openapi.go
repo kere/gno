@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/kere/gno/libs/log"
-	"github.com/kere/gno/libs/myerr"
 	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
@@ -48,23 +47,6 @@ type IOpenAPI interface {
 	Auth(ctx *fasthttp.RequestCtx) (err error)
 }
 
-// OpenAPIReply response
-func OpenAPIReply(ctx *fasthttp.RequestCtx, data interface{}) error {
-	if data == nil {
-		ctx.SetStatusCode(http.StatusOK)
-		return nil
-	}
-	src, err := json.Marshal(data)
-	if err != nil {
-		Site.Log.Warn(err)
-		return err
-	}
-
-	ctx.Write(src)
-
-	return nil
-}
-
 type apiExec func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error)
 
 var openapiMap = make(map[string]apiExec)
@@ -83,57 +65,9 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		openapiMap[rule+"/"+m.Name] = v.Method(i).Interface().(func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error))
 
 		s.Router.POST(rule+"/"+m.Name, func(ctx *fasthttp.RequestCtx) {
-			uri := string(ctx.URI().Path())
-			itemExec, isok := openapiMap[uri]
-			if !isok {
-				doAPIError(ctx, errors.New(uri+" openapi not found"))
-				return
-			}
-
-			if RunMode == ModePro {
-				defer func() {
-					if p := recover(); p != nil {
-						var err error
-						str, isok := p.(string)
-						if isok {
-							err = errors.New(str)
-						} else {
-							err = errors.New("panic")
-						}
-						doAPIError(ctx, err)
-					}
-				}()
-			}
-
-			pArgs := ctx.Request.PostArgs()
-			src := pArgs.Peek(APIFieldSrc)
-
-			var params util.MapData
-			if len(src) > 0 {
-				err := json.Unmarshal(src, &params)
-				if err != nil {
-					doAPIError(ctx, myerr.New(err, string(src)))
-					return
-				}
-			}
-
-			if !isAPIOK(s, &ctx.Request, src) {
-				doAPIError(ctx, errors.New("api auth failed"))
-				return
-			}
-
-			data, err := itemExec(ctx, params)
-			if err != nil {
+			if err := openAPIHandle(ctx); err != nil {
 				doAPIError(ctx, err)
-				return
 			}
-
-			err = OpenAPIReply(ctx, data)
-			if err != nil {
-				doAPIError(ctx, err)
-				return
-			}
-
 		})
 	}
 }

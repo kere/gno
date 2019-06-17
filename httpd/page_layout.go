@@ -53,7 +53,7 @@ func renderPage(site *SiteServer, w io.Writer, p IPage, bPath []byte) error {
 	w.Write([]byte(RunMode))
 	w.Write(bRenderS2)
 
-	token := buildToken(bPath, site.Secret, site.Salt)
+	token := buildToken(bPath, site.Secret, site.Nonce)
 
 	w.Write([]byte(token))
 
