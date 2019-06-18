@@ -34,6 +34,9 @@ func InvokeExec(dat interface{}) {
 
 // initPool new
 func initPool(n int) {
+	if n == 0 {
+		return
+	}
 	var err error
 	pool, err = ants.NewPoolWithFunc(n, InvokeExec)
 	if err != nil {

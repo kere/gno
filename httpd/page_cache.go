@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
@@ -18,10 +19,9 @@ const ()
 
 // PageCacheOption option
 type PageCacheOption struct {
-	PageMode     int // page, path, uri
-	HTTPHead     int // 页面缓存模式 0:不缓存  1: etag  >1: 过期模式
-	Store        int // 0: mem 1:file
-	StoreExpires int
+	PageMode int // page, path, uri
+	HTTPHead int // 页面缓存模式 0:不缓存  1: etag  >1: 过期模式
+	Store    int // 0: mem 1:file
 }
 
 // pCacheElem class
@@ -82,10 +82,12 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		src, _ = ioutil.ReadAll(file)
 		stat, err := file.Stat()
 		if err != nil {
-			last = gmtNowTime(stat.ModTime())
+			log.App.Error(err)
+			file.Close()
+			return false
 		}
+		last = gmtNowTime(stat.ModTime())
 		file.Close()
-
 	}
 
 	// check use cache ?

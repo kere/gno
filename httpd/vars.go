@@ -48,4 +48,5 @@ const (
 	headSValMaxAge        = "max-age="
 	headSValContent       = "text/html; charset=utf-8"
 	defaultTemplateSubfix = ".htm"
+	sAuthURL              = "url"
 )

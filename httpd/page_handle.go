@@ -16,7 +16,7 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 	err := p.Auth(ctx)
 	if err != nil {
 		u, _ := url.Parse(Site.LoginURL)
-		u.Query().Add("url", string(ctx.RequestURI()))
+		u.Query().Add(sAuthURL, string(ctx.RequestURI()))
 		ctx.Redirect(u.String(), fasthttp.StatusSeeOther)
 		return
 	}

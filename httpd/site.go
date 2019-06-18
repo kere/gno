@@ -106,10 +106,10 @@ func Init() *SiteServer {
 	// PID
 	s.PID = a.DefaultString("pid", "")
 	// Pool
-	s.Pool = a.DefaultInt("pool", 20)
+	s.Pool = a.DefaultInt("pool", 0)
+	initPool(s.Pool)
 	// Lang
 	s.Lang = []byte(a.DefaultString("lang", "zh"))
-	initPool(s.Pool)
 
 	Site = s
 

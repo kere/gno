@@ -18,7 +18,11 @@ type IPage interface {
 // RegistGet router
 func (s *SiteServer) RegistGet(rule string, p IPage) {
 	s.Router.GET(rule, func(ctx *fasthttp.RequestCtx) {
-		// pageHandle(p, ctx)
+		if s.Pool == 0 {
+			pageHandle(p, ctx)
+			return
+		}
+
 		done := make(chan bool)
 		if err := pool.Invoke(PoolParams{Typ: invokePage, Page: p, Ctx: ctx, Done: done}); err != nil {
 			doAPIError(ctx, errors.New("Throttle limit error"))
@@ -41,11 +45,3 @@ func doPageErr(errorURL string, ctx *fasthttp.RequestCtx, err error) {
 	// ErrorURL redirect to
 	ctx.Redirect(errorURL+"?msg="+err.Error(), fasthttp.StatusSeeOther)
 }
-
-// // SetPageToken token
-// func (s *SiteServer) SetPageToken(ctx *fasthttp.RequestCtx, p IPage) {
-// 	token := s.PageToken(ctx.URI().Path(), fmt.Sprint(time.Now().Unix()))
-//
-// 	token = base64.StdEncoding.EncodeToString([]byte(token))
-// 	ctx.Request.Header.SetCookie(PageAccessTokenField, url.PathEscape(token))
-// }
