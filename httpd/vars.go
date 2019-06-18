@@ -32,8 +32,8 @@ const (
 	//CacheStoreNone 不缓存页面
 	CacheStoreNone = -1
 
-	pagecacheKeyPrefix = "c:"
-	pageCacheSubfix    = ".htm"
+	// pagecacheKeyPrefix = "c:"
+	pageCacheSubfix = ".htm"
 
 	delim1 = byte('\n')
 	delim2 = "\n"

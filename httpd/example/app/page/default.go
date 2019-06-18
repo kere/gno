@@ -24,7 +24,7 @@ func NewDefault() *Default {
 	d.D.Top = []render.IRender{render.NewTemplate("_header.htm")}
 
 	d.D.CacheOption.PageMode = httpd.CacheModePagePath
-	d.D.CacheOption.Store = httpd.CacheStoreMem
+	d.D.CacheOption.Store = httpd.CacheStoreFile
 	d.D.CacheOption.HTTPHead = 300
 
 	// requirejs

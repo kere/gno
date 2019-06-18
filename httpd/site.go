@@ -3,7 +3,6 @@ package httpd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/buaazp/fasthttprouter"
@@ -124,7 +123,7 @@ func Init() *SiteServer {
 		db.SetCache(cache.CurrentCache())
 	}
 
-	err := os.MkdirAll(filepath.Dir(cacheFileStoreDir), os.ModeDir)
+	err := os.MkdirAll(cacheFileStoreDir, os.ModeDir)
 	if err != nil {
 		panic(err)
 	}

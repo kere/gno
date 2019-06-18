@@ -1,6 +1,8 @@
 package httpd
 
 import (
+	"errors"
+
 	"github.com/valyala/fasthttp"
 )
 
@@ -16,12 +18,12 @@ type IPage interface {
 // RegistGet router
 func (s *SiteServer) RegistGet(rule string, p IPage) {
 	s.Router.GET(rule, func(ctx *fasthttp.RequestCtx) {
-		pageHandle(p, ctx)
-		// done := make(chan bool)
-		// if err := pool.Invoke(PoolParams{Typ: invokePage, Page: p, Ctx: ctx, Done: done}); err != nil {
-		// 	doAPIError(ctx, errors.New("Throttle limit error"))
-		// }
-		// <-done
+		// pageHandle(p, ctx)
+		done := make(chan bool)
+		if err := pool.Invoke(PoolParams{Typ: invokePage, Page: p, Ctx: ctx, Done: done}); err != nil {
+			doAPIError(ctx, errors.New("Throttle limit error"))
+		}
+		<-done
 	})
 }
 

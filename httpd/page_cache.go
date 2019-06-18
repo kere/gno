@@ -2,7 +2,7 @@ package httpd
 
 import (
 	"bytes"
-	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kere/gno/libs/log"
+	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
 
@@ -30,23 +30,23 @@ type pCacheElem struct {
 	Src          []byte
 }
 
-var pageCached = &sync.Map{}
+var pageCacheMap = &sync.Map{}
 
 // pageCachedKey key
-func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) string {
+func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) []byte {
 	switch opt.PageMode {
 	case CacheModePage:
 		pdata := p.Data()
-		return pagecacheKeyPrefix + pdata.Dir + pdata.Name
+		return []byte(pdata.Dir + pdata.Name)
 
 	case CacheModePagePath:
-		return pagecacheKeyPrefix + string(ctx.URI().Path())
+		return ctx.URI().Path()
 
 	case CacheModePageURI:
-		return pagecacheKeyPrefix + string(ctx.URI().RequestURI())
+		return ctx.URI().RequestURI()
 
 	default:
-		return ""
+		return nil
 	}
 }
 
@@ -64,7 +64,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 
 	switch opt.Store {
 	case CacheStoreMem:
-		if v, isCached := pageCached.Load(key); isCached {
+		if v, isCached := pageCacheMap.Load(string(key)); isCached {
 			pe := v.(pCacheElem)
 			src = pe.Src
 			last = pe.LastModified
@@ -73,12 +73,8 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		}
 
 	case CacheStoreFile:
-		bstr, err := base64.StdEncoding.DecodeString(key)
-		if err != nil {
-			log.App.Alert(err)
-			return false
-		}
-		name := filepath.Join(cacheFileStoreDir, string(bstr))
+		bstr := util.MD5BytesV(key)
+		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", bstr))
 		file, err := os.OpenFile(name, os.O_RDONLY, os.ModePerm)
 		if os.IsNotExist(err) {
 			return false
@@ -101,8 +97,8 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	}
 
 	setHeader(p, ctx, last)
-
-	ctx.Write(src)
+	// ctx.Write(src)
+	ctx.SetBody(src)
 	return true
 }
 
@@ -116,15 +112,11 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
 	switch opt.Store {
 	case CacheStoreMem:
 		last = gmtNowTime(time.Now())
-		pageCached.Store(key, pCacheElem{LastModified: last, Src: buf.Bytes()})
+		pageCacheMap.Store(string(key), pCacheElem{LastModified: last, Src: buf.Bytes()})
 
 	case CacheStoreFile:
-		bstr, err := base64.StdEncoding.DecodeString(key)
-		if err != nil {
-			return err
-		}
-
-		name := filepath.Join(cacheFileStoreDir, string(bstr))
+		bstr := util.MD5BytesV(key)
+		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", bstr))
 		f, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return err

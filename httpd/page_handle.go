@@ -21,12 +21,9 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	println(1)
 	if TryCache(ctx, p) {
-		fmt.Println("Header:", ctx.Request.Header.String())
 		return
 	}
-	println(2)
 
 	err = p.Page(ctx)
 	if err != nil {
@@ -44,9 +41,15 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	TrySetCache(ctx, p, buf)
+	err = TrySetCache(ctx, p, buf)
+	if err != nil {
+		log.App.Error(err)
+		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
+		return
+	}
 
-	ctx.Write(buf.Bytes())
+	ctx.SetBody(buf.Bytes())
+	// ctx.Write(buf.Bytes())
 }
 
 func gmtNowTime(d time.Time) string {
