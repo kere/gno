@@ -16,7 +16,14 @@ var (
 )
 
 //MD5 md5校验
-func MD5(src []byte) []byte {
+func MD5(src string) []byte {
+	m := md5.New()
+	m.Write([]byte(src))
+	return m.Sum(nil)
+}
+
+//MD5BytesV md5校验
+func MD5BytesV(src []byte) []byte {
 	m := md5.New()
 	m.Write(src)
 	return m.Sum(nil)

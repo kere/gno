@@ -23,8 +23,6 @@ const (
 	ModePro = "pro"
 	// ModeDev dev
 	ModeDev = "dev"
-
-	defaultTemplateSubfix = ".htm"
 )
 
 var (

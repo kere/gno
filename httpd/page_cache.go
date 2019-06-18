@@ -14,60 +14,14 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-const (
-	//CacheModePage 按照页面名称缓存
-	CacheModePage = 1
-	//CacheModePagePath 按照URL Path缓存页面
-	CacheModePagePath = 2
-	//CacheModePageURI 按照URL缓存页面
-	CacheModePageURI = 3
-
-	//CacheStoreMem to store in memory
-	CacheStoreMem = 0
-	//CacheStoreFile to store in file
-	CacheStoreFile = 1
-
-	//CacheStoreNone 不缓存页面
-	CacheStoreNone = -1
-
-	pagecacheKeyPrefix = "c:"
-	pageCacheSubfix    = ".htm"
-
-	delim1 = byte('\n')
-	delim2 = "\n"
-
-	// HeaderEtag etag
-	HeaderEtag = "ETag"
-
-	// HeaderCacheCtl cache
-	HeaderCacheCtl = "Cache-Control"
-
-	// HeaderIfNoneMatch If-None-Match
-	HeaderIfNoneMatch = "If-None-Match"
-
-	// HeaderLastModified Last-Modified
-	HeaderLastModified = "Last-Modified"
-
-	// HeaderIfModifiedSince = "If-Modified-Since"
-	HeaderIfModifiedSince = "If-Modified-Since"
-
-	//LastModifiedFormat Wed, 21 Oct 2015 07:28:00 GMT
-	// Last-Modified: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
-	LastModifiedFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
-
-	cacheFileStoreDir = "var/cache/page"
-
-	headValCacheNone = "no-cache"
-	headValCache     = "max-age="
-	headValContent   = "text/html; charset=utf-8"
-)
+const ()
 
 // PageCacheOption option
 type PageCacheOption struct {
-	Mode         int // 0:
-	StoreMode    int // 0: mem 1:file
-	HeadExpires  int // http head expires
-	CacheExpires int
+	PageMode     int // page, path, uri
+	HTTPHead     int // 页面缓存模式 0:不缓存  1: etag  >1: 过期模式
+	Store        int // 0: mem 1:file
+	StoreExpires int
 }
 
 // pCacheElem class
@@ -80,7 +34,7 @@ var pageCached = &sync.Map{}
 
 // pageCachedKey key
 func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) string {
-	switch opt.Mode {
+	switch opt.PageMode {
 	case CacheModePage:
 		pdata := p.Data()
 		return pagecacheKeyPrefix + pdata.Dir + pdata.Name
@@ -108,7 +62,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	var src []byte
 	var last string
 
-	switch opt.StoreMode {
+	switch opt.Store {
 	case CacheStoreMem:
 		if v, isCached := pageCached.Load(key); isCached {
 			pe := v.(pCacheElem)
@@ -139,7 +93,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	}
 
 	// check use cache ?
-	last0 := string(ctx.Request.Header.Peek(HeaderIfModifiedSince))
+	last0 := string(ctx.Request.Header.PeekBytes(HeaderIfModifiedSince))
 
 	if last != "" && last == last0 {
 		ctx.SetStatusCode(http.StatusNotModified)
@@ -159,7 +113,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
 
 	var last string
 
-	switch opt.StoreMode {
+	switch opt.Store {
 	case CacheStoreMem:
 		last = gmtNowTime(time.Now())
 		pageCached.Store(key, pCacheElem{LastModified: last, Src: buf.Bytes()})

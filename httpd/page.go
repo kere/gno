@@ -1,8 +1,6 @@
 package httpd
 
 import (
-	"net/http"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -35,11 +33,11 @@ func (s *SiteServer) RegistPost(rule string, p IPage) {
 
 func doPageErr(errorURL string, ctx *fasthttp.RequestCtx, err error) {
 	if errorURL == "" {
-		ctx.Error(err.Error(), http.StatusInternalServerError)
+		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 		return
 	}
 	// ErrorURL redirect to
-	ctx.Redirect(errorURL+"?msg="+err.Error(), http.StatusSeeOther)
+	ctx.Redirect(errorURL+"?msg="+err.Error(), fasthttp.StatusSeeOther)
 }
 
 // // SetPageToken token

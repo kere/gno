@@ -3,11 +3,11 @@ package httpd
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/kere/gno/libs/log"
+	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
 
@@ -17,7 +17,7 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 	if err != nil {
 		u, _ := url.Parse(Site.LoginURL)
 		u.Query().Add("url", string(ctx.RequestURI()))
-		ctx.Redirect(u.String(), http.StatusSeeOther)
+		ctx.Redirect(u.String(), fasthttp.StatusSeeOther)
 		return
 	}
 
@@ -31,7 +31,7 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 	err = p.Page(ctx)
 	if err != nil {
 		log.App.Error(err)
-		ctx.SetStatusCode(http.StatusInternalServerError)
+		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		return
 	}
 
@@ -40,7 +40,7 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 	err = renderPage(buf, p, ctx.URI().PathOriginal())
 	if err != nil {
 		log.App.Error(err)
-		ctx.SetStatusCode(http.StatusInternalServerError)
+		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		return
 	}
 
@@ -64,10 +64,16 @@ func setHeader(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
 	// set response header
 	// Cache-Control: public, max-age=3600
 	// must-revalidate
-	if p.Data().CacheOption.StoreMode == CacheStoreNone {
-		ctx.Request.Header.Set(HeaderCacheCtl, headValCacheNone)
-	} else {
-		ctx.Request.Header.Set(HeaderCacheCtl, fmt.Sprint(headValCache, p.Data().CacheOption.HeadExpires))
-		ctx.Request.Header.Set(HeaderLastModified, lastModified)
+
+	mode := p.Data().CacheOption.HTTPHead
+	switch {
+	case mode == 1:
+		ctx.Response.Header.SetBytesK(HeaderEtag, fmt.Sprintf("%x", util.MD5(lastModified)))
+		ctx.Response.Header.SetBytesK(HeaderLastModified, lastModified)
+	case mode > 1:
+		ctx.Response.Header.SetBytesK(HeaderCacheCtl, fmt.Sprint(headSValMaxAge, mode))
+		ctx.Response.Header.SetBytesK(HeaderLastModified, lastModified)
+	default:
+		ctx.Response.Header.SetBytesK(HeaderCacheCtl, headSValNoCache)
 	}
 }

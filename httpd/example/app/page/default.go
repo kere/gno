@@ -23,6 +23,10 @@ func NewDefault() *Default {
 	// d.D.Head = []render.IRender{}
 	d.D.Top = []render.IRender{render.NewTemplate("_header.htm")}
 
+	d.D.CacheOption.PageMode = httpd.CacheModePagePath
+	d.D.CacheOption.Store = httpd.CacheStoreMem
+	d.D.CacheOption.HTTPHead = 300
+
 	// requirejs
 	data := make(map[string]string, 0)
 	data["defer"] = ""
