@@ -10,6 +10,7 @@ const (
 	invokeAPI  = 3
 )
 
+var invokeDoneOK = struct{}{}
 var pool *ants.PoolWithFunc
 
 // PoolParams for pool
@@ -17,7 +18,7 @@ type PoolParams struct {
 	Typ  int
 	Page IPage
 	Ctx  *fasthttp.RequestCtx
-	Done chan bool
+	Done chan struct{}
 }
 
 // InvokeExec by http
@@ -29,7 +30,8 @@ func InvokeExec(dat interface{}) {
 	case invokeAPI:
 		openAPIHandle(param.Ctx)
 	}
-	param.Done <- true
+	close(param.Done)
+	// param.Done <- invokeDoneOK
 }
 
 // initPool new

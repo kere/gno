@@ -57,6 +57,10 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	}
 
 	opt := p.Data().CacheOption
+	if opt.Store == CacheStoreNone {
+		return false
+	}
+
 	key := pageCachedKey(opt, ctx, p)
 
 	var src []byte
@@ -107,6 +111,11 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 // TrySetCache TrySet cache
 func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
 	opt := p.Data().CacheOption
+	if opt.Store == CacheStoreNone {
+		setHeader(p, ctx, "")
+		return nil
+	}
+
 	key := pageCachedKey(opt, ctx, p)
 
 	var last string

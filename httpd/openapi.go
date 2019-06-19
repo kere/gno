@@ -69,11 +69,16 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 				openAPIHandle(ctx)
 				return
 			}
-			done := make(chan bool)
+			done := make(chan struct{})
 			if err := pool.Invoke(PoolParams{Typ: invokeAPI, Ctx: ctx, Done: done}); err != nil {
 				doAPIError(ctx, errors.New("Throttle limit error"))
 			}
-			<-done
+			// <-done
+			select {
+			case <-done:
+			case <-time.After(s.Timeout):
+				ctx.TimeoutError("timeout!")
+			}
 
 		})
 	}

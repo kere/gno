@@ -58,6 +58,10 @@ type SiteServer struct {
 	PID  string
 	Lang []byte
 
+	Timeout       time.Duration
+	MaxConnsPerIP int
+	Concurrency   int //连接并发数
+
 	Pool int
 }
 
@@ -110,6 +114,12 @@ func Init() *SiteServer {
 	initPool(s.Pool)
 	// Lang
 	s.Lang = []byte(a.DefaultString("lang", "zh"))
+	// IdleTimeout
+	s.Timeout = time.Second * time.Duration(a.DefaultInt("timeout", 2))
+	// MaxConnsPerIP
+	s.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 200)
+	// Concurrency
+	s.Concurrency = a.DefaultInt("concurrency", 2048)
 
 	Site = s
 
@@ -150,8 +160,10 @@ func (s *SiteServer) Start() {
 	fmt.Println("RunMode:", RunMode)
 	fmt.Println("Listen:", s.Listen)
 	svr := &fasthttp.Server{
-		ErrorHandler: s.ErrorHandler,
-		Handler:      s.Router.Handler,
+		MaxConnsPerIP: s.MaxConnsPerIP,
+		Concurrency:   s.Concurrency,
+		ErrorHandler:  s.ErrorHandler,
+		Handler:       s.Router.Handler,
 	}
 
 	util.ListenSignal(func(sign os.Signal) {

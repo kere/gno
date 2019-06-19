@@ -4,6 +4,7 @@ import (
 	"github.com/kere/gno/httpd"
 	"github.com/kere/gno/libs/util"
 	"github.com/kere/gno/render"
+	"github.com/valyala/fasthttp"
 )
 
 // Default page class
@@ -23,9 +24,10 @@ func NewDefault() *Default {
 	// d.D.Head = []render.IRender{}
 	d.D.Top = []render.IRender{render.NewTemplate("_header.htm")}
 
-	d.D.CacheOption.PageMode = httpd.CacheModePagePath
-	d.D.CacheOption.Store = httpd.CacheStoreFile
-	d.D.CacheOption.HTTPHead = 300
+	// d.D.CacheOption.PageMode = httpd.CacheModePagePath
+	d.D.CacheOption.Store = httpd.CacheStoreNone
+	// d.D.CacheOption.Store = httpd.CacheStoreMem
+	// d.D.CacheOption.HTTPHead = 300
 
 	// requirejs
 	data := make(map[string]string, 0)
@@ -38,10 +40,12 @@ func NewDefault() *Default {
 	return d
 }
 
-// // Page page
-// func (d *Default) Page(ctx *fasthttp.RequestCtx) error {
-// 	return nil
-// }
+// Page page
+func (d *Default) Page(ctx *fasthttp.RequestCtx) error {
+	// time.Sleep(3 * time.Second)
+	return nil
+}
+
 //
 // // Auth page
 // func (d *Default) Auth(ctx *fasthttp.RequestCtx) error {

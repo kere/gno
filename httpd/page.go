@@ -2,6 +2,7 @@ package httpd
 
 import (
 	"errors"
+	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -23,17 +24,24 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 			return
 		}
 
-		done := make(chan bool)
+		done := make(chan struct{})
 		if err := pool.Invoke(PoolParams{Typ: invokePage, Page: p, Ctx: ctx, Done: done}); err != nil {
 			doAPIError(ctx, errors.New("Throttle limit error"))
 		}
 		<-done
+		select {
+		case <-done:
+		case <-time.After(s.Timeout):
+			ctx.TimeoutError("timeout!")
+		}
+
 	})
 }
 
 // RegistPost router
 func (s *SiteServer) RegistPost(rule string, p IPage) {
 	s.Router.POST(rule, func(ctx *fasthttp.RequestCtx) {
+		// ctx.SetStatusCode(fasthttp.StatusForbidden)
 	})
 }
 
