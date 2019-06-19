@@ -47,10 +47,10 @@ func openAPIHandle(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
-	// if !isAPIOK(&ctx.Request, src) {
-	// 	doAPIError(ctx, errors.New("api auth failed"))
-	// 	return
-	// }
+	if !isAPIOK(&ctx.Request, src) {
+		doAPIError(ctx, errors.New("api auth failed"))
+		return
+	}
 
 	data, err := itemExec(ctx, params)
 	if err != nil {
