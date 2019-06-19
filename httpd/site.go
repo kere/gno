@@ -3,6 +3,7 @@ package httpd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/buaazp/fasthttprouter"
@@ -27,6 +28,9 @@ const (
 var (
 	// ConfigName config file name
 	ConfigName = "app/app.conf"
+
+	// HomeDir of config
+	HomeDir = ""
 	// RunMode dev pro
 	RunMode = "dev"
 	// Site svr
@@ -52,15 +56,15 @@ type SiteServer struct {
 	Secret string
 	Nonce  string
 
-	Log  *log.Logger
+	Log *log.Logger
+
 	PID  string
 	Lang []byte
 
 	// Timeout       time.Duration
 	MaxConnsPerIP int
 	Concurrency   int //连接并发数
-
-	Pool int
+	// Pool int
 }
 
 // GetConfig return Configuration
@@ -69,11 +73,15 @@ func GetConfig() *conf.Configuration {
 }
 
 // Init Server
-func Init() *SiteServer {
-	config = conf.Load(ConfigName)
+func Init(name string) {
+	ConfigName = name
+	config = conf.Load(name)
+
+	dir := filepath.Dir(name)
+	HomeDir, _ = filepath.Abs(filepath.Join(dir, ".."))
 
 	a := config.GetConf("site")
-	s := &SiteServer{
+	Site = &SiteServer{
 		Listen: a.DefaultString("listen", ":8080"),
 		Router: fasthttprouter.New(),
 	}
@@ -93,39 +101,37 @@ func Init() *SiteServer {
 	} else {
 		log.Init("", "app", "stdout", "")
 	}
-	s.Log = log.Get("app")
+	Site.Log = log.Get("app")
 
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
 
 	// ErrorURL
-	s.ErrorURL = a.DefaultString("error_url", "/error")
+	Site.ErrorURL = a.DefaultString("error_url", "/error")
 	// LoginURL
-	s.LoginURL = a.DefaultString("login_url", "/login")
+	Site.LoginURL = a.DefaultString("login_url", "/login")
 
 	// Secret
-	s.Secret = a.DefaultString("secret", "")
-	s.Nonce = fmt.Sprint(time.Now().Unix())
+	Site.Secret = a.DefaultString("secret", "")
+	Site.Nonce = fmt.Sprint(time.Now().Unix())
 
 	// PID
-	s.PID = a.DefaultString("pid", "")
+	Site.PID = a.DefaultString("pid", "")
 	// Pool
 	// s.Pool = a.DefaultInt("pool", 0)
 	// initPool(s.Pool)
 
 	// Lang
-	s.Lang = []byte(a.DefaultString("lang", "zh"))
+	Site.Lang = []byte(a.DefaultString("lang", "zh"))
 
 	// Timeout
 	// s.Timeout = time.Second * time.Duration(a.DefaultInt("timeout", 2))
 
 	// MaxConnsPerIP
-	s.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 0)
+	Site.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 0)
 	// Concurrency
-	s.Concurrency = a.DefaultInt("concurrency", 2048)
-	s.Name = a.DefaultString("name", "httpd")
-
-	Site = s
+	Site.Concurrency = a.DefaultInt("concurrency", 2048)
+	Site.Name = a.DefaultString("name", "httpd")
 
 	// DB
 	if config.IsSet("db") {
@@ -150,8 +156,6 @@ func Init() *SiteServer {
 	// Template Delim
 	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
 	render.TemplateRightDelim = a.DefaultString("template_right_delim", "")
-
-	return s
 }
 
 // Start server listen
