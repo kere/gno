@@ -1,7 +1,6 @@
 package render
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -36,10 +35,12 @@ func (t JS) Render(w io.Writer) error {
 			filename = strings.Replace(t.FileName, "\\", "/", -1)
 		}
 
-		w.Write([]byte(AssetsURL + "/assets/js/" + filename))
+		w.Write([]byte(AssetsURL + "/js/" + filename))
 	}
-	if JSVersion != "" {
-		w.Write([]byte(fmt.Sprint("?gv=", JSVersion)))
+
+	if len(JSVersion) > 0 {
+		w.Write(bVerStr)
+		w.Write(JSVersion)
 	}
 
 	w.Write(BytesQuote)

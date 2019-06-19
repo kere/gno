@@ -4,7 +4,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/kere/gno/render"
+	"github.com/kere/gno/httpd/render"
 )
 
 var (

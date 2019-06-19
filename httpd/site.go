@@ -7,7 +7,7 @@ import (
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/kere/gno/db"
-	"github.com/kere/gno/layout"
+	"github.com/kere/gno/httpd/render"
 	"github.com/kere/gno/libs/cache"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
@@ -39,17 +39,15 @@ var (
 
 // SiteServer class
 type SiteServer struct {
+	Name   string
 	Listen string
 
 	// Location *time.Location
 	Router *fasthttprouter.Router
 
-	AssetsURL string
-	ErrorURL  string
-	LoginURL  string
-
-	JSVer  string
-	CSSVer string
+	// AssetsURL string
+	ErrorURL string
+	LoginURL string
 
 	Secret string
 	Nonce  string
@@ -58,11 +56,16 @@ type SiteServer struct {
 	PID  string
 	Lang []byte
 
-	Timeout       time.Duration
+	// Timeout       time.Duration
 	MaxConnsPerIP int
 	Concurrency   int //连接并发数
 
 	Pool int
+}
+
+// GetConfig return Configuration
+func GetConfig() *conf.Configuration {
+	return &config
 }
 
 // Init Server
@@ -95,9 +98,6 @@ func Init() *SiteServer {
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
 
-	// AssetsURL
-	s.AssetsURL = a.DefaultString("assets_url", "")
-
 	// ErrorURL
 	s.ErrorURL = a.DefaultString("error_url", "/error")
 	// LoginURL
@@ -110,16 +110,20 @@ func Init() *SiteServer {
 	// PID
 	s.PID = a.DefaultString("pid", "")
 	// Pool
-	s.Pool = a.DefaultInt("pool", 0)
-	initPool(s.Pool)
+	// s.Pool = a.DefaultInt("pool", 0)
+	// initPool(s.Pool)
+
 	// Lang
 	s.Lang = []byte(a.DefaultString("lang", "zh"))
-	// IdleTimeout
-	s.Timeout = time.Second * time.Duration(a.DefaultInt("timeout", 2))
+
+	// Timeout
+	// s.Timeout = time.Second * time.Duration(a.DefaultInt("timeout", 2))
+
 	// MaxConnsPerIP
-	s.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 200)
+	s.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 0)
 	// Concurrency
 	s.Concurrency = a.DefaultInt("concurrency", 2048)
+	s.Name = a.DefaultString("name", "httpd")
 
 	Site = s
 
@@ -138,12 +142,21 @@ func Init() *SiteServer {
 		panic(err)
 	}
 
+	// AssetsURL
+	render.AssetsURL = a.DefaultString("assets_url", "/assets")
+	// JsVersion CSSVersion
+	render.JSVersion = a.DefaultBytes("js_version", nil)
+	render.CSSVersion = a.DefaultBytes("css_version", nil)
+	// Template Delim
+	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
+	render.TemplateRightDelim = a.DefaultString("template_right_delim", "")
+
 	return s
 }
 
 // Start server listen
 func (s *SiteServer) Start() {
-	if layout.RunMode == "dev" {
+	if RunMode == "dev" {
 		s.Router.NotFound = fasthttp.FSHandler(WEBROOT, 0)
 	}
 

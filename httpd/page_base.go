@@ -1,7 +1,7 @@
 package httpd
 
 import (
-	"github.com/kere/gno/render"
+	"github.com/kere/gno/httpd/render"
 	"github.com/valyala/fasthttp"
 )
 

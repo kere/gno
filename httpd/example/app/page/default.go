@@ -2,8 +2,8 @@ package page
 
 import (
 	"github.com/kere/gno/httpd"
+	"github.com/kere/gno/httpd/render"
 	"github.com/kere/gno/libs/util"
-	"github.com/kere/gno/render"
 	"github.com/valyala/fasthttp"
 )
 
@@ -34,7 +34,7 @@ func NewDefault() *Default {
 	data["defer"] = ""
 	data["async"] = "true"
 
-	data["data-main"] = httpd.Site.AssetsURL + util.PathToURL("/assets/js/", httpd.RunMode+"/page", d.D.Dir, d.D.Name)
+	data["data-main"] = render.AssetsURL + util.PathToURL("/js/", httpd.RunMode+"/page", d.D.Dir, d.D.Name)
 	data["src"] = "/assets/js/require.js"
 	d.D.Bottom = []render.IRender{render.NewTemplate("_bottom.htm"), render.Script("", data)}
 	return d

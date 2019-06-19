@@ -4,19 +4,20 @@ import (
 	"io"
 )
 
+// JSVersion js ?v=001
+var JSVersion []byte
+
+// CSSVersion js ?v=001
+var CSSVersion []byte
+
 var (
 	// AssetsURL url
 	AssetsURL = ""
-	// JSVersion js ?v=001
-	JSVersion = ""
-	// CSSVersion css ?v=001
-	CSSVersion = ""
+
 	// TemplateLeftDelim for template
 	TemplateLeftDelim = ""
 	// TemplateRightDelim for template
 	TemplateRightDelim = ""
-)
-var (
 	// BytesEqual equal
 	BytesEqual = []byte("=")
 	// BytesQuote quote
@@ -28,6 +29,7 @@ var (
 
 	bCSSTagBegin = []byte("<link href=\"")
 	bCSSTagEnd   = []byte("\" rel=\"stylesheet\"/>\n")
+	bVerStr      = []byte("?gv=")
 )
 
 // IRender interface

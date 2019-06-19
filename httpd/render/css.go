@@ -25,8 +25,9 @@ func (t CSS) Render(w io.Writer) error {
 	filename := t.FileName
 	if strings.HasPrefix(filename, "http") {
 		w.Write([]byte(filename))
-		if CSSVersion != "" {
-			w.Write([]byte("?gv=" + CSSVersion))
+		if len(CSSVersion) > 0 {
+			w.Write(bVerStr)
+			w.Write(CSSVersion)
 		}
 		w.Write(bCSSTagEnd)
 		return nil
@@ -36,14 +37,15 @@ func (t CSS) Render(w io.Writer) error {
 		filename = strings.Replace(t.FileName, "\\", "/", -1)
 	}
 
-	if t.Theme == "" {
-		w.Write([]byte(AssetsURL + "/assets/css/" + filename))
-	} else {
-		w.Write([]byte(AssetsURL + "/assets/css/" + t.Theme + "/" + filename))
-	}
+	// if t.Theme == "" {
+	w.Write([]byte(AssetsURL + "/css/" + filename))
+	// } else {
+	// 	w.Write([]byte(AssetsURL + "/css/" + t.Theme + "/" + filename))
+	// }
 
-	if CSSVersion != "" {
-		w.Write([]byte("?v=" + CSSVersion))
+	if len(CSSVersion) > 0 {
+		w.Write(bVerStr)
+		w.Write(CSSVersion)
 	}
 
 	if t.Data != nil {
