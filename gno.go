@@ -8,6 +8,9 @@ import (
 var (
 	// HomeDir home
 	HomeDir = ""
+
+	// RunMode home
+	RunMode = ""
 )
 
 // GetConfig return Configuration
@@ -19,4 +22,5 @@ func GetConfig() *conf.Configuration {
 func Init(name string) {
 	httpd.Init(name)
 	HomeDir = httpd.HomeDir
+	RunMode = httpd.RunMode
 }

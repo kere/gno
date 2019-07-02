@@ -2,6 +2,7 @@ package httpd
 
 import (
 	"github.com/kere/gno/httpd/render"
+	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
 
@@ -18,6 +19,13 @@ type PageData struct {
 	Top    []render.IRender
 	Body   []render.IRender
 	Bottom []render.IRender
+}
+
+// Init page
+func (d *PageData) Init(title, name, dir string) {
+	d.Title = util.StrToBytes(title)
+	d.Name = name
+	d.Dir = dir
 }
 
 // P class

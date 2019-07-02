@@ -4,13 +4,13 @@ import (
 	"io"
 )
 
-// JSVersion js ?v=001
-var JSVersion []byte
-
-// CSSVersion js ?v=001
-var CSSVersion []byte
-
 var (
+	// JSVersion js ?v=001
+	JSVersion []byte
+
+	// CSSVersion js ?v=001
+	CSSVersion []byte
+
 	// AssetsURL url
 	AssetsURL = ""
 
@@ -22,6 +22,8 @@ var (
 	BytesEqual = []byte("=")
 	// BytesQuote quote
 	BytesQuote = []byte("\"")
+	// BytesLargeThan >
+	BytesLargeThan = []byte(">")
 	//BytesSpace space
 	BytesSpace = []byte(" ")
 	// BytesBreak break

@@ -14,8 +14,8 @@ type CSS struct {
 }
 
 // NewCSS new
-func NewCSS(fileName, theme string) CSS {
-	return CSS{FileName: fileName, Theme: theme}
+func NewCSS(fileName string) CSS {
+	return CSS{FileName: fileName}
 }
 
 // Render func

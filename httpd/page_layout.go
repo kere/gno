@@ -30,8 +30,7 @@ var (
 )
 
 // renderPage func
-func renderPage(w io.Writer, p IPage, bPath []byte) error {
-	pd := p.Data()
+func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
 	// <html>
 	w.Write(bytesHTMLBegin)
 	w.Write(Site.Lang)

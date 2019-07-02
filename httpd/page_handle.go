@@ -34,7 +34,7 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 
 	buf := bytes.NewBuffer(nil)
 
-	err = renderPage(buf, p, ctx.URI().PathOriginal())
+	err = renderPage(buf, p.Data(), ctx.URI().PathOriginal())
 	if err != nil {
 		log.App.Error(err)
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)

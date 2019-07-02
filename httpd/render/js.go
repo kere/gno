@@ -4,16 +4,20 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/kere/gno/libs/util"
 )
 
 var (
-	bJsTagBegin = []byte("<script text=\"text/javascript\" src=\"")
-	bJsTagEnd   = []byte("></script>\n")
+	bJsTagBegin = []byte("<script type=\"text/javascript\"")
+	bJsSrc      = []byte(" src=\"")
+	bJsTagEnd   = []byte("</script>\n")
 )
 
 // JS class
 type JS struct {
 	FileName string
+	Src      string
 	Data     map[string]string
 }
 
@@ -22,28 +26,35 @@ func NewJS(fileName string) JS {
 	return JS{FileName: fileName}
 }
 
+// NewScript new
+func NewScript(src string) JS {
+	return JS{Src: src}
+}
+
 // Render f
 func (t JS) Render(w io.Writer) error {
 	w.Write(bJsTagBegin)
 
-	filename := t.FileName
-	if strings.HasPrefix(filename, "http:") || strings.HasPrefix(filename, "https:") {
-		w.Write([]byte(filename))
+	if t.FileName != "" {
+		w.Write(bJsSrc)
+		if strings.HasPrefix(t.FileName, "http:") || strings.HasPrefix(t.FileName, "https:") {
+			w.Write(util.StrToBytes(t.FileName))
 
-	} else {
-		if os.PathSeparator == '\\' {
-			filename = strings.Replace(t.FileName, "\\", "/", -1)
+		} else {
+			var filename string
+			if os.PathSeparator == '\\' {
+				filename = strings.Replace(t.FileName, "\\", "/", -1)
+			}
+			w.Write([]byte(AssetsURL + "/js/" + filename))
 		}
-
-		w.Write([]byte(AssetsURL + "/js/" + filename))
+		if len(JSVersion) > 0 {
+			w.Write(bVerStr)
+			w.Write(JSVersion)
+		}
+		w.Write(BytesQuote)
 	}
 
-	if len(JSVersion) > 0 {
-		w.Write(bVerStr)
-		w.Write(JSVersion)
-	}
-
-	w.Write(BytesQuote)
+	// write property data
 	if t.Data != nil {
 		for k, val := range t.Data {
 			w.Write(BytesSpace)
@@ -54,6 +65,12 @@ func (t JS) Render(w io.Writer) error {
 			w.Write(BytesQuote)
 		}
 	}
+	w.Write(BytesLargeThan) // >
+
+	if t.Src != "" {
+		w.Write(util.StrToBytes(t.Src))
+	}
+
 	w.Write(bJsTagEnd)
 
 	return nil
