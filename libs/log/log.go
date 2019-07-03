@@ -5,7 +5,6 @@ import (
 	golog "log"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -101,25 +100,25 @@ func init() {
 }
 
 // Init func
-func Init(folder, names, storeType, levelStr string) {
+func Init(folder, name, storeType, levelStr string) {
 	level := IntLevel(levelStr)
 	if storeType == ConstNone || level < 0 {
 		// App = New("", "", ConstNone, ConstNone)
 		return
 	}
 
-	if names == "" {
-		names = "app"
-	}
+	// if names == "" {
+	// 	names = "app"
+	// }
 
-	arr := strings.Split(names, ",")
-	for _, name := range arr {
-		if name == defaultLogName {
-			App = New(folder, name, storeType, levelStr)
-		} else {
-			New(folder, name, storeType, levelStr)
-		}
-	}
+	// arr := strings.Split(names, ",")
+	// for _, name := range arr {
+	// if name == defaultLogName {
+	App = New(folder, name, storeType, levelStr)
+	// 	} else {
+	// 		New(folder, name, storeType, levelStr)
+	// 	}
+	// }
 
 }
 
