@@ -33,6 +33,7 @@ const (
 	LogSQL         = 8  //* SQL messages */
 	LogFmt         = 9  //* Fmt messages */
 	LogAll         = 10 //* all messages */
+	LogNone        = -1
 
 	LogEmergStr  = "emerg"  //* system is unusable */
 	LogAlertStr  = "alert"  //* action must be taken immediately */
@@ -45,7 +46,7 @@ const (
 	LogSQLStr    = "sql"    //* SQL messages */
 	LogFmtStr    = "fmt"    //* Fmt messages */
 	LogAllStr    = "all"    //* all messages */
-	ConstNone    = "none"
+	LogNoneStr   = "none"
 )
 
 // IntLevel func
@@ -71,8 +72,8 @@ func IntLevel(s string) int {
 		return LogFmt
 	case LogAllStr:
 		return LogAll
-	case ConstNone:
-		return -1
+	case LogNoneStr:
+		return LogNone
 	}
 
 	return -100
@@ -102,7 +103,7 @@ func init() {
 // Init func
 func Init(folder, name, storeType, levelStr string) {
 	level := IntLevel(levelStr)
-	if storeType == ConstNone || level < 0 {
+	if storeType == LogNoneStr || level < 0 {
 		// App = New("", "", ConstNone, ConstNone)
 		return
 	}
@@ -145,7 +146,7 @@ func New(folder, name, storeType, levelStr string) *Logger {
 	fmt.Println("Prepare logger:", name)
 
 	level := IntLevel(levelStr)
-	if level < 0 || storeType == ConstNone {
+	if level < 0 || storeType == LogNoneStr {
 		fmt.Println("xxx Logger Closed xxx")
 		l = NewEmpty()
 	} else if storeType == "filedate" {

@@ -115,6 +115,11 @@ func (d *Database) SetLogLevel(level string) {
 	d.log.SetLevel(level)
 }
 
+// SetLog db
+func (d *Database) SetLog(l *log.Logger) {
+	d.log = l
+}
+
 // QueryPrepare db
 func (d *Database) QueryPrepare(sql string, args ...interface{}) (DataSet, error) {
 	d.Log(sql, args)

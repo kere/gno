@@ -161,6 +161,11 @@ func (ins *InsertBuilder) Insert(data interface{}) (sql.Result, error) {
 	return cdb.ExecPrepare(sql, vals...)
 }
 
+// // InsertM func
+// func (ins *InsertBuilder) InsertM(rows DataSet) (int, error) {
+//
+// }
+
 // InsertM func
 func (ins *InsertBuilder) InsertM(rows DataSet) (int, error) {
 	l := len(rows)

@@ -20,7 +20,8 @@ func NewLogger(dbConf map[string]string) *log.Logger {
 	}
 
 	if level < 0 {
-		return log.New("", name, "std", log.LogAlertStr)
+		// return log.New("", name, "std", log.LogAlertStr)
+		return log.NewEmpty()
 	}
 
 	folder := filepath.Join(filepath.Dir(os.Args[0]), "/var/log/")

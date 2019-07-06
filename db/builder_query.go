@@ -239,7 +239,10 @@ func (q *QueryBuilder) Query() (DataSet, error) {
 
 // QueryOne limit=1
 func (q *QueryBuilder) QueryOne() (DataRow, error) {
+	limit := q.limit
+	q.limit = 1
 	r, err := q.Query()
+	q.limit = limit
 	if err != nil {
 		return nil, err
 	}
