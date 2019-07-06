@@ -90,16 +90,15 @@ func Init(name string) {
 	if config.IsSet("log") {
 		l := config.GetConf("log")
 
-		if _, err := os.Stat("var/log"); err != nil {
-			if os.IsNotExist(err) {
-				os.Mkdir("var/log", os.ModePerm)
-			}
-		}
-
-		log.Init("var/log/", l.DefaultString("logname", "app"), l.DefaultString("logstore", "stdout"), l.DefaultString("level", "info"))
+		// if _, err := os.Stat("var/log"); err != nil {
+		// 	if os.IsNotExist(err) {
+		// 		os.Mkdir("var/log", os.ModePerm)
+		// 	}
+		// }
+		log.Init("var/log/", l.DefaultString("logname", "app"), l.DefaultString("logstore", log.StoreTypeStd), l.DefaultString("level", "info"))
 
 	} else {
-		log.Init("", "app", "stdout", "")
+		log.Init("", "app", log.StoreTypeStd, "")
 	}
 	Site.Log = log.Get("app")
 
@@ -143,11 +142,6 @@ func Init(name string) {
 		db.SetCache(cache.CurrentCache())
 	}
 
-	err := os.MkdirAll(cacheFileStoreDir, os.ModeDir)
-	if err != nil {
-		panic(err)
-	}
-
 	// AssetsURL
 	render.AssetsURL = a.DefaultString("assets_url", "/assets")
 	// JsVersion CSSVersion
@@ -162,6 +156,10 @@ func Init(name string) {
 func (s *SiteServer) Start() {
 	if RunMode == "dev" {
 		s.Router.NotFound = fasthttp.FSHandler(WEBROOT, 0)
+	}
+
+	if _, err := os.Stat(cacheFileStoreDir); os.IsNotExist(err) {
+		os.Mkdir(cacheFileStoreDir, os.ModePerm)
 	}
 
 	if s.PID != "" {

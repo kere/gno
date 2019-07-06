@@ -21,6 +21,11 @@ import (
 // all=10
 // -100=NotFound
 const (
+	// StoreTypeFile file
+	StoreTypeFile = "file"
+	// StoreTypeStd std
+	StoreTypeStd = "stdout"
+
 	defaultLogName = "app"
 	LogEmerg       = 1  //* system is unusable */
 	LogAlert       = 2  //* action must be taken immediately */
@@ -136,7 +141,14 @@ func New(folder, name, storeType, levelStr string) *Logger {
 	//
 	var l *Logger
 	if storeType == "" {
-		storeType = "stdout"
+		storeType = StoreTypeStd
+	}
+	if storeType == StoreTypeFile {
+		if _, err := os.Stat("var/log"); err != nil {
+			if os.IsNotExist(err) {
+				os.Mkdir("var/log", os.ModePerm)
+			}
+		}
 	}
 
 	if name == "" {
