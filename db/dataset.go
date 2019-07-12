@@ -14,6 +14,11 @@ func NewDataSet(l int) DataSet {
 	return make([]DataRow, l)
 }
 
+// NewDataSetN by length
+func NewDataSetN(l, n int) DataSet {
+	return make([]DataRow, l, n)
+}
+
 // Insert current dataset
 func (ds DataSet) Insert(table string) error {
 	if ds.Len() == 0 {

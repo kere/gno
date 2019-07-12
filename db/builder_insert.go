@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 )
@@ -161,10 +162,23 @@ func (ins *InsertBuilder) Insert(data interface{}) (sql.Result, error) {
 	return cdb.ExecPrepare(sql, vals...)
 }
 
-// // InsertM func
-// func (ins *InsertBuilder) InsertM(rows DataSet) (int, error) {
-//
-// }
+// InsertMN every n
+func (ins *InsertBuilder) InsertMN(rows DataSet, step int) error {
+	l := rows.Len()
+	count := int(math.Ceil(float64(l) / float64(step)))
+	for i := 0; i < count; i++ {
+		b := i * step
+		e := b + step
+		if e > l {
+			e = l
+		}
+		_, err := ins.InsertM(rows[b:e])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // InsertM func
 func (ins *InsertBuilder) InsertM(rows DataSet) (int, error) {
