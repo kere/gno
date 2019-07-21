@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/kere/gno/libs/conf"
 	libRedis "github.com/kere/gno/libs/redis"
 )
