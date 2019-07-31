@@ -156,6 +156,53 @@ func writeInsertMByMapRow(buf *bytes.Buffer, keys []string, rows MapRows) []inte
 	return values
 }
 
+func writeInsertMByDataSet(buf *bytes.Buffer, dataset *DataSet) []interface{} {
+	l := dataset.Len()
+	n := len(dataset.Fields)
+	seq := 1
+
+	database := Current()
+	values := make([]interface{}, 0, l*n+10)
+	cols := dataset.Columns
+
+	for i := 0; i < l; i++ {
+		buf.WriteByte('(')
+
+		for k := 0; k < n; k++ {
+			key := dataset.Fields[k]
+			v := cols[k][i]
+			var val interface{}
+
+			if len(key) > 5 && key[len(key)-5:] == subfixJSON {
+				val, _ = json.Marshal(v)
+			} else {
+				val = database.Driver.FlatData(reflect.TypeOf(v), v)
+			}
+
+			values = append(values, val)
+
+			if seq == 1 {
+				buf.WriteString("$1")
+			} else {
+				buf.WriteString(fmt.Sprint(SDoller, seq))
+			}
+			if k < n-1 {
+				buf.WriteByte(',')
+			}
+			seq++
+		}
+
+		buf.WriteByte(')')
+		if i < l-1 {
+			buf.WriteByte(',')
+		}
+
+	}
+	buf.WriteByte(';')
+
+	return values
+}
+
 // func sqlInsertMByMapRow(keys []string, row MapRow, values []interface{}) []byte {
 // 	l := len(keys)
 // 	database := Current()

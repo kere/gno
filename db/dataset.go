@@ -54,6 +54,11 @@ type DataSet struct {
 	Columns []DataColumn
 }
 
+// NewDataSet new
+func NewDataSet(fields []string) DataSet {
+	return DataSet{Fields: fields, Columns: make([]DataColumn, len(fields))}
+}
+
 // Len dataset
 func (d *DataSet) Len() int {
 	if len(d.Columns) == 0 {
@@ -65,6 +70,21 @@ func (d *DataSet) Len() int {
 // First datarow
 func (d *DataSet) First() MapRow {
 	return d.MapRowAt(0)
+}
+
+// RangeI datarow
+func (d *DataSet) RangeI(b, e int) DataSet {
+	l := d.Len()
+	n := len(d.Fields)
+	cols := make([]DataColumn, n)
+	end := e + 1
+	if end > l {
+		end = l
+	}
+	for i := 0; i < n; i++ {
+		cols[i] = d.Columns[i][b:end]
+	}
+	return DataSet{Fields: d.Fields, Types: d.Types, Columns: cols}
 }
 
 // MapRowAt datarow
