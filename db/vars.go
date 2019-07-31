@@ -31,6 +31,8 @@ const (
 
 	// SLineBreak = "\n"
 	SLineBreak = "\n"
+	// SDoller $
+	SDoller = "$"
 )
 
 var (

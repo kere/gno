@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"math"
 )
 
 type insResult struct {
@@ -66,43 +67,33 @@ func (ins *InsertBuilder) Table(t string) *InsertBuilder {
 }
 
 var (
-	insInto     = []byte("insert into ")
-	insVal1     = []byte(" (")
-	insVal2     = []byte(") values ")
-	insBracketL = []byte("(")
-	insBracketR = []byte(")")
+	insInto = []byte("insert into ")
+	insVal1 = []byte(" (")
+	insVal2 = []byte(") values ")
+	// insBracketL = []byte("(")
+	// insBracketR = []byte(")")
 )
 
-// func parseInsertM(ins *InsertBuilder, rows MapRows) string {
-// 	l := len(rows)
-// 	if l == 0 {
-// 		return ""
-// 	}
-//
-// 	// keys, _, _ := keyValueList(ActionInsert, rows[0])
-// 	bkeys, strkeys := sqlInsertKeysByMapRow(rows[0])
-// 	s := bytes.Buffer{}
-// 	driver := ins.GetDatabase().Driver
-// 	s.Write(insInto)
-// 	s.WriteString(driver.QuoteField(ins.table))
-// 	s.Write(insVal1)
-// 	s.Write(bkeys)
-// 	s.Write(insVal2)
-//
-//
-// 	for i := 0; i < l; i++ {
-// 		s.Write(insBracketL)
-// 		// keys2, values2, _ = keyValueList(ActionInsert, rows[i])
-// 		valstr := sqlInsertStringByMapRow(strkeys, rows[i])
-// 		s.WriteString(valstr)
-// 		s.Write(insBracketR)
-// 		if i < l-1 {
-// 			s.Write(BCommaSplit)
-// 		}
-// 	}
-//
-// 	return s.String()
-// }
+func parseInsertM(ins *InsertBuilder, rows MapRows) (string, []interface{}) {
+	l := len(rows)
+	if l == 0 {
+		return "", nil
+	}
+
+	bkeys, strkeys := sqlInsertKeysByMapRow(rows[0])
+
+	buf := bytes.NewBuffer(nil)
+	driver := ins.GetDatabase().Driver
+	buf.Write(insInto)
+	buf.WriteString(driver.QuoteField(ins.table))
+	buf.Write(insVal1)
+	buf.Write(bkeys)
+	buf.Write(insVal2)
+
+	values := writeInsertMByMapRow(buf, strkeys, rows)
+
+	return buf.String(), values
+}
 
 func parseInsert(ins *InsertBuilder, row MapRow, hasReturnID bool) (string, []interface{}) {
 	// keys, values, stmts := keyValueList(ActionInsert, row)
@@ -121,9 +112,9 @@ func parseInsert(ins *InsertBuilder, row MapRow, hasReturnID bool) (string, []in
 	s.Write(insVal1)
 	s.Write(keys)
 	s.Write(insVal2)
-	s.Write(insBracketL)
+	s.WriteByte('(')
 	s.Write(bytes.Join(stmts, BCommaSplit))
-	s.Write(insBracketR)
+	s.WriteByte(')')
 
 	if hasReturnID {
 		s.Write(bPGReturning)
@@ -142,95 +133,34 @@ func (ins *InsertBuilder) Insert(row MapRow) (sql.Result, error) {
 	return cdb.ExecPrepare(sql, vals...)
 }
 
-// // InsertMN every n
-// func (ins *InsertBuilder) InsertMN(rows MapRows, step int) error {
-// 	l := rows.Len()
-// 	count := int(math.Ceil(float64(l) / float64(step)))
-// 	for i := 0; i < count; i++ {
-// 		b := i * step
-// 		e := b + step
-// 		if e > l {
-// 			e = l
-// 		}
-// 		_, err := ins.InsertM(rows[b:e])
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
+// InsertMN every n
+func (ins *InsertBuilder) InsertMN(rows MapRows, step int) error {
+	l := rows.Len()
+	count := int(math.Ceil(float64(l) / float64(step)))
+	for i := 0; i < count; i++ {
+		b := i * step
+		e := b + step
+		if e > l {
+			e = l
+		}
+		_, err := ins.InsertM(rows[b:e])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-// // InsertM func
-// func (ins *InsertBuilder) InsertM(rows MapRows) (int, error) {
-// 	l := len(rows)
-// 	step := 500
-//
-// 	if l <= step {
-// 		sql := parseInsertM(ins, rows)
-// 		_, err := ins.GetDatabase().Exec(sql)
-// 		return l, err
-// 	}
-//
-// 	n := l/step + 1
-// 	count := 0
-// 	for i := 0; i < n; i++ {
-// 		b := i * step
-// 		if b >= l {
-// 			break
-// 		}
-// 		e := b + step
-// 		if e > l {
-// 			e = l
-// 		}
-// 		_, err := ins.GetDatabase().Exec(parseInsertM(ins, rows[b:e]))
-// 		if err != nil {
-// 			return count, err
-// 		}
-// 		count += e - b
-// 	}
-// 	return count, nil
-// }
+// InsertM func
+func (ins *InsertBuilder) InsertM(rows MapRows) (sql.Result, error) {
+	str, vals := parseInsertM(ins, rows)
+	cdb := ins.GetDatabase()
 
-// // InsertM func
-// func (ins *InsertBuilder) InsertM(rows MapRows) (sql.Result, error) {
-// 	size := 500
-// 	n := len(rows)
-// 	if n <= size {
-// 		sql := parseInsertM(ins, rows)
-// 		return ins.GetDatabase().Exec(sql)
-// 	}
-//
-// 	// pagination
-// 	p := int(math.Ceil(float64(n) / float64(size)))
-// 	var k int
-// 	var err error
-// 	var tmp MapRows
-// 	var sqlR sql.Result
-// 	for i := 0; i < p; i++ {
-// 		tmp = MapRows{}
-// 		if i+1 == p {
-// 			//last page
-// 			for k = size * i; k < n; k++ {
-// 				tmp = append(tmp, rows[k])
-// 			}
-//
-// 			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
-// 			if err != nil {
-// 				return sqlR, err
-// 			}
-// 		} else {
-// 			for k = 0; k < size; k++ {
-// 				tmp = append(tmp, rows[size*i+k])
-// 			}
-// 			sqlR, err = ins.GetDatabase().Exec(parseInsertM(ins, tmp))
-// 			if err != nil {
-// 				return sqlR, err
-// 			}
-// 		}
-// 	}
-//
-// 	return sqlR, nil
-// }
+	if ins.isExec {
+		return cdb.Exec(str, vals...)
+	}
+	return cdb.ExecPrepare(str, vals...)
+}
 
 // TxInsert return sql.Result transation
 func (ins *InsertBuilder) TxInsert(tx *Tx, data MapRow) (sql.Result, error) {
@@ -247,4 +177,31 @@ func (ins *InsertBuilder) TxInsert(tx *Tx, data MapRow) (sql.Result, error) {
 		return tx.Exec(sql, vals...)
 	}
 	return tx.ExecPrepare(sql, vals...)
+}
+
+// TxInsertM return sql.Result transation
+func (ins *InsertBuilder) TxInsertM(tx *Tx, rows MapRows) (sql.Result, error) {
+	str, vals := parseInsertM(ins, rows)
+	if ins.isExec {
+		return tx.Exec(str, vals...)
+	}
+	return tx.ExecPrepare(str, vals...)
+}
+
+// TxInsertMN return sql.Result transation
+func (ins *InsertBuilder) TxInsertMN(tx *Tx, rows MapRows, step int) error {
+	l := rows.Len()
+	count := int(math.Ceil(float64(l) / float64(step)))
+	for i := 0; i < count; i++ {
+		b := i * step
+		e := b + step
+		if e > l {
+			e = l
+		}
+		_, err := ins.TxInsertM(tx, rows[b:e])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
-	"time"
 )
 
 const (
@@ -113,37 +111,82 @@ func sqlInsertKeysByMapRow(row MapRow) ([]byte, []string) {
 	return bytes.Join(bkeys, BCommaSplit), keys
 }
 
-func sqlInsertStringByMapRow(keys []string, row MapRow) string {
-	l := len(keys)
+func writeInsertMByMapRow(buf *bytes.Buffer, keys []string, rows MapRows) []interface{} {
+	l := len(rows)
+	n := len(keys)
+	seq := 1
+
 	database := Current()
-	values := make([]string, l)
+	values := make([]interface{}, 0, l*n+10)
 
 	for i := 0; i < l; i++ {
-		k := keys[i]
+		row := rows[i]
+		buf.WriteByte('(')
 
-		var val interface{}
-		if len(k) > 5 && k[len(k)-5:] == subfixJSON {
-			b, _ := json.Marshal(row[k])
-			val = string(b)
-		} else {
-			val = database.Driver.FlatData(reflect.TypeOf(row[k]), row[k])
+		for k := 0; k < n; k++ {
+			key := keys[k]
+			var val interface{}
+			if len(key) > 5 && key[len(key)-5:] == subfixJSON {
+				val, _ = json.Marshal(row[key])
+			} else {
+				val = database.Driver.FlatData(reflect.TypeOf(row[key]), row[key])
+			}
+
+			values = append(values, val)
+
+			if seq == 1 {
+				buf.WriteString("$1")
+			} else {
+				buf.WriteString(fmt.Sprint(SDoller, seq))
+			}
+			if k < n-1 {
+				buf.WriteByte(',')
+			}
+			seq++
 		}
 
-		switch val.(type) {
-		case time.Time:
-			values[i] = SQuot + (row[k].(time.Time)).Format(time.RFC1123) + SQuot
-		case string:
-			values[i] = SQuot + row[k].(string) + SQuot
-		case []byte:
-			values[i] = SQuot + string(row[k].([]byte)) + SQuot
-		default:
-			values[i] = fmt.Sprint(row[k])
+		buf.WriteByte(')')
+		if i < l-1 {
+			buf.WriteByte(',')
 		}
-		i++
+
 	}
+	buf.WriteByte(';')
 
-	return strings.Join(values, SCommaSplit)
+	return values
 }
+
+// func sqlInsertMByMapRow(keys []string, row MapRow, values []interface{}) []byte {
+// 	l := len(keys)
+// 	database := Current()
+// 	sbu := strings.Builder{}
+//
+// 	for i := 0; i < l; i++ {
+// 		k := keys[i]
+//
+// 		var val interface{}
+// 		if len(k) > 5 && k[len(k)-5:] == subfixJSON {
+// 			b, _ := json.Marshal(row[k])
+// 			val = string(b)
+// 		} else {
+// 			val = database.Driver.FlatData(reflect.TypeOf(row[k]), row[k])
+// 		}
+//
+// 		switch val.(type) {
+// 		case time.Time:
+// 			values[i] = SQuot + (row[k].(time.Time)).Format(time.RFC1123) + SQuot
+// 		case string:
+// 			values[i] = SQuot + row[k].(string) + SQuot
+// 		case []byte:
+// 			values[i] = SQuot + string(row[k].([]byte)) + SQuot
+// 		default:
+// 			values[i] = fmt.Sprint(row[k])
+// 		}
+// 		i++
+// 	}
+//
+// 	return strings.Join(values, SCommaSplit)
+// }
 
 // // keyValueList
 // // stype:insert,update
