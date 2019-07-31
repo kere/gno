@@ -15,7 +15,7 @@ type StructField struct {
 // StructConverter class
 // Example: sc := NewStructConvert(UserVO{})
 // dataset, err := db.NewQueryBuilder("users").Where("id=?",1).Query()
-// result := cs.DataSet2Struct(datarow)
+// result := cs.DataSet2Struct(maprow)
 // userVO := result[0].(*UserVO)
 type StructConverter struct {
 	typ      reflect.Type
@@ -113,37 +113,37 @@ func (sc *StructConverter) Fields() []*StructField {
 	return sc.fields
 }
 
-// KeyValueList f
-func (sc *StructConverter) KeyValueList(stype string) ([][]byte, []interface{}, [][]byte) {
-	return keyValueList(stype, sc.target)
-}
+// // KeyValueList f
+// func (sc *StructConverter) KeyValueList(stype string) ([][]byte, []interface{}, [][]byte) {
+// 	return keyValueList(stype, sc.target)
+// }
 
 //DataRow2Struct f
-func (sc *StructConverter) DataRow2Struct(datarow DataRow) (IVO, error) {
+func (sc *StructConverter) DataRow2Struct(maprow MapRow) (IVO, error) {
 	rowStruct := reflect.New(sc.GetTypeElem())
-	err := datarow.CopyToVO(rowStruct.Interface().(IVO))
+	err := maprow.CopyToVO(rowStruct.Interface().(IVO))
 	if err != nil {
 		return nil, err
 	}
 	return (rowStruct.Interface()).(IVO), nil
 }
 
-// DataSet2Struct f
-func (sc *StructConverter) DataSet2Struct(dataset DataSet) (VODataSet, error) {
-	result := VODataSet{}
-	var err error
-	var vo IVO
-
-	for _, row := range dataset {
-		vo, err = sc.DataRow2Struct(row)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, vo)
-	}
-
-	return result, nil
-}
+// // DataSet2Struct f
+// func (sc *StructConverter) DataSet2Struct(dataset DataSet) (VODataSet, error) {
+// 	result := VODataSet{}
+// 	var err error
+// 	var vo IVO
+//
+// 	for _, row := range dataset {
+// 		vo, err = sc.DataRow2Struct(row)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		result = append(result, vo)
+// 	}
+//
+// 	return result, nil
+// }
 
 func (sc *StructConverter) isEmpty(fieldTyp reflect.StructField, n int) bool {
 	val := sc.val
@@ -199,17 +199,22 @@ const (
 	vBaseVO      = "BaseVO"
 )
 
-// Struct2DataRow to datarow
-func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
+// Struct2DataRow to maprow
+func (sc *StructConverter) Struct2DataRow(action int) MapRow {
 	typ := sc.GetTypeElem()
 	l := typ.NumField()
 
 	var skipTag, skipEmpty, tagtyp string
 	var value interface{}
 	var fieldVal reflect.Value
-	isupdate := actionType == ActionUpdate
+	isupdate := action == ActionUpdate
 
-	datarow := DataRow{}
+	actionType := "insert"
+	if isupdate {
+		actionType = "update"
+	}
+
+	maprow := MapRow{}
 
 	for n := 0; n < l; n++ {
 		field := typ.Field(n)
@@ -223,7 +228,7 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 		}
 
 		skipTag = field.Tag.Get(tagSkip)
-		if skipTag == vAll || (actionType != "" && skipTag == actionType) {
+		if skipTag == vAll || skipTag == actionType {
 			continue
 		}
 
@@ -248,12 +253,12 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			}
 		case typPlus:
 			if isupdate {
-				datarow[dbField+"="+dbField+"+"+fmt.Sprint(value)] = nil
+				maprow[dbField+"="+dbField+"+"+fmt.Sprint(value)] = nil
 			}
 			continue
 		case typPlus1:
 			if isupdate {
-				datarow[dbField+"="+dbField+"+1"] = nil
+				maprow[dbField+"="+dbField+"+1"] = nil
 			}
 			continue
 		}
@@ -267,8 +272,8 @@ func (sc *StructConverter) Struct2DataRow(actionType string) DataRow {
 			continue
 		}
 
-		datarow[dbField] = value
+		maprow[dbField] = value
 	}
 
-	return datarow
+	return maprow
 }

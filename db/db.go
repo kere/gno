@@ -114,54 +114,11 @@ func New(name string, c map[string]string) *Database {
 	}
 
 	driver.SetConnectString(confGet(c, "connect"))
-	// poolSize, err := strconv.Atoi(confGet(c, "pool_size"))
-	// if poolSize == 0 || err != nil {
-	// 	poolSize = 3
-	// }
-	// maxCount, err := strconv.Atoi(confGet(c, "max_count"))
-	// if maxCount == 0 || err != nil {
-	// 	maxCount = 10
-	// }
-
 	d := NewDatabase(name, driver, conf.Conf(c), logger)
-
-	// ------- time zone --------
-	// if confGet(conf, "timezone") != "" {
-	// 	loc, err := time.LoadLocation(confGet(conf, "timezone"))
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	d.Location = loc
-	// }
 
 	dbpool.SetDatabase(name, d)
 	dbpool.SetCurrent(d)
 	return d
-}
-
-// CQuery from database on prepare mode
-// This function use the current database from database bool
-// You can set another database use Use(i) or create an new database use New(name, conf)
-func CQuery(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
-	var rows *sql.Rows
-	var err error
-	if len(args) == 0 {
-		rows, err = conn.Query(sqlstr)
-	} else {
-		rows, err = conn.Query(sqlstr, args...)
-	}
-
-	if err != nil {
-		logSQLErr(sqlstr, args)
-		return nil, myerr.New(err).Log().Stack()
-	}
-	dataset, err := ScanRows(rows)
-	if err != nil {
-		return nil, myerr.New(err).Log().Stack()
-	}
-
-	return dataset, nil
-	// return Current().Query(NewSqlState([]byte(sqlstr), args))
 }
 
 func logSQLErr(sqlstr string, args []interface{}) {
@@ -185,87 +142,78 @@ func logSQLErr(sqlstr string, args []interface{}) {
 	log.App.Error(s.String())
 }
 
-// CQueryPrepare from database on prepare mode
-// In prepare mode, the sql command will be cached by database
-// This function use the current database from database bool
-// You can set another database by Use(i) or New(name, conf) an new database
-func CQueryPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
-	var rows *sql.Rows
-	var err error
-
-	s, err := conn.Prepare(sqlstr)
-	if err != nil {
-		logSQLErr(sqlstr, args)
-		return nil, myerr.New(err).Log().Stack()
-	}
-
-	defer s.Close()
-
-	if len(args) == 0 {
-		rows, err = s.Query()
-	} else {
-		rows, err = s.Query(args...)
-	}
-	if err != nil {
-		logSQLErr(sqlstr, args)
-		return nil, myerr.New(err).Log().Stack()
-	}
-
-	dataset, err := ScanRows(rows)
-	if err != nil {
-		return nil, myerr.New(err).Log().Stack()
-	}
-
-	return dataset, nil
+// CQuery from database on prepare mode
+func CQuery(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
+	dataset, _, err := cQuery(0, 0, conn, sqlstr, args...)
+	return dataset, err
 }
 
-// func Find(conn *sql.DB, cls IVO, sqlstr []byte, args ...interface{}) (VODataSet, error) {
-// 	dataset, err := Query(conn, sqlstr, args...)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	return NewStructConvert(cls).DataSet2Struct(dataset)
-// 	// return Current().Find(cls, NewSqlState([]byte(sqlstr), args))
-// }
-// func FindPrepare(conn *sql.DB, cls IVO, sqlstr []byte, args ...interface{}) (VODataSet, error) {
-// 	dataset, err := QueryPrepare(conn, sqlstr, args...)
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	return NewStructConvert(cls).DataSet2Struct(dataset)
-// }
+// CQueryPrepare from database on prepare mode
+func CQueryPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, error) {
+	result, _, err := cQuery(0, 1, conn, sqlstr, args...)
+	return result, err
+}
 
-// // ExecFromFile sql from a file
-// // This function run sql under not transaction mode and use the current database from database bool
-// func ExecFromFile(file string) error {
-// 	var filebytes []byte
-// 	var err error
-//
-// 	if filebytes, err = ioutil.ReadFile(file); err != nil {
-// 		return myerr.New(err).Log().Stack()
-// 	}
-// 	conn := Current().Connection.Connect()
-// 	b := bytes.Split(filebytes, []byte(";"))
-// 	for _, i := range b {
-// 		if len(bytes.TrimSpace(i)) == 0 {
-// 			continue
-// 		}
-//
-// 		_, err = Exec(conn, i)
-// 		if err != nil {
-// 			return myerr.New(err).Log().Stack()
-// 		}
-// 	}
-// 	return nil
-// }
+// CQueryRows from database on prepare mode
+func CQueryRows(conn *sql.DB, sqlstr string, args ...interface{}) (MapRows, error) {
+	_, rows, err := cQuery(1, 0, conn, sqlstr, args...)
+	return rows, err
+}
+
+// CQueryPrepareRows from database on prepare mode
+func CQueryPrepareRows(conn *sql.DB, sqlstr string, args ...interface{}) (MapRows, error) {
+	_, rows, err := cQuery(1, 1, conn, sqlstr, args...)
+	return rows, err
+}
+
+// pmode 1: prepare
+// result mode 1: Rows
+func cQuery(mode, pmode int, conn *sql.DB, sqlstr string, args ...interface{}) (DataSet, MapRows, error) {
+	var rows *sql.Rows
+	var err error
+	var stmt *sql.Stmt
+	var dataset DataSet
+
+	defer conn.Close()
+
+	if pmode == 1 {
+		stmt, err = conn.Prepare(sqlstr)
+		defer stmt.Close()
+		if err != nil {
+			logSQLErr(sqlstr, args)
+			return dataset, nil, myerr.New(err).Log().Stack()
+		}
+		rows, err = stmt.Query(args...)
+		defer rows.Close()
+	} else {
+		rows, err = conn.Query(sqlstr, args...)
+		defer rows.Close()
+	}
+
+	if err != nil {
+		logSQLErr(sqlstr, args)
+		return dataset, nil, myerr.New(err).Log().Stack()
+	}
+
+	var maprows MapRows
+	if mode == 1 {
+		maprows, err = ScanToMapRows(rows)
+	} else {
+		dataset, err = ScanToDataSet(rows)
+	}
+
+	if err != nil {
+		return dataset, nil, myerr.New(err).Log().Stack()
+	}
+
+	return dataset, maprows, nil
+}
 
 // Exec sql.
 // If your has more than on sql command, it will only excute the first.
 // This function use the current database from database bool
 func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, err error) {
+	defer conn.Close()
 	if len(args) == 0 {
 		result, err = conn.Exec(sqlstr)
 	} else {
@@ -281,6 +229,7 @@ func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, 
 // ExecPrepare sql on prepare mode
 // This function use the current database from database bool
 func ExecPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, err error) {
+	defer conn.Close()
 	s, err := conn.Prepare(sqlstr)
 	if err != nil {
 		return nil, myerr.New(err).Log().Stack()

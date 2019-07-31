@@ -11,9 +11,12 @@ package db
 
 const (
 	// ActionUpdate update
-	ActionUpdate = "update"
+	ActionUpdate = 1
 	// ActionInsert insert
-	ActionInsert = "insert"
+	ActionInsert = 3
+	// ActionDelete delete
+	ActionDelete = 9
+
 	// timeClassName s
 	timeClassName = "time.Time"
 	// ColumnBytePrefix prefix

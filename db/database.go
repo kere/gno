@@ -16,6 +16,7 @@ type IDriver interface {
 	ConnectString() string
 	SetConnectString(string)
 	QuoteField(string) string
+	QuoteFieldB(string) []byte
 	LastInsertID(string, string) string
 	FlatData(reflect.Type, interface{}) interface{}
 	StringSlice([]byte) ([]string, error)
@@ -52,14 +53,14 @@ func (c *Connection) Close() error {
 
 // Conn sql.DB
 func (c *Connection) Conn() *sql.DB {
-	if c.conn == nil {
-		c.conn = c.Connect()
-	}
+	// if c.conn == nil {
+	c.conn = c.Connect()
+	// }
 
-	if err := c.conn.Ping(); err != nil {
-		c.conn.Close()
-		c.conn = c.Connect()
-	}
+	// if err := c.conn.Ping(); err != nil {
+	// 	c.conn.Close()
+	// 	c.conn = c.Connect()
+	// }
 	return c.conn
 }
 
@@ -97,14 +98,6 @@ func NewDatabase(name string, driver IDriver, dbConf conf.Conf, lg *log.Logger) 
 	return &Database{Name: name, Driver: driver, log: lg, Connection: conn}
 }
 
-// func (d *Database) isError(err error) bool {
-// 	if err != nil {
-// 		d.log.Error(d.Name, err.Error())
-// 		return true
-// 	}
-// 	return false
-// }
-
 // Log db
 func (d *Database) Log(sql string, args []interface{}) {
 	d.log.Sql(d.Name, sql, args)
@@ -121,25 +114,41 @@ func (d *Database) SetLog(l *log.Logger) {
 }
 
 // QueryPrepare db
-func (d *Database) QueryPrepare(sql string, args ...interface{}) (DataSet, error) {
-	d.Log(sql, args)
-	return CQueryPrepare(d.Connection.Conn(), sql, args...)
+func (d *Database) QueryPrepare(sqlstr string, args ...interface{}) (DataSet, error) {
+	d.Log(sqlstr, args)
+	result, _, err := cQuery(0, 1, d.Connection.Conn(), sqlstr, args...)
+	return result, err
 }
 
 //Query db
-func (d *Database) Query(sql string, args ...interface{}) (DataSet, error) {
-	d.Log(sql, args)
-	return CQuery(d.Connection.Conn(), sql, args...)
+func (d *Database) Query(sqlstr string, args ...interface{}) (DataSet, error) {
+	d.Log(sqlstr, args)
+	dataset, _, err := cQuery(0, 0, d.Connection.Conn(), sqlstr, args...)
+	return dataset, err
+}
+
+// QueryRowsPrepare db
+func (d *Database) QueryRowsPrepare(sqlstr string, args ...interface{}) (MapRows, error) {
+	d.Log(sqlstr, args)
+	_, rows, err := cQuery(1, 1, d.Connection.Conn(), sqlstr, args...)
+	return rows, err
+}
+
+//QueryRows db
+func (d *Database) QueryRows(sqlstr string, args ...interface{}) (MapRows, error) {
+	d.Log(sqlstr, args)
+	_, rows, err := cQuery(1, 0, d.Connection.Conn(), sqlstr, args...)
+	return rows, err
 }
 
 // ExecPrepare db
-func (d *Database) ExecPrepare(sql string, args ...interface{}) (sql.Result, error) {
-	d.Log(sql, args)
-	return ExecPrepare(d.Connection.Conn(), sql, args...)
+func (d *Database) ExecPrepare(sqlstr string, args ...interface{}) (sql.Result, error) {
+	d.Log(sqlstr, args)
+	return ExecPrepare(d.Connection.Conn(), sqlstr, args...)
 }
 
 //Exec db
-func (d *Database) Exec(sql string, args ...interface{}) (sql.Result, error) {
-	d.Log(sql, args)
-	return Exec(d.Connection.Conn(), sql, args...)
+func (d *Database) Exec(sqlstr string, args ...interface{}) (sql.Result, error) {
+	d.Log(sqlstr, args)
+	return Exec(d.Connection.Conn(), sqlstr, args...)
 }

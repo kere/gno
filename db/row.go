@@ -14,26 +14,26 @@ import (
 	"github.com/kere/gno/db/drivers"
 )
 
-// DataRow row struct
-type DataRow map[string]interface{}
+// MapRow row struct
+type MapRow map[string]interface{}
 
 // Insert datarow item
-func (dr DataRow) Insert(table string) error {
+func (dr MapRow) Insert(table string) error {
 	ins := InsertBuilder{}
 	_, err := ins.Table(table).Insert(dr)
 	return err
 }
 
 // TxInsert datarow item
-func (dr DataRow) TxInsert(tx *Tx, table string) error {
+func (dr MapRow) TxInsert(tx *Tx, table string) error {
 	ins := InsertBuilder{}
 	_, err := ins.Table(table).TxInsert(tx, dr)
 	return err
 }
 
 // ChangedData item
-func (dr DataRow) ChangedData(newRow DataRow) DataRow {
-	var dat = DataRow{}
+func (dr MapRow) ChangedData(newRow MapRow) MapRow {
+	var dat = MapRow{}
 	var val interface{}
 	var isok bool
 	for k, v := range dr {
@@ -91,7 +91,7 @@ func (dr DataRow) ChangedData(newRow DataRow) DataRow {
 }
 
 // Update datarow item
-func (dr DataRow) Update(table string, where string, params ...interface{}) error {
+func (dr MapRow) Update(table string, where string, params ...interface{}) error {
 	u := UpdateBuilder{table: table}
 	_, err := u.Where(where, params...).Update(dr)
 	return err
@@ -100,7 +100,7 @@ func (dr DataRow) Update(table string, where string, params ...interface{}) erro
 // Save datarow item
 // If exists then update
 // If not found then insert
-func (dr DataRow) Save(table string, where string, params ...interface{}) error {
+func (dr MapRow) Save(table string, where string, params ...interface{}) error {
 	e := ExistsBuilder{}
 	if e.Table(table).Where(where, params...).Exists() {
 		e := UpdateBuilder{table: table}
@@ -113,7 +113,7 @@ func (dr DataRow) Save(table string, where string, params ...interface{}) error 
 }
 
 // InsertIfNotFound inert data
-func (dr DataRow) InsertIfNotFound(table string, where string, params ...interface{}) (bool, error) {
+func (dr MapRow) InsertIfNotFound(table string, where string, params ...interface{}) (bool, error) {
 	e := ExistsBuilder{}
 	if e.Table(table).Where(where, params...).Exists() {
 		return true, nil
@@ -125,18 +125,18 @@ func (dr DataRow) InsertIfNotFound(table string, where string, params ...interfa
 
 // Add datarow item
 // if current datarow is nil, then create
-func (dr DataRow) Add(field string, v interface{}) {
+func (dr MapRow) Add(field string, v interface{}) {
 	dr[field] = v
 }
 
 // IsEmpty check empty
-func (dr DataRow) IsEmpty() bool {
+func (dr MapRow) IsEmpty() bool {
 	return len(dr) == 0
 }
 
 // Clone func
-func (dr DataRow) Clone() DataRow {
-	row := DataRow{}
+func (dr MapRow) Clone() MapRow {
+	row := MapRow{}
 	for k, v := range dr {
 		row[k] = v
 	}
@@ -144,13 +144,13 @@ func (dr DataRow) Clone() DataRow {
 }
 
 // IsSet func
-func (dr DataRow) IsSet(field string) bool {
+func (dr MapRow) IsSet(field string) bool {
 	_, ok := dr[field]
 	return ok
 }
 
 // IsNull func
-func (dr DataRow) IsNull(field string) bool {
+func (dr MapRow) IsNull(field string) bool {
 	if !dr.IsSet(field) {
 		return true
 	}
@@ -159,7 +159,7 @@ func (dr DataRow) IsNull(field string) bool {
 }
 
 // Fix2JsonData remove NaN, +Inf, -Inf
-func (dr DataRow) Fix2JsonData() DataRow {
+func (dr MapRow) Fix2JsonData() MapRow {
 	for k := range dr {
 		v := dr.Float(k)
 		if math.IsNaN(v) || math.IsInf(v, 1) || math.IsInf(v, -1) {
@@ -170,7 +170,7 @@ func (dr DataRow) Fix2JsonData() DataRow {
 }
 
 // Bytes2String convert all bytes to string type
-func (dr DataRow) Bytes2String() DataRow {
+func (dr MapRow) Bytes2String() MapRow {
 	for k, v := range dr {
 		switch v.(type) {
 		case []byte:
@@ -180,31 +180,31 @@ func (dr DataRow) Bytes2String() DataRow {
 	return dr
 }
 
-// Bytes2NumericByFields convert to number type
-func (dr DataRow) Bytes2NumericByFields(fields []string) DataRow {
-	for k := range dr {
-		if InStrings(fields, k) {
-			dr[k] = dr.Float(k)
-		}
-	}
-	return dr
-}
-
-// Bytes2NumericBySubfix func
-func (dr DataRow) Bytes2NumericBySubfix(subfix string) DataRow {
-	nn := len(subfix)
-	for k := range dr {
-		if k[len(k)-nn:] != subfix {
-			continue
-		}
-
-		dr[k] = dr.Float(k)
-	}
-	return dr
-}
+// // Bytes2NumericByFields convert to number type
+// func (dr MapRow) Bytes2NumericByFields(fields []string) MapRow {
+// 	for k := range dr {
+// 		if InStrings(fields, k) {
+// 			dr[k] = dr.Float(k)
+// 		}
+// 	}
+// 	return dr
+// }
+//
+// // Bytes2NumericBySubfix func
+// func (dr MapRow) Bytes2NumericBySubfix(subfix string) MapRow {
+// 	nn := len(subfix)
+// 	for k := range dr {
+// 		if k[len(k)-nn:] != subfix {
+// 			continue
+// 		}
+//
+// 		dr[k] = dr.Float(k)
+// 	}
+// 	return dr
+// }
 
 // Bool return
-func (dr DataRow) Bool(field string) bool {
+func (dr MapRow) Bool(field string) bool {
 	switch dr[field].(type) {
 	case int, int64, int32, int16, int8, float32, float64, uint, uint64, uint32, uint16, uint8:
 		return dr.Int64(field) > 0
@@ -227,7 +227,7 @@ func (dr DataRow) Bool(field string) bool {
 }
 
 // BoolDefault bool
-func (dr DataRow) BoolDefault(field string, v bool) bool {
+func (dr MapRow) BoolDefault(field string, v bool) bool {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
@@ -235,7 +235,7 @@ func (dr DataRow) BoolDefault(field string, v bool) bool {
 }
 
 // Bytes return
-func (dr DataRow) Bytes(field string) []byte {
+func (dr MapRow) Bytes(field string) []byte {
 	if dr.IsNull(field) {
 		return BEmptyString
 	}
@@ -262,7 +262,7 @@ func (dr DataRow) Bytes(field string) []byte {
 }
 
 // Rune return
-func (dr DataRow) Rune(field string) rune {
+func (dr MapRow) Rune(field string) rune {
 	str := dr.String(field)
 	if str == "" {
 		return 0
@@ -271,7 +271,7 @@ func (dr DataRow) Rune(field string) rune {
 }
 
 // String return
-func (dr DataRow) String(field string) string {
+func (dr MapRow) String(field string) string {
 	if dr.IsNull(field) {
 		return ""
 	}
@@ -290,7 +290,7 @@ func (dr DataRow) String(field string) string {
 }
 
 // StringDefault bool
-func (dr DataRow) StringDefault(field string, v string) string {
+func (dr MapRow) StringDefault(field string, v string) string {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
@@ -298,7 +298,7 @@ func (dr DataRow) StringDefault(field string, v string) string {
 }
 
 // Uint64 return
-func (dr DataRow) Uint64(field string) uint64 {
+func (dr MapRow) Uint64(field string) uint64 {
 	if dr[field] == nil {
 		return 0
 	}
@@ -339,7 +339,7 @@ func (dr DataRow) Uint64(field string) uint64 {
 }
 
 // Int64 return
-func (dr DataRow) Int64(field string) int64 {
+func (dr MapRow) Int64(field string) int64 {
 	if dr[field] == nil {
 		return 0
 	}
@@ -390,7 +390,7 @@ func (dr DataRow) Int64(field string) int64 {
 }
 
 // Int64Default bool
-func (dr DataRow) Int64Default(field string, v int64) int64 {
+func (dr MapRow) Int64Default(field string, v int64) int64 {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
@@ -398,7 +398,7 @@ func (dr DataRow) Int64Default(field string, v int64) int64 {
 }
 
 // Int return
-func (dr DataRow) Int(field string) int {
+func (dr MapRow) Int(field string) int {
 	if dr[field] == nil {
 		return 0
 	}
@@ -406,7 +406,7 @@ func (dr DataRow) Int(field string) int {
 }
 
 // IntDefault bool
-func (dr DataRow) IntDefault(field string, v int) int {
+func (dr MapRow) IntDefault(field string, v int) int {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
@@ -414,7 +414,7 @@ func (dr DataRow) IntDefault(field string, v int) int {
 }
 
 // Float float64
-func (dr DataRow) Float(field string) float64 {
+func (dr MapRow) Float(field string) float64 {
 	if dr[field] == nil {
 		return 0
 	}
@@ -451,7 +451,7 @@ func (dr DataRow) Float(field string) float64 {
 }
 
 // FloatDefault bool
-func (dr DataRow) FloatDefault(field string, v float64) float64 {
+func (dr MapRow) FloatDefault(field string, v float64) float64 {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
@@ -459,7 +459,7 @@ func (dr DataRow) FloatDefault(field string, v float64) float64 {
 }
 
 // Int64s return []int64
-func (dr DataRow) Int64s(field string) []int64 {
+func (dr MapRow) Int64s(field string) []int64 {
 	switch dr[field].(type) {
 	case []int64:
 		return dr[field].([]int64)
@@ -478,7 +478,7 @@ func (dr DataRow) Int64s(field string) []int64 {
 }
 
 // Int64sDefault bool
-func (dr DataRow) Int64sDefault(field string, v []int64) []int64 {
+func (dr MapRow) Int64sDefault(field string, v []int64) []int64 {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
@@ -486,7 +486,7 @@ func (dr DataRow) Int64sDefault(field string, v []int64) []int64 {
 }
 
 // Ints return []int
-func (dr DataRow) Ints(field string) []int {
+func (dr MapRow) Ints(field string) []int {
 	if dr.IsNull(field) {
 		return []int{}
 	}
@@ -509,7 +509,7 @@ func (dr DataRow) Ints(field string) []int {
 }
 
 // IntsDefault bool
-func (dr DataRow) IntsDefault(field string, v []int) []int {
+func (dr MapRow) IntsDefault(field string, v []int) []int {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
@@ -517,17 +517,17 @@ func (dr DataRow) IntsDefault(field string, v []int) []int {
 }
 
 //ParseNumberSlice err
-func (dr DataRow) ParseNumberSlice(field string, ptr interface{}) error {
+func (dr MapRow) ParseNumberSlice(field string, ptr interface{}) error {
 	return Current().Driver.ParseNumberSlice(dr.Bytes(field), ptr)
 }
 
 //ParseStringSlice err
-func (dr DataRow) ParseStringSlice(field string, ptr interface{}) error {
+func (dr MapRow) ParseStringSlice(field string, ptr interface{}) error {
 	return Current().Driver.ParseStringSlice(dr.Bytes(field), ptr)
 }
 
 // Floats []float64
-func (dr DataRow) Floats(field string) []float64 {
+func (dr MapRow) Floats(field string) []float64 {
 	switch dr[field].(type) {
 	case []float64:
 		return dr[field].([]float64)
@@ -551,7 +551,7 @@ func (dr DataRow) Floats(field string) []float64 {
 }
 
 // Strings []string
-func (dr DataRow) Strings(field string) []string {
+func (dr MapRow) Strings(field string) []string {
 	if dr.IsNull(field) {
 		return []string{}
 	}
@@ -590,49 +590,49 @@ func (dr DataRow) Strings(field string) []string {
 }
 
 // StringsDefault bool
-func (dr DataRow) StringsDefault(field string, v []string) []string {
+func (dr MapRow) StringsDefault(field string, v []string) []string {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Strings(field)
 }
 
-// DataRow func
-func (dr DataRow) DataRow(field string) DataRow {
+// MapRow func
+func (dr MapRow) MapRow(field string) MapRow {
 	switch dr[field].(type) {
 	case map[string]interface{}:
-		return DataRow(dr[field].(map[string]interface{}))
+		return MapRow(dr[field].(map[string]interface{}))
 
 	case []byte, string:
 		v := make(map[string]interface{}, 0)
 		dr.JSONParse(field, &v)
-		return DataRow(v)
+		return MapRow(v)
 
 	default:
-		panic("DataRow unknow data type")
+		panic("MapRow unknow data type")
 	}
 
 }
 
-//DataSet func
-func (dr DataRow) DataSet(field string) DataSet {
+//MapRows func
+func (dr MapRow) MapRows(field string) MapRows {
 	switch dr[field].(type) {
-	case []DataRow:
-		return DataSet(dr[field].([]DataRow))
+	case []MapRow:
+		return MapRows(dr[field].([]MapRow))
 
 	case []byte, string:
-		v := make([]DataRow, 0)
+		v := make([]MapRow, 0)
 		dr.JSONParse(field, &v)
-		return DataSet(v)
+		return MapRows(v)
 
 	default:
-		panic("DataSet unknow data type")
+		panic("MapRows unknow data type")
 	}
 
 }
 
 // Hstore dr
-func (dr DataRow) Hstore(field string) map[string]string {
+func (dr MapRow) Hstore(field string) map[string]string {
 	switch dr[field].(type) {
 	case map[string]string:
 		return dr[field].(map[string]string)
@@ -651,17 +651,17 @@ func (dr DataRow) Hstore(field string) map[string]string {
 }
 
 // JSONParse data row to parse jSON field
-func (dr DataRow) JSONParse(field string, v interface{}) error {
+func (dr MapRow) JSONParse(field string, v interface{}) error {
 	return json.Unmarshal(dr.Bytes(field), v)
 }
 
 // Time default
-func (dr DataRow) Time(field string) time.Time {
+func (dr MapRow) Time(field string) time.Time {
 	return dr.TimeParse(field, DateTimeFormat)
 }
 
 // TimeParse default
-func (dr DataRow) TimeParse(field, layout string) time.Time {
+func (dr MapRow) TimeParse(field, layout string) time.Time {
 	if dr.IsNull(field) {
 		return time.Unix(0, 0)
 	}
@@ -692,7 +692,7 @@ func (dr DataRow) TimeParse(field, layout string) time.Time {
 }
 
 // CopyToWithJSON copy to json vo
-func (dr DataRow) CopyToWithJSON(vo interface{}) error {
+func (dr MapRow) CopyToWithJSON(vo interface{}) error {
 	src, err := json.Marshal(dr)
 	if err != nil {
 		return err
@@ -702,7 +702,7 @@ func (dr DataRow) CopyToWithJSON(vo interface{}) error {
 }
 
 // CopyToVO func
-func (dr DataRow) CopyToVO(vo interface{}) error {
+func (dr MapRow) CopyToVO(vo interface{}) error {
 	typ := reflect.TypeOf(vo)
 	if typ.Kind() != reflect.Ptr {
 		return errors.New("arg vo must be a kind of ptr")
@@ -721,7 +721,7 @@ func (dr DataRow) CopyToVO(vo interface{}) error {
 
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("DataRow ConvertTo failed ")
+			fmt.Println("MapRow ConvertTo failed ")
 		}
 	}()
 
@@ -787,8 +787,8 @@ func (dr DataRow) CopyToVO(vo interface{}) error {
 			case "map[string]string":
 				val.Field(i).Set(reflect.ValueOf(dr.Hstore(field)))
 
-			case "db.DataRow", "map[string]interface {}":
-				val.Field(i).Set(reflect.ValueOf(dr.DataRow(field)))
+			case "db.MapRow", "map[string]interface {}":
+				val.Field(i).Set(reflect.ValueOf(dr.MapRow(field)))
 
 			default:
 				return fmt.Errorf("unkonw map data type of %s", sf.Type.String())
@@ -866,7 +866,7 @@ func (dr DataRow) CopyToVO(vo interface{}) error {
 }
 
 // SplitData split map data
-func (dr DataRow) SplitData() ([]string, []interface{}) {
+func (dr MapRow) SplitData() ([]string, []interface{}) {
 	l := len(dr)
 	keys := make([]string, l)
 	vals := make([]interface{}, l)
@@ -885,7 +885,7 @@ func (dr DataRow) SplitData() ([]string, []interface{}) {
 }
 
 // Merge data
-func (dr DataRow) Merge(row DataRow) DataRow {
+func (dr MapRow) Merge(row MapRow) MapRow {
 	for k, v := range row {
 		dr[k] = v
 	}
@@ -894,7 +894,7 @@ func (dr DataRow) Merge(row DataRow) DataRow {
 }
 
 // Keys list
-func (dr DataRow) Keys() []string {
+func (dr MapRow) Keys() []string {
 	l := len(dr)
 	arr := make([]string, l)
 	i := 0
@@ -906,6 +906,6 @@ func (dr DataRow) Keys() []string {
 }
 
 // Len data
-func (dr DataRow) Len() int {
+func (dr MapRow) Len() int {
 	return len(dr)
 }

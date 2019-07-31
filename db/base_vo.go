@@ -17,15 +17,21 @@ import (
 type IVO interface {
 	Init(string, IVO)
 	GetTable() string
-	ToDataRow(ctype string) DataRow
-	ToJSON(ctype string) string
+	ToMapRow(action int) MapRow
+	ToJSON(action int) string
 	Create() error
 	CreateIfNotFound(where string, params ...interface{}) (bool, error)
 	Update(where string, params ...interface{}) error
 	Delete(where string, params ...interface{}) error
 	Order(string) *QueryBuilder
-	QueryOne(params ...interface{}) (DataRow, error)
+	QueryOnePrepare(params ...interface{}) (MapRow, error)
+	QueryOne(params ...interface{}) (MapRow, error)
+
 	Query(params ...interface{}) (DataSet, error)
+	QueryPrepare(params ...interface{}) (DataSet, error)
+
+	QueryRows(params ...interface{}) (MapRows, error)
+	QueryRowsPrepare(params ...interface{}) (MapRows, error)
 }
 
 // BaseVO class
@@ -38,19 +44,19 @@ type BaseVO struct {
 	querybuild *QueryBuilder
 }
 
-// ToDataRow convert to DataRow
+// ToMapRow convert to MapRow
 // ctype = insert | update |
-func (b *BaseVO) ToDataRow(ctype string) DataRow {
+func (b *BaseVO) ToMapRow(action int) MapRow {
 	if b.converter == nil {
 		b.converter = NewStructConvert(b.target)
 	}
-	return b.converter.Struct2DataRow(ctype)
+	return b.converter.Struct2DataRow(action)
 }
 
-// ToJSON convert to DataRow
+// ToJSON convert to MapRow
 // ctype = insert | update |
-func (b *BaseVO) ToJSON(ctype string) string {
-	row := b.ToDataRow(ctype)
+func (b *BaseVO) ToJSON(action int) string {
+	row := b.ToMapRow(action)
 	src, _ := json.Marshal(row)
 	return string(src)
 }
@@ -76,13 +82,10 @@ func (b *BaseVO) Create() error {
 		panic("vo.target is nil")
 	}
 	ins := InsertBuilder{}
-	_, err := ins.Table(b.Table).Insert(b.target)
+	row := b.target.ToMapRow(ActionInsert)
+	_, err := ins.Table(b.Table).Insert(row)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // TxCreate func
@@ -91,7 +94,8 @@ func (b *BaseVO) TxCreate(tx *Tx) error {
 		panic("vo.target is nil")
 	}
 	ins := InsertBuilder{}
-	_, err := ins.Table(b.Table).TxInsert(tx, b.target)
+	row := b.target.ToMapRow(ActionInsert)
+	_, err := ins.Table(b.Table).TxInsert(tx, row)
 	tx.DoError(err)
 	return err
 }
@@ -102,7 +106,8 @@ func (b *BaseVO) TxCreateAndReturnID(tx *Tx) (sql.Result, error) {
 		panic("vo.target is nil")
 	}
 	ins := InsertBuilder{}
-	r, err := ins.Table(b.Table).ReturnID().TxInsert(tx, b.target)
+	row := b.target.ToMapRow(ActionInsert)
+	r, err := ins.Table(b.Table).ReturnID().TxInsert(tx, row)
 	tx.DoError(err)
 	return r, err
 }
@@ -146,14 +151,16 @@ func (b *BaseVO) TxCreateIfNotFound(tx *Tx, where string, params ...interface{})
 // Update func
 func (b *BaseVO) Update(where string, params ...interface{}) error {
 	u := UpdateBuilder{table: b.Table}
-	_, err := u.Where(where, params...).Update(b.target)
+	row := b.target.ToMapRow(ActionUpdate)
+	_, err := u.Where(where, params...).Update(row)
 	return err
 }
 
 // TxUpdate func
 func (b *BaseVO) TxUpdate(tx *Tx, where string, params ...interface{}) error {
 	u := UpdateBuilder{table: b.Table}
-	_, err := u.Where(where, params...).TxUpdate(tx, b.target)
+	row := b.target.ToMapRow(ActionUpdate)
+	_, err := u.Where(where, params...).TxUpdate(tx, row)
 	tx.DoError(err)
 	return err
 }
@@ -166,16 +173,16 @@ func (b *BaseVO) UpdateFields(fields []string, where string, params ...interface
 		val = val.Elem()
 	}
 	l := typ.NumField()
-	dat := DataRow{}
+	row := MapRow{}
 	for i := 0; i < l; i++ {
 		name := typ.Field(i).Tag.Get("json")
 		if name != "" || util.InStrings(name, fields) {
-			dat[name] = val.Field(i).Interface()
+			row[name] = val.Field(i).Interface()
 		}
 	}
 
 	u := UpdateBuilder{table: b.Table}
-	_, err := u.Where(where, params...).Update(dat)
+	_, err := u.Where(where, params...).Update(row)
 	return err
 }
 
@@ -210,8 +217,46 @@ func (b *BaseVO) Order(s string) *QueryBuilder {
 	return b.querybuild
 }
 
+// // Query func
+// func (b *BaseVO) Query(params ...interface{}) (DataSet, error) {
+// 	q := b.getQueryBuilder()
+// 	if len(params) == 1 {
+// 		q.Where(fmt.Sprint(params[0]))
+// 	} else if len(params) > 1 {
+// 		q.Where(fmt.Sprint(params[0]), params[1:]...)
+// 	}
+//
+// 	if b.Fields != "" {
+// 		q.Select(b.Fields)
+// 	}
+// 	return q.Query()
+// }
+
+// QueryRows func
+func (b *BaseVO) QueryRows(params ...interface{}) (MapRows, error) {
+	_, rows, err := b.cQuery(1, 0, params...)
+	return rows, err
+}
+
+// QueryRowsPrepare func
+func (b *BaseVO) QueryRowsPrepare(params ...interface{}) (MapRows, error) {
+	_, rows, err := b.cQuery(1, 1, params...)
+	return rows, err
+}
+
 // Query func
 func (b *BaseVO) Query(params ...interface{}) (DataSet, error) {
+	dataset, _, err := b.cQuery(0, 0, params...)
+	return dataset, err
+}
+
+// QueryPrepare func
+func (b *BaseVO) QueryPrepare(params ...interface{}) (DataSet, error) {
+	dataset, _, err := b.cQuery(0, 1, params...)
+	return dataset, err
+}
+
+func (b *BaseVO) cQuery(mode, pmode int, params ...interface{}) (dataset DataSet, rows MapRows, err error) {
 	q := b.getQueryBuilder()
 	if len(params) == 1 {
 		q.Where(fmt.Sprint(params[0]))
@@ -222,11 +267,18 @@ func (b *BaseVO) Query(params ...interface{}) (DataSet, error) {
 	if b.Fields != "" {
 		q.Select(b.Fields)
 	}
-	return q.Query()
+	q.SetPrepare(pmode == 1)
+
+	if mode == 1 {
+		rows, err = q.QueryRows()
+	} else {
+		dataset, err = q.Query()
+	}
+	return dataset, rows, err
 }
 
 // QueryOne func
-func (b *BaseVO) QueryOne(params ...interface{}) (DataRow, error) {
+func (b *BaseVO) QueryOne(params ...interface{}) (MapRow, error) {
 	q := b.getQueryBuilder()
 	if len(params) == 1 {
 		q.Where(fmt.Sprint(params[0]))

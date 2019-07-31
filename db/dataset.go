@@ -1,247 +1,122 @@
 package db
 
 import (
-	"bytes"
-	"encoding/json"
+	"database/sql"
+	"errors"
 	"reflect"
 )
 
-// DataSet datarow list
-type DataSet []DataRow
+// DataType class
+type DataType struct {
+	Name     string
+	TypeName string
+	Type     reflect.Type
+	LengthOK bool
+	Length   int
 
-// NewDataSet by length
-func NewDataSet(l int) DataSet {
-	return make([]DataRow, l)
+	DecimalOK bool
+	Precision int
+	Scale     int
 }
 
-// NewDataSetN by length
-func NewDataSetN(l, n int) DataSet {
-	return make([]DataRow, l, n)
+// NewDataType new type class
+func NewDataType(typ *sql.ColumnType) DataType {
+	d := DataType{Name: typ.Name(), TypeName: typ.DatabaseTypeName(), Type: typ.ScanType()}
+	var v, v2 int64
+	v, d.LengthOK = typ.Length()
+	d.Length = int(v)
+	v, v2, d.DecimalOK = typ.DecimalSize()
+	d.Precision = int(v)
+	d.Scale = int(v2)
+	return d
 }
 
-// Insert current dataset
-func (ds DataSet) Insert(table string) error {
-	if ds.Len() == 0 {
+// DataRow class
+type DataRow []interface{}
+
+// DataRow2MapRow convert to
+func DataRow2MapRow(row DataRow, fields []string) MapRow {
+	mapRow := MapRow{}
+	n := len(fields)
+	for i := 0; i < n; i++ {
+		mapRow[fields[i]] = row[i]
+	}
+	return mapRow
+}
+
+// DataColumn class
+type DataColumn []interface{}
+
+// DataSet data rows
+type DataSet struct {
+	Fields  []string
+	Types   []DataType
+	Columns []DataColumn
+}
+
+// Len dataset
+func (d *DataSet) Len() int {
+	if len(d.Columns) == 0 {
+		return -1
+	}
+	return len(d.Columns[0])
+}
+
+// First datarow
+func (d *DataSet) First() MapRow {
+	return d.MapRowAt(0)
+}
+
+// MapRowAt datarow
+func (d *DataSet) MapRowAt(i int) MapRow {
+	n := len(d.Columns)
+	if n == 0 || len(d.Columns[0]) >= i {
 		return nil
 	}
-	ins := InsertBuilder{}
-	_, err := ins.Table(table).InsertM(ds)
-	return err
-}
 
-// IsEmpty func
-func (ds DataSet) IsEmpty() bool {
-	return len(ds) == 0
-}
+	row := MapRow{}
 
-// Clone func
-func (ds DataSet) Clone() DataSet {
-	tmp := make([]DataRow, len(ds))
-	for i := range ds {
-		tmp[i] = ds[i].Clone()
+	for k := 0; k < n; k++ {
+		row[d.Fields[k]] = d.Columns[k][i]
 	}
-	return tmp
+	return row
 }
 
-// Bytes2String fix bytes value data
-func (ds DataSet) Bytes2String() DataSet {
-	for i := range ds {
-		ds[i] = ds[i].Bytes2String()
+// AddMapRow add
+func (d *DataSet) AddMapRow(row MapRow) error {
+	n := len(d.Types)
+	if n == 0 {
+		return errors.New("dataset types is empty")
+	}
+	if n != len(row) {
+		return errors.New("row fields not match")
 	}
 
-	return ds
-}
-
-// Bytes2NumericBySubfix fix number
-// Convert bytes data to numeric by subfix
-func (ds DataSet) Bytes2NumericBySubfix(subfix string) DataSet {
-	for i := range ds {
-		ds[i] = ds[i].Bytes2NumericBySubfix(subfix)
+	if len(d.Columns) == 0 {
+		d.Columns = make([]DataColumn, n)
 	}
 
-	return ds
-}
-
-// Bytes2NumericByFields Convert bytes data to numeric by field list
-func (ds DataSet) Bytes2NumericByFields(fields []string) DataSet {
-	for i := range ds {
-		ds[i] = ds[i].Bytes2NumericByFields(fields)
-	}
-
-	return ds
-}
-
-// Search search by field and return DataRow, if not found return nil
-func (ds DataSet) Search(field string, value interface{}) DataRow {
-	for _, r := range ds {
-		if r[field] == value {
-			return r
+	for k := 0; k < n; k++ {
+		val, isok := row[d.Fields[k]]
+		if isok {
+			d.Columns[k] = append(d.Columns[k], val)
 		}
 	}
+
 	return nil
 }
 
-// Filter data
-func (ds DataSet) Filter(f func(int, DataRow) bool) DataSet {
-	arr := DataSet{}
-	for i, r := range ds {
-		if f(i, r) {
-			arr = append(arr, r)
-		}
-	}
-	return arr
-}
-
-// Group data
-func (ds DataSet) Group(field string) map[interface{}]DataSet {
-	mapDat := make(map[interface{}]DataSet, 0)
-	for _, r := range ds {
-		v := r[field]
-		if _, isok := mapDat[v]; !isok {
-			mapDat[v] = DataSet{}
-		}
-
-		mapDat[v] = append(mapDat[v], r)
-	}
-	return mapDat
-}
-
-// Len return length of dataset
-func (ds DataSet) Len() int {
-	return len(ds)
-}
-
-// StringValues return string value list by field
-func (ds DataSet) StringValues(field string) []string {
-	l := ds.Len()
-	arr := make([]string, l)
-	for i := 0; i < l; i++ {
-		arr[i] = ds[i].String(field)
-	}
-	return arr
-}
-
-// FloatValues return string value list by field
-func (ds DataSet) FloatValues(field string) []float64 {
-	l := ds.Len()
-	arr := make([]float64, l)
-	for i := 0; i < l; i++ {
-		arr[i] = ds[i].Float(field)
-	}
-	return arr
-}
-
-// IntValues return string value list by field
-func (ds DataSet) IntValues(field string) []int {
-	l := ds.Len()
-	arr := make([]int, l)
-	for i := 0; i < l; i++ {
-		arr[i] = ds[i].Int(field)
-	}
-	return arr
-}
-
-// Encode zip dataset
-func (ds DataSet) Encode() [][]interface{} {
-	ds.Bytes2String()
-	if ds == nil || len(ds) == 0 {
+// AddDataRow add
+func (d *DataSet) AddDataRow(row DataRow) error {
+	n := len(row)
+	if n == 0 {
 		return nil
 	}
-
-	var value []interface{}
-
-	values := make([][]interface{}, len(ds)+1)
-	colSize := len(ds[0])
-	columns := make([]interface{}, colSize)
-	colMap := make(map[string]int)
-	isFirst := true
-	var n int
-	var row DataRow
-	for i, r := range ds {
-		row = r
-		n = 0
-		if isFirst {
-			for k := range row {
-				columns[n] = k
-				colMap[k] = n
-				n++
-			}
-
-			values[i] = columns
-			isFirst = false
-		}
-
-		value = make([]interface{}, colSize)
-		for k, v := range row {
-			value[colMap[k]] = v
-		}
-
-		values[i+1] = value
+	if n != len(d.Fields) {
+		return errors.New("dataset AddDataRow, fields not matched")
 	}
-
-	return values
-}
-
-// VODataSet class
-type VODataSet []IVO
-
-// ToJSON []byte
-func (ds VODataSet) ToJSON(action string) []byte {
-	l := len(ds)
-	buf := bytes.NewBuffer([]byte("["))
-
-	for i := 0; i < l; i++ {
-		if ds[i] == nil {
-			continue
-		}
-
-		row := ds[i].ToDataRow(action)
-		src, err := json.Marshal(row)
-		if err != nil {
-			continue
-		}
-		if i > 0 {
-			buf.Write(BCommaSplit)
-		}
-		buf.Write(src)
+	for k := 0; k < n; k++ {
+		d.Columns[k] = append(d.Columns[k], row[k])
 	}
-
-	buf.WriteString("]")
-
-	return buf.Bytes()
-}
-
-// Encode to
-func (ds VODataSet) Encode() [][]interface{} {
-	count := len(ds)
-	if count < 1 {
-		return make([][]interface{}, 0)
-	}
-
-	sc := NewStructConvert(ds[0])
-	dbFields := sc.DBFields()
-	fields := sc.Fields()
-	colSize := len(dbFields)
-	values := make([][]interface{}, len(ds)+1)
-	columns := make([]interface{}, colSize)
-
-	var i int
-	var k int
-	var tmp []interface{}
-
-	for i = range dbFields {
-		columns[i] = string(dbFields[i])
-	}
-	values[0] = columns
-
-	for i = 0; i < count; i++ {
-		tmp = make([]interface{}, colSize)
-		for k = range fields {
-			tmp[k] = reflect.ValueOf(ds[i]).Elem().FieldByName(fields[k].Name).Interface()
-		}
-
-		values[i+1] = tmp
-	}
-
-	return values
+	return nil
 }

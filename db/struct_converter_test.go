@@ -15,7 +15,7 @@ type VO struct {
 
 func TestVO(t *testing.T) {
 	now := time.Now()
-	row := DataRow{"code": "code1", "name": "tom01", "finished_at": now}
+	row := MapRow{"code": "code1", "name": "tom01", "finished_at": now}
 	vo := VO{}
 	row.CopyToVO(&vo)
 	if vo.Code != row.String("code") && vo.FinishedAt.String() != now.String() {

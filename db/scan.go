@@ -1,19 +1,62 @@
 package db
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
-// ScanRows db
-// parse db.RowData from sql.rows
-func ScanRows(rows *sql.Rows) (DataSet, error) {
-	defer rows.Close()
-
-	cols, _ := rows.Columns()
+// ScanToDataSet db
+func ScanToDataSet(rows *sql.Rows) (DataSet, error) {
+	var result DataSet
+	cols, err := rows.Columns()
+	if err != nil {
+		return result, err
+	}
 	colsNum := len(cols)
 
-	result := DataSet{}
-	var err error
+	typs, err := rows.ColumnTypes()
+	if err != nil {
+		return result, err
+	}
+	fields := make([]string, colsNum)
+	typItems := make([]DataType, colsNum)
+	for i := 0; i < colsNum; i++ {
+		typItems[i] = NewDataType(typs[i])
+		fields[i] = typs[i].Name()
+	}
+
+	result = DataSet{Types: typItems, Fields: fields}
 	var row, tem []interface{}
-	var rowData DataRow
+
+	for rows.Next() {
+		row = make([]interface{}, colsNum)
+		tem = make([]interface{}, colsNum)
+
+		for i := range row {
+			tem[i] = &row[i]
+		}
+
+		if err = rows.Scan(tem...); err != nil {
+			return result, err
+		}
+
+		result.AddDataRow(row)
+	}
+
+	return result, rows.Err()
+}
+
+// ScanToMapRows db
+// parse db.RowData from sql.rows
+func ScanToMapRows(rows *sql.Rows) (MapRows, error) {
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	colsNum := len(cols)
+	mapRows := MapRows{}
+
+	var row, tem []interface{}
 
 	for rows.Next() {
 		row = make([]interface{}, colsNum)
@@ -27,26 +70,14 @@ func ScanRows(rows *sql.Rows) (DataSet, error) {
 			return nil, err
 		}
 
-		rowData = DataRow{}
-		for i, col := range cols {
-			switch row[i].(type) {
-			case []byte:
-				// prefix = byte_
-				if len(col) > 5 && col[:5] == ColumnBytePrefix {
-					rowData[col] = row[i].([]byte)
-				} else {
-					rowData[col] = string(row[i].([]byte))
-				}
-			default:
-				rowData[col] = row[i]
-			}
+		rowData := MapRow{}
+
+		for i := 0; i < colsNum; i++ {
+			rowData[cols[i]] = row[i]
 		}
 
-		result = append(result, rowData)
+		mapRows = append(mapRows, rowData)
 	}
 
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return result, nil
+	return mapRows, rows.Err()
 }

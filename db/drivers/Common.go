@@ -3,9 +3,14 @@ package drivers
 import "reflect"
 
 const (
-	DriverPSQL    = "postgres"
-	DriverMySQL   = "mysql"
-	DriverSqlite  = "sqlite"
+	// DriverPSQL pgsql
+	DriverPSQL = "postgres"
+
+	// DriverMySQL mysql
+	DriverMySQL = "mysql"
+	// DriverSqlite sqlite
+	DriverSqlite = "sqlite"
+
 	sQuestionMark = "?"
 )
 
@@ -42,6 +47,20 @@ func (c *Common) ConnectString() string {
 
 func (c *Common) QuoteField(s string) string {
 	return `"` + s + `"`
+}
+
+func (c *Common) QuoteFieldB(s string) []byte {
+	l := len(s)
+
+	// l+8 : "name"=$1234
+	arr := make([]byte, l+2, l+8)
+	arr[0] = '"'
+	for i := 0; i < l; i++ {
+		arr[i+1] = s[i]
+	}
+	arr[l+1] = '"'
+
+	return arr
 }
 
 func (c *Common) LastInsertID(table, pkey string) string {

@@ -76,10 +76,6 @@ func (p *Postgres) ConnectString() string {
 	}
 }
 
-func (p *Postgres) QuoteField(s string) string {
-	return fmt.Sprint("\"", s, "\"")
-}
-
 func (p *Postgres) LastInsertId(table, pkey string) string {
 	// return "select currval(pg_get_serial_sequence('" + table + "','" + pkey + "'))"
 	return fmt.Sprint("select currval(pg_get_serial_sequence('", table, "','", pkey, "')) as count")

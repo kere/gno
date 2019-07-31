@@ -26,13 +26,13 @@ type QueryBuilder struct {
 	cache      bool
 	expire     int
 	cls        IVO
-	isExec     bool
+	isPrepare  bool
 	isQueryOne bool
 }
 
 // NewQuery new
 func NewQuery(t string) *QueryBuilder {
-	return &QueryBuilder{table: t, isExec: true}
+	return &QueryBuilder{table: t, isPrepare: true}
 }
 
 // Table return string
@@ -46,15 +46,15 @@ func (q *QueryBuilder) GetTable() string {
 	return q.table
 }
 
-// SetIsPrepare prepare sql
-func (q *QueryBuilder) SetIsPrepare(v bool) *QueryBuilder {
-	q.isExec = !v
+// SetPrepare prepare sql
+func (q *QueryBuilder) SetPrepare(v bool) *QueryBuilder {
+	q.isPrepare = v
 	return q
 }
 
-// GetIsPrepare get
-func (q *QueryBuilder) GetIsPrepare() bool {
-	return !q.isExec
+// GetPrepare get
+func (q *QueryBuilder) GetPrepare() bool {
+	return q.isPrepare
 }
 
 // Select fields
@@ -142,7 +142,7 @@ func (q *QueryBuilder) CacheExpire(expire int) *QueryBuilder {
 	return q
 }
 
-func querybuildCacheKey(q *QueryBuilder) string {
+func querybuildCacheKey(q *QueryBuilder, datamode int) string {
 	s := bytes.Buffer{}
 	s.WriteString(q.table)
 	setQueryFields(q, &s)
@@ -154,15 +154,16 @@ func querybuildCacheKey(q *QueryBuilder) string {
 		s.WriteString(fmt.Sprint(q.args))
 	}
 
-	return fmt.Sprintf("db-%s:%x", q.GetDatabase().Name, MD5(s.Bytes()))
+	return fmt.Sprintf("db-%d-%s:%x", datamode, q.GetDatabase().Name, MD5(s.Bytes()))
 }
 
 // ClearCache func
-func (q *QueryBuilder) ClearCache() error {
+func (q *QueryBuilder) ClearCache() {
 	if cacheIns == nil {
-		return nil
+		return
 	}
-	return cacheDel(querybuildCacheKey(q))
+	cacheDel(querybuildCacheKey(q, 1))
+	cacheDel(querybuildCacheKey(q, 0))
 }
 
 func parseQuery(q *QueryBuilder) string {
@@ -210,38 +211,63 @@ func parseQuery(q *QueryBuilder) string {
 
 // Query return DataSet
 func (q *QueryBuilder) Query() (DataSet, error) {
+	dataset, _, err := q.cQuery(0)
+	return dataset, err
+}
+
+// QueryRows return DataSet
+func (q *QueryBuilder) QueryRows() (MapRows, error) {
+	_, rows, err := q.cQuery(1)
+	return rows, err
+}
+
+func (q *QueryBuilder) cQuery(mode int) (DataSet, MapRows, error) {
 	var key string
 
 	if q.cache {
-		key = querybuildCacheKey(q)
+		key = querybuildCacheKey(q, mode)
 		if exi, _ := cacheIns.IsExists(key); exi {
-			return cacheGet(key)
+			return cacheGet(key, mode)
 		}
 	}
-	var r DataSet
+	var dataset DataSet
+	var datarows MapRows
 	var err error
-	if q.isExec {
-		r, err = q.GetDatabase().Query(parseQuery(q), q.args...)
+
+	if mode == 1 {
+		if q.isPrepare {
+			datarows, err = q.GetDatabase().QueryRowsPrepare(parseQuery(q), q.args...)
+		} else {
+			datarows, err = q.GetDatabase().QueryRows(parseQuery(q), q.args...)
+		}
 	} else {
-		r, err = q.GetDatabase().QueryPrepare(parseQuery(q), q.args...)
+		if q.isPrepare {
+			dataset, err = q.GetDatabase().QueryPrepare(parseQuery(q), q.args...)
+		} else {
+			dataset, err = q.GetDatabase().Query(parseQuery(q), q.args...)
+		}
 	}
 
 	if err != nil {
-		return r, err
-	}
-	if q.cache {
-		// r.Bytes2String()
-		cacheSet(key, r, q.expire)
+		return dataset, datarows, err
 	}
 
-	return r, nil
+	if q.cache {
+		if mode == 1 {
+			cacheSet(key, datarows, q.expire)
+		} else {
+			cacheSet(key, dataset, q.expire)
+		}
+	}
+
+	return dataset, datarows, nil
 }
 
 // QueryOne limit=1
-func (q *QueryBuilder) QueryOne() (DataRow, error) {
+func (q *QueryBuilder) QueryOne() (MapRow, error) {
 	limit := q.limit
 	q.limit = 1
-	r, err := q.Query()
+	r, err := q.QueryRows()
 	q.limit = limit
 	if err != nil {
 		return nil, err
@@ -252,47 +278,6 @@ func (q *QueryBuilder) QueryOne() (DataRow, error) {
 	}
 	return nil, nil
 }
-
-// // Find return VODataSet
-// func (q *QueryBuilder) Find() (VODataSet, error) {
-// 	database := q.getDatabase()
-//
-// 	var key string
-// 	if q.cache {
-// 		key = q.cachekey()
-// 		if exi, _ := cacheIns.Exists(key); exi {
-// 			return cacheGetX(key, q.cls)
-// 		}
-// 	}
-// 	var r VODataSet
-// 	var err error
-// 	if q.isExec {
-// 		r, err = database.FindPrepare(q.cls, NewSqlState(parseQuery(q)))
-// 	} else {
-// 		r, err = database.Find(q.cls, NewSqlState(parseQuery(q)))
-// 	}
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if q.cache {
-// 		cacheSet(key, r, q.expire)
-// 	}
-// 	return r, nil
-// }
-
-// func (q *QueryBuilder) FindOne() (IVO, error) {
-// 	q.isQueryOne = true
-// 	r, err := q.Find()
-// 	q.isQueryOne = false
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	if len(r) > 0 {
-// 		return r[0], nil
-// 	}
-// 	return nil, nil
-// }
 
 func setQueryFields(q *QueryBuilder, s *bytes.Buffer) {
 	field := BStarKey
@@ -308,10 +293,24 @@ func setQueryFields(q *QueryBuilder, s *bytes.Buffer) {
 
 // TxQuery transction
 func (q *QueryBuilder) TxQuery(tx *Tx) (DataSet, error) {
+	if q.isPrepare {
+		return tx.QueryPrepare(parseQuery(q), q.args...)
+	}
 	return tx.Query(parseQuery(q), q.args...)
 }
 
+// TxQueryRows transction
+func (q *QueryBuilder) TxQueryRows(tx *Tx) (MapRows, error) {
+	if q.isPrepare {
+		return tx.QueryRowsPrepare(parseQuery(q), q.args...)
+	}
+	return tx.QueryRows(parseQuery(q), q.args...)
+}
+
 // TxQueryOne transction
-func (q *QueryBuilder) TxQueryOne(tx *Tx) (DataRow, error) {
+func (q *QueryBuilder) TxQueryOne(tx *Tx) (MapRow, error) {
+	if q.isPrepare {
+		return tx.QueryOnePrepare(parseQuery(q), q.args...)
+	}
 	return tx.QueryOne(parseQuery(q), q.args...)
 }

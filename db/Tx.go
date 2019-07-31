@@ -30,10 +30,6 @@ func (t *Tx) GetTx() *sql.Tx {
 
 // Begin tx
 func (t *Tx) Begin() error {
-	// if t.tx != nil {
-	// 	return t
-	// }
-
 	t.conn = t.GetDatabase().Connection.Connect()
 	tx, err := t.conn.Begin()
 	if err != nil {
@@ -46,22 +42,22 @@ func (t *Tx) Begin() error {
 	return nil
 }
 
-// func (t *Tx) FindOne(cls IVO, item *SqlState) (IVO, error) {
-// 	r, err := t.Find(cls, item)
-// 	if t.DoError(err) {
-// 		return nil, err
-// 	}
-//
-// 	if len(r) > 0 {
-// 		return r[0], nil
-// 	} else {
-// 		return nil, nil
-// 	}
-// }
-
 // QueryOne tx
-func (t *Tx) QueryOne(sql string, args ...interface{}) (DataRow, error) {
-	r, err := t.Query(sql, args...)
+func (t *Tx) QueryOne(sql string, args ...interface{}) (MapRow, error) {
+	r, err := t.QueryRows(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(r) > 0 {
+		return r[0], nil
+	}
+	return nil, nil
+}
+
+// QueryOnePrepare tx
+func (t *Tx) QueryOnePrepare(sql string, args ...interface{}) (MapRow, error) {
+	r, err := t.QueryRowsPrepare(sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +70,7 @@ func (t *Tx) QueryOne(sql string, args ...interface{}) (DataRow, error) {
 
 // Exists db
 func (t *Tx) Exists(sql string, args ...interface{}) (bool, error) {
-	r, err := t.Query(sql, args...)
+	r, err := t.QueryRows(sql, args...)
 	if err != nil {
 		return false, err
 	}
@@ -83,47 +79,68 @@ func (t *Tx) Exists(sql string, args ...interface{}) (bool, error) {
 
 // Query db tx
 func (t *Tx) Query(sqlstr string, args ...interface{}) (DataSet, error) {
-	if t.IsError {
-		return nil, nil
-	}
-
-	t.GetDatabase().Log(sqlstr, args)
-	st, err := t.tx.Prepare(sqlstr)
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := st.Query(args...)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	dataset, err := ScanRows(rows)
-	if err != nil {
-		return nil, err
-	}
-
-	return dataset, nil
+	dataset, _, err := t.cQuery(0, 0, sqlstr, args...)
+	return dataset, err
 }
 
-// func (t *Tx) Find(cls IVO, item *SqlState) (VODataSet, error) {
-// 	if t.IsError {
-// 		return nil, nil
-// 	}
-//
-// 	// sqlstr := string(t.database.AdaptSql(item.Sql))
-// 	database := Current()
-// 	database.Log.Sql(item.GetSql(), item.GetArgs())
-//
-// 	dataset, err := t.Query(item)
-// 	if t.DoError(err) {
-// 		return nil, err
-// 	}
-//
-// 	return NewStructConvert(cls).DataSet2Struct(dataset)
-// }
+// QueryPrepare db tx
+func (t *Tx) QueryPrepare(sqlstr string, args ...interface{}) (DataSet, error) {
+	dataset, _, err := t.cQuery(0, 1, sqlstr, args...)
+	return dataset, err
+}
+
+// QueryRows db tx
+func (t *Tx) QueryRows(sqlstr string, args ...interface{}) (MapRows, error) {
+	_, datarows, err := t.cQuery(1, 0, sqlstr, args...)
+	return datarows, err
+}
+
+// QueryRowsPrepare db tx
+func (t *Tx) QueryRowsPrepare(sqlstr string, args ...interface{}) (MapRows, error) {
+	_, datarows, err := t.cQuery(1, 1, sqlstr, args...)
+	return datarows, err
+}
+
+// cQuery db tx
+func (t *Tx) cQuery(mode, qmode int, sqlstr string, args ...interface{}) (DataSet, MapRows, error) {
+	var dataset DataSet
+	if t.IsError {
+		return dataset, nil, nil
+	}
+	var err error
+	var rows *sql.Rows
+
+	t.GetDatabase().Log(sqlstr, args)
+	if mode == 1 {
+		st, err := t.tx.Prepare(sqlstr)
+		if err != nil {
+			return dataset, nil, err
+		}
+
+		rows, err = st.Query(args...)
+		defer rows.Close()
+		if err != nil {
+			return dataset, nil, err
+		}
+
+	} else {
+		rows, err = t.tx.Query(sqlstr, args...)
+		defer rows.Close()
+		if err != nil {
+			return dataset, nil, err
+		}
+
+	}
+
+	var datarows MapRows
+	if mode == 1 {
+		datarows, err = ScanToMapRows(rows)
+	} else {
+		dataset, err = ScanToDataSet(rows)
+	}
+
+	return dataset, datarows, err
+}
 
 // Exec db
 func (t *Tx) Exec(sqlstr string, args ...interface{}) (sql.Result, error) {
@@ -175,7 +192,7 @@ func (t *Tx) ExecPrepare(sqlstr string, args ...interface{}) (sql.Result, error)
 }
 
 // PGCopyIn db
-func (t *Tx) PGCopyIn(table string, fields []string, rows []DataRow) (int, error) {
+func (t *Tx) PGCopyIn(table string, fields []string, rows []MapRow) (int, error) {
 	l := len(rows)
 	step := 200
 	n := l/step + 1
@@ -198,7 +215,7 @@ func (t *Tx) PGCopyIn(table string, fields []string, rows []DataRow) (int, error
 	return count, nil
 }
 
-func (t *Tx) pgCopyIn(table string, fields []string, rows []DataRow) error {
+func (t *Tx) pgCopyIn(table string, fields []string, rows []MapRow) error {
 	stmt, err := t.tx.Prepare(pq.CopyIn(table, fields...))
 	if err != nil {
 		return err

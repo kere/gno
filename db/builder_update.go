@@ -24,15 +24,16 @@ func (u *UpdateBuilder) Table(t string) *UpdateBuilder {
 	return u
 }
 
-func parseUpdate(u *UpdateBuilder, data interface{}) (string, []interface{}) {
-	keys, values, _ := keyValueList(ActionUpdate, data)
+func parseUpdate(u *UpdateBuilder, row MapRow) (string, []interface{}) {
+	// keys, values, _ := keyValueList(ActionUpdate, data)
+	keys, values := sqlUpdateParamsByMapRow(row)
 
 	s := bytes.Buffer{}
 	driver := u.GetDatabase().Driver
 	s.Write(bSQLUpdate)
 	s.WriteString(driver.QuoteField(u.table))
 	s.Write(bSQLSet)
-	s.Write(bytes.Join(keys, BCommaSplit))
+	s.Write(keys)
 	if u.where != "" {
 		s.Write(bSQLWhere)
 		s.WriteString(driver.Adapt(u.where, len(values)))
@@ -52,8 +53,8 @@ func (u *UpdateBuilder) Where(cond string, args ...interface{}) *UpdateBuilder {
 }
 
 // Update db
-func (u *UpdateBuilder) Update(data interface{}) (sql.Result, error) {
-	sql, vals := parseUpdate(u, data)
+func (u *UpdateBuilder) Update(row MapRow) (sql.Result, error) {
+	sql, vals := parseUpdate(u, row)
 	return u.GetDatabase().ExecPrepare(sql, vals...)
 }
 
@@ -94,7 +95,7 @@ func (u *UpdateBuilder) Update(data interface{}) (sql.Result, error) {
 // }
 
 // TxUpdate trunsaction
-func (u *UpdateBuilder) TxUpdate(tx *Tx, data interface{}) (sql.Result, error) {
-	sql, vals := parseUpdate(u, data)
+func (u *UpdateBuilder) TxUpdate(tx *Tx, row MapRow) (sql.Result, error) {
+	sql, vals := parseUpdate(u, row)
 	return tx.ExecPrepare(sql, vals...)
 }

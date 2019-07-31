@@ -6,7 +6,8 @@ import (
 
 // CounterBuilder class
 type CounterBuilder struct {
-	table string
+	table     string
+	isPrepare bool
 	builder
 }
 
@@ -21,6 +22,17 @@ func (c *CounterBuilder) Table(t string) *CounterBuilder {
 	return c
 }
 
+// SetPrepare prepare sql
+func (c *CounterBuilder) SetPrepare(v bool) *CounterBuilder {
+	c.isPrepare = v
+	return c
+}
+
+// GetPrepare get
+func (c *CounterBuilder) GetPrepare() bool {
+	return c.isPrepare
+}
+
 // Count db
 func (c *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) {
 	s := bytes.Buffer{}
@@ -28,21 +40,21 @@ func (c *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) 
 	s.WriteString("SELECT count(1) as count FROM ")
 	s.WriteString(c.table)
 
-	var r DataSet
+	var rows MapRows
 	var err error
 
-	if cond != "" {
+	if c.isPrepare {
 		s.Write(bSQLWhere)
 		s.WriteString(c.GetDatabase().Driver.Adapt(cond, 0))
-		r, err = c.GetDatabase().QueryPrepare(s.String(), args...)
+		rows, err = c.GetDatabase().QueryRowsPrepare(s.String(), args...)
 	} else {
-		r, err = c.GetDatabase().Query(s.String())
+		rows, err = c.GetDatabase().QueryRows(s.String())
 	}
 
 	if err != nil {
 		return -1, err
 	}
-	return r[0].Int64(FieldCount), nil
+	return rows[0].Int64(FieldCount), nil
 }
 
 //TxCount transaction Count db
@@ -52,13 +64,13 @@ func (c *CounterBuilder) TxCount(tx *Tx, cond string, args ...interface{}) (int6
 	s.WriteString("SELECT count(1) as count FROM ")
 	s.WriteString(c.table)
 
-	var row DataRow
+	var row MapRow
 	var err error
 
-	if cond != "" {
+	if c.isPrepare {
 		s.Write(bSQLWhere)
 		s.WriteString(c.GetDatabase().Driver.Adapt(cond, 0))
-		row, err = tx.QueryOne(s.String(), args...)
+		row, err = tx.QueryOnePrepare(s.String(), args...)
 	} else {
 		row, err = tx.QueryOne(s.String())
 	}

@@ -24,14 +24,14 @@ func (e *ExistsBuilder) Table(t string) *ExistsBuilder {
 	return e
 }
 
-// SetIsPrepare prepare sql
-func (e *ExistsBuilder) SetIsPrepare(v bool) *ExistsBuilder {
+// SetPrepare prepare sql
+func (e *ExistsBuilder) SetPrepare(v bool) *ExistsBuilder {
 	e.isPrepare = v
 	return e
 }
 
-// GetIsPrepare f
-func (e *ExistsBuilder) GetIsPrepare(v bool) bool {
+// GetPrepare f
+func (e *ExistsBuilder) GetPrepare(v bool) bool {
 	return e.isPrepare
 }
 
@@ -61,10 +61,16 @@ func parseExists(e *ExistsBuilder) string {
 
 // Exists db
 func (e *ExistsBuilder) Exists() bool {
-	r, err := e.GetDatabase().QueryPrepare(parseExists(e), e.args...)
+	var r MapRows
+	var err error
+	if e.isPrepare {
+		r, err = e.GetDatabase().QueryRowsPrepare(parseExists(e), e.args...)
+	} else {
+		r, err = e.GetDatabase().QueryRows(parseExists(e), e.args...)
+	}
 	if err != nil {
 		e.GetDatabase().log.Alert(err).Stack()
-		panic(err)
+		return false
 	}
 	return len(r) > 0
 }

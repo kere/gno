@@ -4,27 +4,27 @@ import (
 	"database/sql"
 )
 
-// QueryOne f
-func QueryOne(table string, where string, params ...interface{}) (DataRow, error) {
-	q := QueryBuilder{}
-	return q.Table(table).Where(where, params...).QueryOne()
-}
-
-// Query f
-func Query(table string, where string, params ...interface{}) (DataSet, error) {
-	q := QueryBuilder{}
-	return q.Table(table).Where(where, params...).Query()
-}
+// // QueryOne f
+// func QueryOne(table string, where string, params ...interface{}) (MapRow, error) {
+// 	q := QueryBuilder{}
+// 	return q.Table(table).Where(where, params...).QueryOne()
+// }
+//
+// // Query f
+// func Query(table string, where string, params ...interface{}) (DataSet, error) {
+// 	q := QueryBuilder{}
+// 	return q.Table(table).Where(where, params...).Query()
+// }
 
 // Create f
-func Create(table string, row DataRow) error {
+func Create(table string, row MapRow) error {
 	ins := InsertBuilder{}
 	_, err := ins.Table(table).Insert(row)
 	return err
 }
 
 // TxCreate func
-func TxCreate(tx *Tx, table string, row DataRow) error {
+func TxCreate(tx *Tx, table string, row MapRow) error {
 	ins := InsertBuilder{}
 	_, err := ins.Table(table).TxInsert(tx, row)
 
@@ -32,14 +32,14 @@ func TxCreate(tx *Tx, table string, row DataRow) error {
 }
 
 // TxCreateAndReturnID func
-func TxCreateAndReturnID(tx *Tx, table string, row DataRow) (sql.Result, error) {
+func TxCreateAndReturnID(tx *Tx, table string, row MapRow) (sql.Result, error) {
 	ins := InsertBuilder{}
 	return ins.Table(table).ReturnID().TxInsert(tx, row)
 }
 
 // CreateIfNotFound insert data if not found
 // return true if insert
-func CreateIfNotFound(table string, row DataRow, where string, params ...interface{}) (bool, error) {
+func CreateIfNotFound(table string, row MapRow, where string, params ...interface{}) (bool, error) {
 	e := ExistsBuilder{}
 	if e.Table(table).Where(where, params...).Exists() {
 		return false, nil
@@ -49,14 +49,14 @@ func CreateIfNotFound(table string, row DataRow, where string, params ...interfa
 }
 
 // Update func
-func Update(table string, row DataRow, where string, params ...interface{}) error {
+func Update(table string, row MapRow, where string, params ...interface{}) error {
 	u := UpdateBuilder{table: table}
 	_, err := u.Where(where, params...).Update(row)
 	return err
 }
 
 // TxUpdate func
-func TxUpdate(tx *Tx, table string, row DataRow, where string, params ...interface{}) error {
+func TxUpdate(tx *Tx, table string, row MapRow, where string, params ...interface{}) error {
 	u := UpdateBuilder{table: table}
 	_, err := u.Where(where, params...).TxUpdate(tx, row)
 	return err
