@@ -215,11 +215,7 @@ func cQuery(mode, pmode int, conn *sql.DB, sqlstr string, args ...interface{}) (
 // This function use the current database from database bool
 func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, err error) {
 	// defer conn.Close()
-	if len(args) == 0 {
-		result, err = conn.Exec(sqlstr)
-	} else {
-		result, err = conn.Exec(sqlstr, args...)
-	}
+	result, err = conn.Exec(sqlstr, args...)
 	if err != nil {
 		logSQLErr(sqlstr, args)
 		return result, myerr.New(err).Log().Stack()
@@ -238,11 +234,7 @@ func ExecPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.R
 
 	defer stmt.Close()
 
-	if len(args) == 0 {
-		result, err = stmt.Exec()
-	} else {
-		result, err = stmt.Exec(args...)
-	}
+	result, err = stmt.Exec(args...)
 	if err != nil {
 		logSQLErr(sqlstr, args)
 		return result, myerr.New(err).Log().Stack()
