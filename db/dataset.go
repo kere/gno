@@ -90,7 +90,7 @@ func (d *DataSet) RangeI(b, e int) DataSet {
 // MapRowAt datarow
 func (d *DataSet) MapRowAt(i int) MapRow {
 	n := len(d.Columns)
-	if n == 0 || len(d.Columns[0]) >= i {
+	if n == 0 || i >= len(d.Columns[0]) {
 		return nil
 	}
 

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+
+	"github.com/valyala/bytebufferpool"
 )
 
 const (
@@ -111,7 +113,7 @@ func sqlInsertKeysByMapRow(row MapRow) ([]byte, []string) {
 	return bytes.Join(bkeys, BCommaSplit), keys
 }
 
-func writeInsertMByMapRow(buf *bytes.Buffer, keys []string, rows MapRows) []interface{} {
+func writeInsertMByMapRow(buf *bytebufferpool.ByteBuffer, keys []string, rows MapRows) []interface{} {
 	l := len(rows)
 	n := len(keys)
 	seq := 1
@@ -156,7 +158,7 @@ func writeInsertMByMapRow(buf *bytes.Buffer, keys []string, rows MapRows) []inte
 	return values
 }
 
-func writeInsertMByDataSet(buf *bytes.Buffer, dataset *DataSet) []interface{} {
+func writeInsertMByDataSet(buf *bytebufferpool.ByteBuffer, dataset *DataSet) []interface{} {
 	l := dataset.Len()
 	n := len(dataset.Fields)
 	seq := 1

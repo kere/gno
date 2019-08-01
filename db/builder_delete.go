@@ -1,7 +1,6 @@
 package db
 
 import (
-	"bytes"
 	"database/sql"
 )
 
@@ -25,16 +24,17 @@ func (d *DeleteBuilder) Table(t string) *DeleteBuilder {
 }
 
 func parseDelete(d *DeleteBuilder) string {
-	s := bytes.Buffer{}
+	buf := bytePool.Get()
+	// s := bytes.Buffer{}
 	driver := Current().Driver
-	s.Write(bSQLDelete)
-	s.Write(bSQLFrom)
-	s.WriteString(driver.QuoteField(d.table))
+	buf.Write(bSQLDelete)
+	buf.Write(bSQLFrom)
+	buf.Write(driver.QuoteFieldB(d.table))
 	if d.where != "" {
-		s.Write(bSQLWhere)
-		s.WriteString(d.GetDatabase().Driver.Adapt(d.where, 0))
+		buf.Write(bSQLWhere)
+		buf.WriteString(d.GetDatabase().Driver.Adapt(d.where, 0))
 	}
-	return s.String()
+	return buf.String()
 }
 
 // Where conditions

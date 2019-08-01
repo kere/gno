@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+
+	"github.com/valyala/bytebufferpool"
 )
 
 type insResult struct {
@@ -66,14 +68,6 @@ func (ins *InsertBuilder) Table(t string) *InsertBuilder {
 	return ins
 }
 
-var (
-	insInto = []byte("insert into ")
-	insVal1 = []byte(" (")
-	insVal2 = []byte(") values ")
-	// insBracketL = []byte("(")
-	// insBracketR = []byte(")")
-)
-
 func parseInsertM(ins *InsertBuilder, rows MapRows) (string, []interface{}) {
 	l := len(rows)
 	if l == 0 {
@@ -82,13 +76,13 @@ func parseInsertM(ins *InsertBuilder, rows MapRows) (string, []interface{}) {
 
 	bkeys, strkeys := sqlInsertKeysByMapRow(rows[0])
 
-	buf := bytes.NewBuffer(nil)
+	buf := bytePool.Get()
 	driver := ins.GetDatabase().Driver
-	buf.Write(insInto)
+	buf.Write(bInsSQL)
 	buf.WriteString(driver.QuoteField(ins.table))
-	buf.Write(insVal1)
+	buf.Write(bInsBracketL)
 	buf.Write(bkeys)
-	buf.Write(insVal2)
+	buf.Write(bInsBracketR)
 
 	values := writeInsertMByMapRow(buf, strkeys, rows)
 
@@ -102,13 +96,15 @@ func parseInsertM2(ins *InsertBuilder, dataset *DataSet) (string, []interface{})
 
 	keys := dataset.Fields
 
-	buf := bytes.NewBuffer(nil)
+	// buf := bytes.NewBuffer(nil)
+	buf := bytebufferpool.Get()
+
 	database := ins.GetDatabase()
 	driver := database.Driver
 
-	buf.Write(insInto)
-	buf.WriteString(driver.QuoteField(ins.table))
-	buf.Write(insVal1)
+	buf.Write(bInsSQL)
+	buf.Write(driver.QuoteFieldB(ins.table))
+	buf.Write(bInsBracketL)
 	n := len(keys)
 	for i := 0; i < n; i++ {
 		buf.Write(database.Driver.QuoteFieldB(keys[i]))
@@ -116,7 +112,7 @@ func parseInsertM2(ins *InsertBuilder, dataset *DataSet) (string, []interface{})
 			buf.WriteByte(',')
 		}
 	}
-	buf.Write(insVal2)
+	buf.Write(bInsBracketR)
 
 	values := writeInsertMByDataSet(buf, dataset)
 
@@ -135,11 +131,11 @@ func parseInsert(ins *InsertBuilder, row MapRow, hasReturnID bool) (string, []in
 
 	s := bytes.Buffer{}
 	driver := ins.GetDatabase().Driver
-	s.Write(insInto)
-	s.WriteString(driver.QuoteField(ins.table))
-	s.Write(insVal1)
+	s.Write(bInsSQL)
+	s.Write(driver.QuoteFieldB(ins.table))
+	s.Write(bInsBracketL)
 	s.Write(keys)
-	s.Write(insVal2)
+	s.Write(bInsBracketR)
 	s.WriteByte('(')
 	s.Write(bytes.Join(stmts, BCommaSplit))
 	s.WriteByte(')')

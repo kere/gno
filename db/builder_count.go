@@ -35,20 +35,21 @@ func (c *CounterBuilder) GetPrepare() bool {
 
 // Count db
 func (c *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) {
-	s := bytes.Buffer{}
+	// s := bytes.Buffer{}
+	buf := bytePool.Get()
 	// driver := database.Driver
-	s.WriteString("SELECT count(1) as count FROM ")
-	s.WriteString(c.table)
+	buf.WriteString("SELECT count(1) as count FROM ")
+	buf.WriteString(c.table)
 
 	var rows MapRows
 	var err error
 
 	if c.isPrepare {
-		s.Write(bSQLWhere)
-		s.WriteString(c.GetDatabase().Driver.Adapt(cond, 0))
-		rows, err = c.GetDatabase().QueryRowsPrepare(s.String(), args...)
+		buf.Write(bSQLWhere)
+		buf.WriteString(c.GetDatabase().Driver.Adapt(cond, 0))
+		rows, err = c.GetDatabase().QueryRowsPrepare(buf.String(), args...)
 	} else {
-		rows, err = c.GetDatabase().QueryRows(s.String())
+		rows, err = c.GetDatabase().QueryRows(buf.String())
 	}
 
 	if err != nil {

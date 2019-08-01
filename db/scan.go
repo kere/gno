@@ -17,6 +17,7 @@ func ScanToDataSet(rows *sql.Rows) (DataSet, error) {
 	if err != nil {
 		return result, err
 	}
+
 	fields := make([]string, colsNum)
 	typItems := make([]DataType, colsNum)
 	for i := 0; i < colsNum; i++ {
@@ -24,7 +25,8 @@ func ScanToDataSet(rows *sql.Rows) (DataSet, error) {
 		fields[i] = typs[i].Name()
 	}
 
-	result = DataSet{Types: typItems, Fields: fields}
+	result = DataSet{Types: typItems, Fields: fields, Columns: make([]DataColumn, colsNum)}
+
 	var row, tem []interface{}
 
 	for rows.Next() {

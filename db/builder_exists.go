@@ -1,9 +1,5 @@
 package db
 
-import (
-	"bytes"
-)
-
 // ExistsBuilder class
 type ExistsBuilder struct {
 	table string
@@ -45,18 +41,22 @@ func (e *ExistsBuilder) Where(s string, args ...interface{}) *ExistsBuilder {
 	return e
 }
 
+var (
+	bExistsSQL = []byte("SELECT 1 as field FROM ")
+)
+
 func parseExists(e *ExistsBuilder) string {
-	s := bytes.Buffer{}
-	s.WriteString("SELECT 1 as field FROM ")
-	s.WriteString(Current().Driver.QuoteField(e.table))
+	// s := bytes.Buffer{}
+	buf := bytePool.Get()
+	buf.Write(bExistsSQL)
+	buf.Write(Current().Driver.QuoteFieldB(e.table))
 
 	if e.where != "" {
-		s.WriteString(" WHERE ")
-		s.WriteString(e.GetDatabase().Driver.Adapt(e.where, 0))
+		buf.Write(bSQLWhere)
+		buf.WriteString(e.GetDatabase().Driver.Adapt(e.where, 0))
 	}
-
-	s.WriteString(" LIMIT 1")
-	return s.String()
+	buf.Write(bSQLLimitOne)
+	return buf.String()
 }
 
 // Exists db

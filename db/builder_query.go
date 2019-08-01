@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+
+	"github.com/valyala/bytebufferpool"
 )
 
 var (
@@ -143,18 +145,20 @@ func (q *QueryBuilder) CacheExpire(expire int) *QueryBuilder {
 }
 
 func querybuildCacheKey(q *QueryBuilder, datamode int) string {
-	s := bytes.Buffer{}
-	s.WriteString(q.table)
-	setQueryFields(q, &s)
-	s.WriteString(fmt.Sprintf("%d%d", q.limit, q.offset))
-	// s.WriteString(strconv.FormatInt(q.limit, 10) + strconv.Formart(q.offset, 10))
-	s.WriteString(q.order)
+	// s := bytes.Buffer{}
+	buf := bytePool.Get()
+
+	buf.WriteString(q.table)
+	setQueryFields(q, buf)
+	buf.WriteString(fmt.Sprintf("%d%d", q.limit, q.offset))
+	// buf.WriteString(strconv.FormatInt(q.limit, 10) + strconv.Formart(q.offset, 10))
+	buf.WriteString(q.order)
 	if q.where != "" {
-		s.WriteString(q.where)
-		s.WriteString(fmt.Sprint(q.args))
+		buf.WriteString(q.where)
+		buf.WriteString(fmt.Sprint(q.args))
 	}
 
-	return fmt.Sprintf("db-%d-%s:%x", datamode, q.GetDatabase().Name, MD5(s.Bytes()))
+	return fmt.Sprintf("db-%d-%s:%x", datamode, q.GetDatabase().Name, MD5(buf.Bytes()))
 }
 
 // ClearCache func
@@ -167,26 +171,27 @@ func (q *QueryBuilder) ClearCache() {
 }
 
 func parseQuery(q *QueryBuilder) string {
-	s := bytes.Buffer{}
-	s.Write(bSQLSelect)
+	// s := bytes.Buffer{}
+	buf := bytebufferpool.Get()
+	buf.Write(bSQLSelect)
 
-	setQueryFields(q, &s)
+	setQueryFields(q, buf)
 
-	s.Write(bSQLFrom)
-	s.WriteString(q.table)
+	buf.Write(bSQLFrom)
+	buf.WriteString(q.table)
 
 	if len(q.leftJoin) > 0 {
-		s.WriteString(" left join ")
-		s.WriteString(q.leftJoin)
+		buf.Write(bSQLLeftJoin)
+		buf.WriteString(q.leftJoin)
 	}
 
 	if q.where != "" {
-		s.Write(bSQLWhere)
-		s.WriteString(q.GetDatabase().Driver.Adapt(q.where, 0))
+		buf.Write(bSQLWhere)
+		buf.WriteString(q.GetDatabase().Driver.Adapt(q.where, 0))
 	}
 	if q.order != "" {
-		s.Write(bSQLOrder)
-		s.WriteString(q.order)
+		buf.Write(bSQLOrder)
+		buf.WriteString(q.order)
 	}
 
 	limit := q.limit
@@ -195,18 +200,18 @@ func parseQuery(q *QueryBuilder) string {
 	}
 
 	if limit > 0 && q.offset > 0 {
-		s.Write(bSQLLimit)
-		s.WriteString(string(limit))
-		s.Write(bSQLOffset)
-		s.WriteString(string(q.offset))
+		buf.Write(bSQLLimit)
+		buf.WriteString(string(limit))
+		buf.Write(bSQLOffset)
+		buf.WriteString(string(q.offset))
 	} else if limit > 0 {
-		s.Write(bSQLLimit)
-		s.WriteString(strconv.FormatInt(int64(limit), 10))
+		buf.Write(bSQLLimit)
+		buf.WriteString(strconv.FormatInt(int64(limit), 10))
 	} else if q.offset > 0 {
-		s.Write(bSQLOffset)
-		s.WriteString(strconv.FormatInt(int64(q.offset), 10))
+		buf.Write(bSQLOffset)
+		buf.WriteString(strconv.FormatInt(int64(q.offset), 10))
 	}
-	return s.String()
+	return buf.String()
 }
 
 // Query return DataSet
@@ -279,7 +284,7 @@ func (q *QueryBuilder) QueryOne() (MapRow, error) {
 	return nil, nil
 }
 
-func setQueryFields(q *QueryBuilder, s *bytes.Buffer) {
+func setQueryFields(q *QueryBuilder, buf *bytebufferpool.ByteBuffer) {
 	field := BStarKey
 	if q.field != "" {
 		field = []byte(q.field)
@@ -288,7 +293,7 @@ func setQueryFields(q *QueryBuilder, s *bytes.Buffer) {
 		field = bytes.Join(sm.DBFields(), BCommaSplit)
 	}
 
-	s.Write(field)
+	buf.Write(field)
 }
 
 // TxQuery transction

@@ -44,16 +44,21 @@ var (
 	// DTFormat not with time zone
 	DTFormat = "2006-01-02 15:04:05"
 
-	bSQLSelect   = []byte("select ")
-	bSQLDelete   = []byte("delete ")
-	bSQLUpdate   = []byte("update ")
-	bSQLSet      = []byte(" set ")
-	bSQLFrom     = []byte(" from ")
-	bSQLWhere    = []byte(" where ")
-	bSQLOrder    = []byte(" order by ")
-	bSQLLimit    = []byte(" limit ")
-	bSQLLimitOne = []byte(" limit 1")
-	bSQLOffset   = []byte(" offset ")
+	bSQLSelect   = []byte("SELECT ")
+	bSQLDelete   = []byte("DELETE ")
+	bSQLUpdate   = []byte("UPDATE ")
+	bSQLSet      = []byte(" SET ")
+	bSQLFrom     = []byte(" FROM ")
+	bSQLWhere    = []byte(" WHERE ")
+	bSQLOrder    = []byte(" ORDER BY ")
+	bSQLLimit    = []byte(" LIMIT ")
+	bSQLLimitOne = []byte(" LIMIT 1")
+	bSQLOffset   = []byte(" OFFSET ")
+	bSQLLeftJoin = []byte(" LEFT JOIN ")
+
+	bInsSQL      = []byte("INSERT INTO ")
+	bInsBracketL = []byte(" (")
+	bInsBracketR = []byte(") VALUES ")
 
 	// BDoller $
 	BDoller = []byte("$")

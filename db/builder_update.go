@@ -1,7 +1,6 @@
 package db
 
 import (
-	"bytes"
 	"database/sql"
 )
 
@@ -28,18 +27,19 @@ func parseUpdate(u *UpdateBuilder, row MapRow) (string, []interface{}) {
 	// keys, values, _ := keyValueList(ActionUpdate, data)
 	keys, values := sqlUpdateParamsByMapRow(row)
 
-	s := bytes.Buffer{}
+	buf := bytePool.Get()
+	// s := bytes.Buffer{}
 	driver := u.GetDatabase().Driver
-	s.Write(bSQLUpdate)
-	s.WriteString(driver.QuoteField(u.table))
-	s.Write(bSQLSet)
-	s.Write(keys)
+	buf.Write(bSQLUpdate)
+	buf.WriteString(driver.QuoteField(u.table))
+	buf.Write(bSQLSet)
+	buf.Write(keys)
 	if u.where != "" {
-		s.Write(bSQLWhere)
-		s.WriteString(driver.Adapt(u.where, len(values)))
+		buf.Write(bSQLWhere)
+		buf.WriteString(driver.Adapt(u.where, len(values)))
 		values = append(values, u.args...)
 	}
-	return s.String(), values
+	return buf.String(), values
 }
 
 // Where sql
