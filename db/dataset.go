@@ -3,7 +3,9 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"reflect"
+	"strings"
 )
 
 // DataType class
@@ -49,9 +51,23 @@ type DataColumn []interface{}
 
 // DataSet data rows
 type DataSet struct {
-	Fields  []string
-	Types   []DataType
-	Columns []DataColumn
+	Fields  []string     `json:"fields"`
+	Types   []DataType   `json:"-"`
+	Columns []DataColumn `json:"columns"`
+}
+
+// PrintDataSet print
+func PrintDataSet(dat *DataSet) {
+	l := dat.Len()
+	n := len(dat.Columns)
+	fmt.Println(strings.Join(dat.Fields, "\t"))
+	for i := 0; i < l; i++ {
+		for k := 0; k < n; k++ {
+			fmt.Print(dat.Columns[k][i], "\t")
+		}
+		fmt.Println()
+	}
+	fmt.Println("length:", l)
 }
 
 // NewDataSet new

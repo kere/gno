@@ -10,13 +10,12 @@ import (
 )
 
 var (
-	b_r_HSTORE = []byte("\"=>\"")
-	b_r_JSON   = []byte("\":\"")
+	brHSTORE = []byte("\"=>\"")
+	brJSON   = []byte("\":\"")
 )
 
 //Postgres class
 type Postgres struct {
-	Common
 	DBName   string
 	User     string
 	Password string
@@ -76,7 +75,7 @@ func (p *Postgres) ConnectString() string {
 	}
 }
 
-func (p *Postgres) LastInsertId(table, pkey string) string {
+func (p *Postgres) LastInsertID(table, pkey string) string {
 	// return "select currval(pg_get_serial_sequence('" + table + "','" + pkey + "'))"
 	return fmt.Sprint("select currval(pg_get_serial_sequence('", table, "','", pkey, "')) as count")
 }
@@ -108,8 +107,8 @@ func (p *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
 
 }
 
-// FlatData for value
-func (p *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
+// StoreData for value
+func (p *Postgres) StoreData(typ reflect.Type, v interface{}) interface{} {
 	if v == nil {
 		return "NULL"
 	}
@@ -122,9 +121,8 @@ func (p *Postgres) FlatData(typ reflect.Type, v interface{}) interface{} {
 	case reflect.Bool:
 		if v.(bool) {
 			return "t"
-		} else {
-			return "f"
 		}
+		return "f"
 
 	case reflect.Array:
 		return p.sliceToStore(typ, v)
@@ -223,7 +221,7 @@ func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
 
 // HStore db
 func (p *Postgres) HStore(src []byte) (map[string]string, error) {
-	src = bytes.Replace(src, b_r_HSTORE, b_r_JSON, -1)
+	src = bytes.Replace(src, brHSTORE, brJSON, -1)
 	src = append(b_BRACE_LEFT, src...)
 	v := make(map[string]string)
 
@@ -248,4 +246,22 @@ func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 	}
 
 	return nil
+}
+
+func (p *Postgres) QuoteField(str string) string {
+	return `"` + str + `"`
+}
+
+func (p *Postgres) QuoteFieldB(s string) []byte {
+	l := len(s)
+
+	// l+8 : "name"=$1234
+	arr := make([]byte, l+2, l+8)
+	arr[0] = '"'
+	for i := 0; i < l; i++ {
+		arr[i+1] = s[i]
+	}
+	arr[l+1] = '"'
+
+	return arr
 }

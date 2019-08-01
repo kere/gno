@@ -72,7 +72,7 @@ func ScanToMapRows(rows *sql.Rows) (MapRows, error) {
 			return nil, err
 		}
 
-		rowData := MapRow{}
+		rowData := make(map[string]interface{})
 
 		for i := 0; i < colsNum; i++ {
 			rowData[cols[i]] = row[i]

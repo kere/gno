@@ -33,16 +33,6 @@ func (b *builder) SetDatabase(d *Database) {
 	b.database = d
 }
 
-// func bKeysByMapRow(action string, row MapRow) [][]byte {
-// 	l := len(row)
-// 	keys = make([][]byte, l)
-//
-// 	for k := range row {
-// 		keys[i] = []byte(k)
-// 	}
-// 	return keys
-// }
-
 func sqlUpdateParamsByMapRow(row MapRow) ([]byte, []interface{}) {
 	l := len(row)
 	keys := make([][]byte, l)
@@ -67,7 +57,7 @@ func sqlUpdateParamsByMapRow(row MapRow) ([]byte, []interface{}) {
 			b, _ := json.Marshal(row[k])
 			values[i] = b
 		} else {
-			values[i] = database.Driver.FlatData(reflect.TypeOf(row[k]), row[k])
+			values[i] = database.Driver.StoreData(reflect.TypeOf(row[k]), row[k])
 		}
 
 		i++
@@ -90,7 +80,7 @@ func sqlInsertParamsByMapRow(row MapRow) ([]byte, []interface{}) {
 			b, _ := json.Marshal(row[k])
 			values[i] = append(values, b)
 		} else {
-			values[i] = database.Driver.FlatData(reflect.TypeOf(row[k]), row[k])
+			values[i] = database.Driver.StoreData(reflect.TypeOf(row[k]), row[k])
 		}
 
 		i++
@@ -131,7 +121,7 @@ func writeInsertMByMapRow(buf *bytebufferpool.ByteBuffer, keys []string, rows Ma
 			if len(key) > 5 && key[len(key)-5:] == subfixJSON {
 				val, _ = json.Marshal(row[key])
 			} else {
-				val = database.Driver.FlatData(reflect.TypeOf(row[key]), row[key])
+				val = database.Driver.StoreData(reflect.TypeOf(row[key]), row[key])
 			}
 
 			values = append(values, val)
@@ -178,7 +168,7 @@ func writeInsertMByDataSet(buf *bytebufferpool.ByteBuffer, dataset *DataSet) []i
 			if len(key) > 5 && key[len(key)-5:] == subfixJSON {
 				val, _ = json.Marshal(v)
 			} else {
-				val = database.Driver.FlatData(reflect.TypeOf(v), v)
+				val = database.Driver.StoreData(reflect.TypeOf(v), v)
 			}
 
 			values = append(values, val)
@@ -218,7 +208,7 @@ func writeInsertMByDataSet(buf *bytebufferpool.ByteBuffer, dataset *DataSet) []i
 // 			b, _ := json.Marshal(row[k])
 // 			val = string(b)
 // 		} else {
-// 			val = database.Driver.FlatData(reflect.TypeOf(row[k]), row[k])
+// 			val = database.Driver.StoreData(reflect.TypeOf(row[k]), row[k])
 // 		}
 //
 // 		switch val.(type) {
@@ -301,7 +291,7 @@ func writeInsertMByDataSet(buf *bytebufferpool.ByteBuffer, dataset *DataSet) []i
 // 			b, _ := json.Marshal(v)
 // 			values = append(values, b)
 // 		} else {
-// 			values = append(values, database.Driver.FlatData(typ, v))
+// 			values = append(values, database.Driver.StoreData(typ, v))
 // 		}
 //
 // 		i++

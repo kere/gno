@@ -10,7 +10,6 @@ import (
 )
 
 type Mysql struct {
-	Common
 	DBName     string
 	User       string
 	Password   string
@@ -24,37 +23,51 @@ type Mysql struct {
 // username:password@protocol(address)/dbname?param=value
 // root:pw@unix(/tmp/mysql.sock)/myDatabase?loc=Local
 // user:password@tcp(localhost:5555)/dbname?tls=skip-verify&autocommit=true
-func (this *Mysql) ConnectString() string {
+func (m *Mysql) ConnectString() string {
 	protocol := "tcp"
-	if this.Protocol != "" {
-		protocol = this.Protocol
+	if m.Protocol != "" {
+		protocol = m.Protocol
 	}
 
 	addr := "127.0.0.1:3306"
-	if this.Addr != "" {
-		addr = this.Addr
+	if m.Addr != "" {
+		addr = m.Addr
 	}
 
-	if this.Parameters != "" {
-		this.Parameters = "?" + this.Parameters
+	if m.Parameters != "" {
+		m.Parameters = "?" + m.Parameters
 	}
 
-	return fmt.Sprintf("%s:%s@%s(%s)/%s%s", this.User, this.Password, protocol, addr, this.DBName, this.Parameters)
+	return fmt.Sprintf("%s:%s@%s(%s)/%s%s", m.User, m.Password, protocol, addr, m.DBName, m.Parameters)
 }
 
-func (this *Mysql) QuoteField(s string) string {
-	return fmt.Sprint("`", s, "`")
+func (m *Mysql) QuoteField(str string) string {
+	return `"` + str + `"`
 }
 
-func (this *Mysql) LastInsertId(table, id string) string {
+func (m *Mysql) QuoteFieldB(str string) []byte {
+	l := len(str)
+
+	// l+8 : "name"=$1234
+	arr := make([]byte, l+2, l+8)
+	arr[0] = '"'
+	for i := 0; i < l; i++ {
+		arr[i+1] = str[i]
+	}
+	arr[l+1] = '"'
+
+	return arr
+}
+
+func (m *Mysql) LastInsertId(table, id string) string {
 	return "SELECT LAST_INSERT_ID() as count"
 }
 
-func (this *Mysql) Name() string {
+func (m *Mysql) Name() string {
 	return DriverMySQL
 }
 
-func (this *Mysql) toJson(v interface{}) []byte {
+func (m *Mysql) toJson(v interface{}) []byte {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return []byte("")
@@ -62,7 +75,7 @@ func (this *Mysql) toJson(v interface{}) []byte {
 	return b
 }
 
-func (this *Mysql) FlatData(typ reflect.Type, v interface{}) interface{} {
+func (m *Mysql) FlatData(typ reflect.Type, v interface{}) interface{} {
 	if v == nil {
 		return nil
 	}
@@ -80,18 +93,18 @@ func (this *Mysql) FlatData(typ reflect.Type, v interface{}) interface{} {
 		}
 
 	case reflect.Array:
-		return this.toJson(v)
+		return m.toJson(v)
 
 	case reflect.Slice:
 		switch v.(type) {
 		case []byte:
 			return v
 		default:
-			return this.toJson(v)
+			return m.toJson(v)
 		}
 
 	case reflect.Map:
-		return this.toJson(v)
+		return m.toJson(v)
 
 	case reflect.Struct:
 		switch v.(type) {
@@ -100,13 +113,13 @@ func (this *Mysql) FlatData(typ reflect.Type, v interface{}) interface{} {
 			return v
 
 		default:
-			return this.toJson(v)
+			return m.toJson(v)
 		}
 	}
 
 }
 
-func (this *Mysql) StringSlice(src []byte) ([]string, error) {
+func (m *Mysql) StringSlice(src []byte) ([]string, error) {
 	if len(src) == 0 {
 		return []string{}, nil
 	}
@@ -126,19 +139,19 @@ func (this *Mysql) StringSlice(src []byte) ([]string, error) {
 	return v, nil
 }
 
-func (this *Mysql) Int64Slice(src []byte) ([]int64, error) {
+func (m *Mysql) Int64Slice(src []byte) ([]int64, error) {
 	if len(src) == 0 {
 		return []int64{}, nil
 	}
 	var arr = make([]int64, 0)
-	if err := this.ParseNumberSlice(src, &arr); err != nil {
+	if err := m.ParseNumberSlice(src, &arr); err != nil {
 		return nil, err
 	}
 
 	return arr, nil
 }
 
-func (this *Mysql) ParseStringSlice(src []byte, ptr interface{}) error {
+func (m *Mysql) ParseStringSlice(src []byte, ptr interface{}) error {
 	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
@@ -148,7 +161,7 @@ func (this *Mysql) ParseStringSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-func (this *Mysql) ParseNumberSlice(src []byte, ptr interface{}) error {
+func (m *Mysql) ParseNumberSlice(src []byte, ptr interface{}) error {
 	if src == nil {
 		return errors.New("empty source")
 	}
@@ -163,8 +176,8 @@ func (this *Mysql) ParseNumberSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-func (this *Mysql) HStore(src []byte) (map[string]string, error) {
-	src = bytes.Replace(src, b_r_HSTORE, b_r_JSON, -1)
+func (m *Mysql) HStore(src []byte) (map[string]string, error) {
+	src = bytes.Replace(src, brHSTORE, brJSON, -1)
 	src = append(b_BRACE_LEFT, src...)
 	v := make(map[string]string)
 

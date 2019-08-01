@@ -30,7 +30,7 @@ func (t *Tx) GetTx() *sql.Tx {
 
 // Begin tx
 func (t *Tx) Begin() error {
-	t.conn = t.GetDatabase().Connection.Connect()
+	t.conn = t.GetDatabase().Conn()
 	tx, err := t.conn.Begin()
 	if err != nil {
 		t.IsError = true
@@ -236,20 +236,17 @@ func (t *Tx) pgCopyIn(table string, fields []string, rows []MapRow) error {
 	return err
 }
 
-func (t *Tx) close() error {
-	if t.conn == nil {
-		return nil
-	}
-	return t.conn.Close()
-}
+// func (t *Tx) close() error {
+// 	if t.conn == nil {
+// 		return nil
+// 	}
+// 	return t.conn.Close()
+// }
 
 // End func
 func (t *Tx) End() error {
-	err := t.Commit()
-	if err != nil {
-		return err
-	}
-	return t.close()
+	return t.Commit()
+	// return t.close()
 }
 
 // Commit func

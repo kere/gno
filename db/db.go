@@ -98,24 +98,23 @@ func New(name string, c map[string]string) *Database {
 			Port:     confGet(c, "port"),
 		}
 
-	case "mysql":
-		driver = &drivers.Mysql{DBName: confGet(c, "dbname"),
-			User:       confGet(c, "user"),
-			Password:   confGet(c, "password"),
-			Protocol:   confGet(c, "protocol"),
-			Parameters: confGet(c, "parameters"),
-			Addr:       confGet(c, "addr")}
-
-	case "sqlite3":
-		driver = &drivers.Sqlite3{File: confGet(c, "file")}
+	// case "mysql":
+	// 	driver = &drivers.Mysql{DBName: confGet(c, "dbname"),
+	// 		User:       confGet(c, "user"),
+	// 		Password:   confGet(c, "password"),
+	// 		Protocol:   confGet(c, "protocol"),
+	// 		Parameters: confGet(c, "parameters"),
+	// 		Addr:       confGet(c, "addr")}
+	//
+	// case "sqlite3":
+	// 	driver = &drivers.Sqlite3{File: confGet(c, "file")}
 
 	default:
-		logger.Println("you may need regist a custom driver: db.RegistDriver(Mysql{})")
-		driver = &drivers.Common{}
-
+		// driver = &drivers.Common{}
+		panic("you may need regist a custom driver: db.RegistDriver(Mysql{})")
 	}
 
-	driver.SetConnectString(confGet(c, "connect"))
+	// driver.SetConnectString(confGet(c, "connect"))
 	d := NewDatabase(name, driver, conf.Conf(c), logger)
 
 	dbpool.SetDatabase(name, d)
@@ -176,7 +175,7 @@ func cQuery(mode, pmode int, conn *sql.DB, sqlstr string, args ...interface{}) (
 	var stmt *sql.Stmt
 	var dataset DataSet
 
-	defer conn.Close()
+	// defer conn.Close()
 
 	if pmode == 1 {
 		stmt, err = conn.Prepare(sqlstr)
@@ -215,7 +214,7 @@ func cQuery(mode, pmode int, conn *sql.DB, sqlstr string, args ...interface{}) (
 // If your has more than on sql command, it will only excute the first.
 // This function use the current database from database bool
 func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, err error) {
-	defer conn.Close()
+	// defer conn.Close()
 	if len(args) == 0 {
 		result, err = conn.Exec(sqlstr)
 	} else {
@@ -231,18 +230,18 @@ func Exec(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, 
 // ExecPrepare sql on prepare mode
 // This function use the current database from database bool
 func ExecPrepare(conn *sql.DB, sqlstr string, args ...interface{}) (result sql.Result, err error) {
-	defer conn.Close()
-	s, err := conn.Prepare(sqlstr)
+	// defer conn.Close()
+	stmt, err := conn.Prepare(sqlstr)
 	if err != nil {
 		return nil, myerr.New(err).Log().Stack()
 	}
 
-	defer s.Close()
+	defer stmt.Close()
 
 	if len(args) == 0 {
-		result, err = s.Exec()
+		result, err = stmt.Exec()
 	} else {
-		result, err = s.Exec(args...)
+		result, err = stmt.Exec(args...)
 	}
 	if err != nil {
 		logSQLErr(sqlstr, args)
