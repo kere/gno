@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
+
+	"github.com/kere/gno/libs/util"
 )
 
 // DataType class
@@ -51,9 +54,10 @@ type DataColumn []interface{}
 
 // DataSet data rows
 type DataSet struct {
-	Fields  []string     `json:"fields"`
-	Types   []DataType   `json:"-"`
-	Columns []DataColumn `json:"columns"`
+	Fields      []string       `json:"fields"`
+	Types       []DataType     `json:"-"`
+	Columns     []DataColumn   `json:"columns"`
+	fieldIndexs map[string]int // 缓存field 索引
 }
 
 // PrintDataSet print
@@ -63,7 +67,13 @@ func PrintDataSet(dat *DataSet) {
 	fmt.Println(strings.Join(dat.Fields, "\t"))
 	for i := 0; i < l; i++ {
 		for k := 0; k < n; k++ {
-			fmt.Print(dat.Columns[k][i], "\t")
+			v := dat.Columns[k][i]
+			switch v.(type) {
+			case []byte:
+				fmt.Print(util.BytesToStr(v.([]byte)), "\t")
+			default:
+				fmt.Print(dat.Columns[k][i], "\t")
+			}
 		}
 		fmt.Println()
 	}
@@ -81,6 +91,21 @@ func (d *DataSet) Len() int {
 		return -1
 	}
 	return len(d.Columns[0])
+}
+
+// FieldI 字段索引
+func (d *DataSet) FieldI(field string) int {
+	if d.fieldIndexs == nil {
+		d.fieldIndexs = make(map[string]int)
+	}
+	n := len(d.Fields)
+	for i := 0; i < n; i++ {
+		if d.Fields[i] == field {
+			d.fieldIndexs[field] = i
+			return i
+		}
+	}
+	return -1
 }
 
 // First datarow
@@ -156,3 +181,149 @@ func (d *DataSet) AddDataRow(row DataRow) error {
 	}
 	return nil
 }
+
+// FloatAt index
+func (d *DataSet) FloatAt(i int, field string) (float64, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return 0, ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case float64:
+		return v.(float64), nil
+	case int64:
+		return float64(v.(int64)), nil
+	case bool:
+		if v.(bool) {
+			return 1, nil
+		}
+		return 0, nil
+	default:
+		return 0, ErrType
+	}
+}
+
+// Int64At index
+func (d *DataSet) Int64At(i int, field string) (int64, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return 0, ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case int64:
+		return v.(int64), nil
+	case float64:
+		return int64(v.(float64)), nil
+	case bool:
+		if v.(bool) {
+			return 1, nil
+		}
+		return 0, nil
+	default:
+		return 0, ErrType
+	}
+}
+
+// IntAt index
+func (d *DataSet) IntAt(i int, field string) (int, error) {
+	v, err := d.Int64At(i, field)
+	return int(v), err
+}
+
+// BoolAt index
+func (d *DataSet) BoolAt(i int, field string) (bool, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return false, ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		val := v.([]byte)
+		return len(val) > 0 && val[0] == 't', nil
+	case int64:
+		return v.(int64) == 1, nil
+	case float64:
+		return v.(float64) == 1, nil
+	default:
+		return false, ErrType
+	}
+}
+
+// StrAt index
+func (d *DataSet) StrAt(i int, field string) (string, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return "", ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		return util.BytesToStr(v.([]byte)), nil
+	default:
+		return fmt.Sprint(v), nil
+	}
+}
+
+// BytesAt index
+func (d *DataSet) BytesAt(i int, field string) ([]byte, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return nil, ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		return v.([]byte), nil
+	default:
+		return nil, ErrType
+	}
+}
+
+// TimeAt index
+func (d *DataSet) TimeAt(i int, field string) (time.Time, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return EmptyTime, ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case time.Time:
+		return v.(time.Time), nil
+	default:
+		return EmptyTime, ErrType
+	}
+}
+
+// // IntsAt index
+// func (d *DataSet) IntsAt(i int, field string) ([]int, error) {
+// 	k := d.FieldI(field)
+// 	if k < 0 {
+// 		return nil, ErrNoField
+// 	}
+// 	v := d.Columns[k][i]
+// 	switch v.(type) {
+// 	case []byte:
+// 		val := v.([]byte)
+//
+// 	default:
+// 		return nil, ErrType
+// 	}
+// }
+// // StrsAt index
+// func (d *DataSet) StrsAt(i int, field string) ([]string, error) {
+// 	k := d.FieldI(field)
+// 	if k < 0 {
+// 		return nil, ErrNoField
+// 	}
+// 	v := d.Columns[k][i]
+// 	switch v.(type) {
+// 	case []byte:
+// 		val := v.([]byte)
+//
+// 	default:
+// 		return nil, ErrType
+// 	}
+// }

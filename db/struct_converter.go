@@ -118,15 +118,15 @@ func (sc *StructConverter) Fields() []*StructField {
 // 	return keyValueList(stype, sc.target)
 // }
 
-//DataRow2Struct f
-func (sc *StructConverter) DataRow2Struct(maprow MapRow) (IVO, error) {
-	rowStruct := reflect.New(sc.GetTypeElem())
-	err := maprow.CopyToVO(rowStruct.Interface().(IVO))
-	if err != nil {
-		return nil, err
-	}
-	return (rowStruct.Interface()).(IVO), nil
-}
+// //DataRow2Struct f
+// func (sc *StructConverter) DataRow2Struct(maprow MapRow) (IVO, error) {
+// 	rowStruct := reflect.New(sc.GetTypeElem())
+// 	err := maprow.CopyToVO(rowStruct.Interface().(IVO))
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return (rowStruct.Interface()).(IVO), nil
+// }
 
 // // DataSet2Struct f
 // func (sc *StructConverter) DataSet2Struct(dataset DataSet) (VODataSet, error) {

@@ -2,16 +2,13 @@ package db
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
-	"sort"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/kere/gno/db/drivers"
+	"github.com/kere/gno/libs/util"
 )
 
 // MapRow row struct
@@ -123,12 +120,6 @@ func (dr MapRow) InsertIfNotFound(table string, where string, params ...interfac
 	return false, err
 }
 
-// Add datarow item
-// if current datarow is nil, then create
-func (dr MapRow) Add(field string, v interface{}) {
-	dr[field] = v
-}
-
 // IsEmpty check empty
 func (dr MapRow) IsEmpty() bool {
 	return len(dr) == 0
@@ -174,55 +165,29 @@ func (dr MapRow) Bytes2String() MapRow {
 	for k, v := range dr {
 		switch v.(type) {
 		case []byte:
-			dr[k] = string(v.([]byte))
+			dr[k] = util.BytesToStr(v.([]byte))
 		}
 	}
 	return dr
 }
 
-// // Bytes2NumericByFields convert to number type
-// func (dr MapRow) Bytes2NumericByFields(fields []string) MapRow {
-// 	for k := range dr {
-// 		if InStrings(fields, k) {
-// 			dr[k] = dr.Float(k)
-// 		}
-// 	}
-// 	return dr
-// }
-//
-// // Bytes2NumericBySubfix func
-// func (dr MapRow) Bytes2NumericBySubfix(subfix string) MapRow {
-// 	nn := len(subfix)
-// 	for k := range dr {
-// 		if k[len(k)-nn:] != subfix {
-// 			continue
-// 		}
-//
-// 		dr[k] = dr.Float(k)
-// 	}
-// 	return dr
-// }
-
 // Bool return
 func (dr MapRow) Bool(field string) bool {
 	switch dr[field].(type) {
-	case int, int64, int32, int16, int8, float32, float64, uint, uint64, uint32, uint16, uint8:
+	case int, int64:
 		return dr.Int64(field) > 0
 
 	case string:
-		switch dr[field].(string) {
-		case "t", "T":
-			return true
-
-		default:
+		v := dr[field].(string)
+		if len(v) != 1 {
 			return false
-
 		}
+		return v[0] == 't' || v[0] == 'T'
 	case bool:
 		return dr[field].(bool)
 
 	default:
-		return false
+		panic(ErrType)
 	}
 }
 
@@ -250,14 +215,11 @@ func (dr MapRow) Bytes(field string) []byte {
 	case float64, float32:
 		return []byte(strconv.FormatFloat(dr.Float(field), 'f', -1, 64))
 
-	case int, int64, int32, int8:
+	case int, int64:
 		return []byte(strconv.FormatInt(dr.Int64(field), 10))
 
-	case uint, uint64, uint32, uint8:
-		return []byte(strconv.FormatUint(dr.Uint64(field), 10))
-
 	default:
-		return BEmptyString
+		panic(ErrType)
 	}
 }
 
@@ -281,7 +243,7 @@ func (dr MapRow) String(field string) string {
 		return dr[field].(string)
 
 	case []byte:
-		return string(dr[field].([]byte))
+		return util.BytesToStr(dr[field].([]byte))
 
 	default:
 		return fmt.Sprint(dr[field])
@@ -297,53 +259,12 @@ func (dr MapRow) StringDefault(field string, v string) string {
 	return dr.String(field)
 }
 
-// Uint64 return
-func (dr MapRow) Uint64(field string) uint64 {
-	if dr[field] == nil {
-		return 0
-	}
-	// return dr[field].(int64)
-	switch dr[field].(type) {
-	case int, int64, int32, int16, int8:
-		return uint64(dr.Int64(field))
-
-	case float64, float32:
-		return uint64(dr.Float(field))
-
-	case uint:
-		return uint64(dr[field].(uint))
-
-	case uint64:
-		return dr[field].(uint64)
-
-	case uint32:
-		return uint64(dr[field].(uint32))
-
-	case uint16:
-		return uint64(dr[field].(uint16))
-
-	case uint8:
-		return uint64(dr[field].(uint8))
-
-	case string:
-		i, err := strconv.ParseInt(dr[field].(string), 10, 64)
-		if err != nil {
-			panic(err)
-		}
-		return uint64(i)
-
-	default:
-		panic(fmt.Sprintf("unknow field %s, can not convert to int64. this field type is %s", field, reflect.TypeOf(dr[field])))
-	}
-
-}
-
 // Int64 return
 func (dr MapRow) Int64(field string) int64 {
 	if dr[field] == nil {
 		return 0
 	}
-	// return dr[field].(int64)
+
 	switch dr[field].(type) {
 	case float64, float32:
 		return int64(dr.Float(field))
@@ -362,15 +283,6 @@ func (dr MapRow) Int64(field string) int64 {
 
 	case int32:
 		return int64(dr[field].(int32))
-
-	case int16:
-		return int64(dr[field].(int16))
-
-	case int8:
-		return int64(dr[field].(int8))
-
-	case uint, uint64, uint32, uint16, uint8:
-		return int64(dr.Uint64(field))
 
 	case string:
 		i, err := strconv.ParseInt(dr[field].(string), 10, 64)
@@ -437,13 +349,10 @@ func (dr MapRow) Float(field string) float64 {
 		return dr[field].(float64)
 
 	case float32:
-
 		return float64(dr[field].(float32))
-	case int, int64, int32, int16, int8:
 
+	case int, int64, int32, int16, int8:
 		return float64(dr.Int64(field))
-	case uint, uint64, uint32, uint16, uint8:
-		return float64(dr.Uint64(field))
 
 	default:
 		panic("unkonw float type to convert, maybe is nil[" + field + "]")
@@ -463,10 +372,17 @@ func (dr MapRow) Int64s(field string) []int64 {
 	switch dr[field].(type) {
 	case []int64:
 		return dr[field].([]int64)
+	case []byte:
+		v, err := Current().Driver.Int64s(dr[field].([]byte))
+		if err != nil {
+			panic(err)
+		}
+		return v
 
-	case string, []byte:
-		v := make([]int64, 0)
-		if err := dr.ParseNumberSlice(field, &v); err != nil {
+	case string:
+		s := dr[field].(string)
+		var v []int64
+		if err := Current().Driver.ParseNumberSlice(util.StrToBytes(s), &v); err != nil {
 			panic(err)
 		}
 		return v
@@ -495,12 +411,20 @@ func (dr MapRow) Ints(field string) []int {
 	case []int:
 		return dr[field].([]int)
 
-	case string, []byte:
-		v := make([]int, 0)
-		if err := dr.ParseNumberSlice(field, &v); err != nil {
+	case []byte:
+		v := dr[field].([]byte)
+		var val []int
+		if err := Current().Driver.ParseNumberSlice(v, &val); err != nil {
 			panic(err)
 		}
-		return v
+		return val
+	case string:
+		v := dr[field].(string)
+		var val []int
+		if err := Current().Driver.ParseNumberSlice(util.StrToBytes(v), &val); err != nil {
+			panic(err)
+		}
+		return val
 
 	default:
 		panic("Int64Slice unknow data type")
@@ -516,15 +440,15 @@ func (dr MapRow) IntsDefault(field string, v []int) []int {
 	return dr.Ints(field)
 }
 
-//ParseNumberSlice err
-func (dr MapRow) ParseNumberSlice(field string, ptr interface{}) error {
-	return Current().Driver.ParseNumberSlice(dr.Bytes(field), ptr)
-}
+// //ParseNumberSlice err
+// func (dr MapRow) ParseNumberSlice(field string, ptr interface{}) error {
+// 	return Current().Driver.ParseNumberSlice(dr.Bytes(field), ptr)
+// }
 
-//ParseStringSlice err
-func (dr MapRow) ParseStringSlice(field string, ptr interface{}) error {
-	return Current().Driver.ParseStringSlice(dr.Bytes(field), ptr)
-}
+// //ParseStringSlice err
+// func (dr MapRow) ParseStringSlice(field string, ptr interface{}) error {
+// 	return Current().Driver.ParseStringSlice(dr.Bytes(field), ptr)
+// }
 
 // Floats []float64
 func (dr MapRow) Floats(field string) []float64 {
@@ -532,17 +456,25 @@ func (dr MapRow) Floats(field string) []float64 {
 	case []float64:
 		return dr[field].([]float64)
 
-	case string, []byte:
+	case []byte:
+		v := dr[field].([]byte)
+		val, err := Current().Driver.Float64s(v)
+		if err != nil {
+			panic(err)
+		}
+		return val
+
+	case string:
 		b := dr.Bytes(field)
 		if len(b) > 0 {
-			s := make([]float64, 0)
+			var s []float64
 			if err := Current().Driver.ParseNumberSlice(b, &s); err != nil {
 				panic(err)
 			}
 			return s
 		}
 
-		return []float64{}
+		return nil
 
 	default:
 		panic("Floats unknow data type")
@@ -567,25 +499,27 @@ func (dr MapRow) Strings(field string) []string {
 			v[i] = fmt.Sprint(val)
 		}
 		return v
-	case string, []byte:
+	case []byte:
+		v := dr[field].([]byte)
+		val, err := Current().Driver.Strings(v)
+		if err != nil {
+			panic(err)
+		}
+		return val
 
-		s := dr.String(field)
+	case string:
+		s := dr[field].(string)
 		if s == "" {
-			return []string{}
+			return nil
 		}
 
-		l := len(s)
-		if l > 0 && Current().Driver.Name() == drivers.DriverPSQL {
-			if s[:1] == "{" && s[l-1:l] == "}" {
-				if arr, err := Current().Driver.StringSlice([]byte(s)); err == nil {
-					return arr
-				}
-				return []string{}
-			}
-		}
-		return strings.Split(s, ",")
+		var val []string
+		Current().Driver.ParseStringSlice(util.StrToBytes(s), &val)
+
+		return val
+
 	default:
-		return []string{}
+		panic(ErrType)
 	}
 }
 
@@ -631,24 +565,24 @@ func (dr MapRow) MapRows(field string) MapRows {
 
 }
 
-// Hstore dr
-func (dr MapRow) Hstore(field string) map[string]string {
-	switch dr[field].(type) {
-	case map[string]string:
-		return dr[field].(map[string]string)
-
-	case []byte, string:
-		data, err := Current().Driver.HStore(dr.Bytes(field))
-		if err != nil {
-			panic(err)
-		}
-		return data
-
-	default:
-		panic("Hstore unknow data type")
-	}
-
-}
+// // Hstore dr
+// func (dr MapRow) Hstore(field string) map[string]string {
+// 	switch dr[field].(type) {
+// 	case map[string]string:
+// 		return dr[field].(map[string]string)
+//
+// 	case []byte, string:
+// 		data, err := Current().Driver.HStore(dr.Bytes(field))
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		return data
+//
+// 	default:
+// 		panic("Hstore unknow data type")
+// 	}
+//
+// }
 
 // JSONParse data row to parse jSON field
 func (dr MapRow) JSONParse(field string, v interface{}) error {
@@ -663,13 +597,12 @@ func (dr MapRow) Time(field string) time.Time {
 // TimeParse default
 func (dr MapRow) TimeParse(field, layout string) time.Time {
 	if dr.IsNull(field) {
-		return time.Unix(0, 0)
+		return EmptyTime
 	}
 
 	switch dr[field].(type) {
 	case string:
 		t, err := time.Parse(layout, dr[field].(string))
-		// t, err := time.ParseInLocation(format, dr[field].(string), loc)
 		if err != nil {
 			panic(err)
 		}
@@ -699,189 +632,6 @@ func (dr MapRow) CopyToWithJSON(vo interface{}) error {
 	}
 
 	return json.Unmarshal(src, vo)
-}
-
-// CopyToVO func
-func (dr MapRow) CopyToVO(vo interface{}) error {
-	typ := reflect.TypeOf(vo)
-	if typ.Kind() != reflect.Ptr {
-		return errors.New("arg vo must be a kind of ptr")
-	}
-
-	typ = typ.Elem()
-	val := reflect.ValueOf(vo)
-	if val.IsNil() {
-		return errors.New("copy to struct failed, vo is nil")
-	}
-
-	val = val.Elem()
-	if !val.IsValid() {
-		return errors.New("copy to struct failed, vo is invalid")
-	}
-
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("MapRow ConvertTo failed ")
-		}
-	}()
-
-	var field string
-	var sf reflect.StructField
-
-	n := typ.NumField()
-	for i := 0; i < n; i++ {
-		sf = typ.Field(i)
-
-		field = sf.Tag.Get(FieldJSON)
-
-		if field == "" {
-			continue
-		}
-
-		if !dr.IsSet(field) {
-			continue
-		}
-
-		// fmt.Println(sf.Name, sf.Type.Kind())
-		switch sf.Type.Kind() {
-		case reflect.Ptr:
-			switch dr[field].(type) {
-			case []byte, string:
-				// data type is json
-				v := reflect.New(sf.Type.Elem())
-				err := dr.JSONParse(field, v.Interface())
-				if err != nil {
-					return err
-				}
-				val.Field(i).Set(v)
-
-			default:
-				val.Field(i).Set(reflect.ValueOf(dr[field]))
-
-			}
-
-		case reflect.Struct, reflect.Interface:
-			switch sf.Type.String() {
-			case timeClassName:
-				val.Field(i).Set(reflect.ValueOf(dr.Time(field)))
-
-			default:
-				switch dr[field].(type) {
-				case []byte, string:
-					// data type is json
-					v := reflect.New(sf.Type)
-					err := dr.JSONParse(field, v.Interface())
-					if err != nil {
-						return err
-					}
-					val.Field(i).Set(v.Elem())
-
-				default:
-					val.Field(i).Set(reflect.ValueOf(dr[field]))
-
-				}
-			}
-
-		case reflect.Map:
-			switch sf.Type.String() {
-			case "map[string]string":
-				val.Field(i).Set(reflect.ValueOf(dr.Hstore(field)))
-
-			case "db.MapRow", "map[string]interface {}":
-				val.Field(i).Set(reflect.ValueOf(dr.MapRow(field)))
-
-			default:
-				return fmt.Errorf("unkonw map data type of %s", sf.Type.String())
-			}
-
-		case reflect.Slice, reflect.Array:
-			switch arrayBaseType(sf.Type).Kind() {
-			case reflect.String:
-				// array base type is string
-				switch dr[field].(type) {
-				case []byte, string:
-					cv := reflect.New(val.Field(i).Type())
-					err := Current().Driver.ParseStringSlice(dr.Bytes(field), cv.Interface())
-					if err != nil {
-						return err
-					}
-					val.Field(i).Set(cv.Elem())
-
-				default:
-					b, err := json.Marshal(dr[field])
-					if err != nil {
-						return err
-					}
-					cv := reflect.New(val.Field(i).Type())
-					err = Current().Driver.ParseStringSlice(b, cv.Interface())
-					if err != nil {
-						return err
-					}
-					val.Field(i).Set(cv.Elem())
-				}
-
-			case reflect.Int64, reflect.Int, reflect.Int32, reflect.Float64, reflect.Float32:
-				// array base type is number
-				switch dr[field].(type) {
-				case []byte, string:
-					cv := reflect.New(val.Field(i).Type())
-					err := Current().Driver.ParseNumberSlice(dr.Bytes(field), cv.Interface())
-					if err != nil {
-						return err
-					}
-					val.Field(i).Set(cv.Elem())
-
-				default:
-					b, err := json.Marshal(dr[field])
-					if err != nil {
-						return err
-					}
-					cv := reflect.New(val.Field(i).Type())
-					err = Current().Driver.ParseNumberSlice(b, cv.Interface())
-					if err != nil {
-						return err
-					}
-					val.Field(i).Set(cv.Elem())
-				}
-
-			}
-
-		case reflect.String:
-			val.Field(i).SetString(dr.String(field))
-
-		case reflect.Int64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
-			val.Field(i).SetInt(dr.Int64(field))
-
-		case reflect.Uint64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
-			val.Field(i).SetUint(uint64(dr.Int64(field)))
-
-		case reflect.Bool:
-			val.Field(i).SetBool(dr.Bool(field))
-
-		case reflect.Float64, reflect.Float32:
-			val.Field(i).SetFloat(dr.Float(field))
-		}
-	}
-	return nil
-}
-
-// SplitData split map data
-func (dr MapRow) SplitData() ([]string, []interface{}) {
-	l := len(dr)
-	keys := make([]string, l)
-	vals := make([]interface{}, l)
-	i := 0
-	for k := range dr {
-		keys[i] = k
-		i++
-	}
-
-	sort.Strings(keys)
-	for i := 0; i < l; i++ {
-		vals[i] = dr[keys[i]]
-	}
-
-	return keys, vals
 }
 
 // Merge data

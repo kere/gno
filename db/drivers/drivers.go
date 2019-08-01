@@ -1,6 +1,8 @@
 package drivers
 
 const (
+	subfixJSON = "_json"
+
 	// DriverPSQL pgsql
 	DriverPSQL = "postgres"
 

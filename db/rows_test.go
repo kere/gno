@@ -44,11 +44,6 @@ func TestDataRow(t *testing.T) {
 	}
 	dat = row1.ChangedData(row2)
 	fmt.Println(dat)
-
-	row2["uint"] = uint(126)
-	if row2.Int("uint") != 126 {
-		t.Fatal("uint failed")
-	}
 }
 
 func TestDataSet(t *testing.T) {

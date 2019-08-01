@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"reflect"
 	"time"
 
 	"github.com/kere/gno/libs/conf"
@@ -16,12 +15,14 @@ type IDriver interface {
 	QuoteField(string) string
 	QuoteFieldB(string) []byte
 	LastInsertID(string, string) string
-	StoreData(reflect.Type, interface{}) interface{}
-	StringSlice([]byte) ([]string, error)
-	Int64Slice([]byte) ([]int64, error)
+	StoreData(key string, val interface{}) interface{}
+	Strings([]byte) ([]string, error)
+	Int64s([]byte) ([]int64, error)
+	Float64s([]byte) ([]float64, error)
+	Ints([]byte) ([]int, error)
 	ParseNumberSlice([]byte, interface{}) error
 	ParseStringSlice([]byte, interface{}) error
-	HStore([]byte) (map[string]string, error)
+	// HStore([]byte) (map[string]string, error)
 	Name() string
 }
 

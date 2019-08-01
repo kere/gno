@@ -16,13 +16,13 @@ type VO struct {
 func TestVO(t *testing.T) {
 	now := time.Now()
 	row := MapRow{"code": "code1", "name": "tom01", "finished_at": now}
-	vo := VO{}
-	row.CopyToVO(&vo)
-	if vo.Code != row.String("code") && vo.FinishedAt.String() != now.String() {
-		t.Fatal()
-	}
+	// vo := VO{}
+	// row.CopyToVO(&vo)
+	// if vo.Code != row.String("code") && vo.FinishedAt.String() != now.String() {
+	// 	t.Fatal()
+	// }
 
-	vo = VO{}
+	vo := VO{}
 	row.CopyToWithJSON(&vo)
 	if vo.Code != row.String("code") && vo.FinishedAt.String() != now.String() {
 		t.Fatal()

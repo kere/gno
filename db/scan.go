@@ -33,7 +33,7 @@ func ScanToDataSet(rows *sql.Rows) (DataSet, error) {
 		row = make([]interface{}, colsNum)
 		tem = make([]interface{}, colsNum)
 
-		for i := range row {
+		for i := 0; i < colsNum; i++ {
 			tem[i] = &row[i]
 		}
 
@@ -64,7 +64,7 @@ func ScanToMapRows(rows *sql.Rows) (MapRows, error) {
 		row = make([]interface{}, colsNum)
 		tem = make([]interface{}, colsNum)
 
-		for i := range row {
+		for i := 0; i < colsNum; i++ {
 			tem[i] = &row[i]
 		}
 

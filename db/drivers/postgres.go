@@ -7,6 +7,9 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
+	"github.com/valyala/bytebufferpool"
 )
 
 var (
@@ -65,97 +68,80 @@ func (p *Postgres) ConnectString() string {
 			p.Password,
 			p.HostAddr)
 
-	} else {
-		return fmt.Sprintf("dbname=%s user=%s password=%s host=%s port=%s sslmode=disable",
-			p.DBName,
-			p.User,
-			p.Password,
-			p.Host,
-			p.Port)
 	}
+	return fmt.Sprintf("dbname=%s user=%s password=%s host=%s port=%s sslmode=disable",
+		p.DBName,
+		p.User,
+		p.Password,
+		p.Host,
+		p.Port)
 }
 
+// LastInsertID f
 func (p *Postgres) LastInsertID(table, pkey string) string {
 	// return "select currval(pg_get_serial_sequence('" + table + "','" + pkey + "'))"
 	return fmt.Sprint("select currval(pg_get_serial_sequence('", table, "','", pkey, "')) as count")
 }
 
-func (p *Postgres) sliceToStore(typ reflect.Type, v interface{}) string {
-	switch typ.Kind() {
-	case reflect.Slice, reflect.Array:
-		value := reflect.ValueOf(v)
-		arr := make([]string, value.Len())
-		l := value.Len()
-		if l == 0 {
-			return "{}"
-		}
+var (
+	bytePool   bytebufferpool.Pool
+	emptyArray = "{}"
+)
 
-		var tmpV reflect.Value
-		for i := 0; i < l; i++ {
-			tmpV = value.Index(i)
-			arr[i] = p.sliceToStore(tmpV.Type(), tmpV.Interface())
-		}
-		return fmt.Sprint("{", strings.Join(arr, ","), "}")
-
-	case reflect.String:
-		return fmt.Sprint("'", v, "'")
-
-	default:
-		return fmt.Sprint(v)
-
+func sliceToStore(v interface{}) string {
+	val := reflect.ValueOf(v)
+	l := val.Len()
+	if l == 0 {
+		return emptyArray
 	}
+	arr := make([]string, l)
 
+	for i := 0; i < l; i++ {
+		v := val.Index(i)
+		arr[i] = fmt.Sprint(v.Interface())
+	}
+	return fmt.Sprint("{", strings.Join(arr, ","), "}")
 }
 
+// func Hstore()string{
+// 		// case map[string]string:
+// 			var valStr string
+// 			hdata := v.(map[string]string)
+// 			arr := make([]string, len(hdata))
+// 			i := 0
+// 			for kk, vv := range hdata {
+// 				valStr = strings.Replace(fmt.Sprint(vv), "\"", "\\\"", -1)
+// 				arr[i] = fmt.Sprint("\"", kk, "\"", "=>", "\"", valStr, "\"")
+// 				i++
+// 			}
+// 			return fmt.Sprint(strings.Join(arr, ","))
+// }
+
 // StoreData for value
-func (p *Postgres) StoreData(typ reflect.Type, v interface{}) interface{} {
+func (p *Postgres) StoreData(key string, v interface{}) interface{} {
 	if v == nil {
-		return "NULL"
+		return nil
 	}
 
+	if len(key) > 5 && key[len(key)-5:] == subfixJSON {
+		b, _ := json.Marshal(v)
+		return b
+	}
+
+	typ := reflect.TypeOf(v)
 	switch typ.Kind() {
-	// case reflect.String, reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
 	default:
 		return v
 
-	case reflect.Bool:
-		if v.(bool) {
-			return "t"
-		}
-		return "f"
-
 	case reflect.Array:
-		return p.sliceToStore(typ, v)
+		return sliceToStore(v)
 
 	case reflect.Slice:
 		switch v.(type) {
 		case []byte:
 			return v
 		default:
-			return p.sliceToStore(typ, v)
-		}
-
-	case reflect.Map:
-		switch v.(type) {
-		case map[string]string:
-			var valStr string
-			hdata := v.(map[string]string)
-			arr := make([]string, len(hdata))
-			i := 0
-			for kk, vv := range hdata {
-				valStr = strings.Replace(fmt.Sprint(vv), "\"", "\\\"", -1)
-				arr[i] = fmt.Sprint("\"", kk, "\"", "=>", "\"", valStr, "\"")
-				i++
-			}
-			return fmt.Sprint(strings.Join(arr, ","))
-
-		default:
-			b, err := json.Marshal(v)
-			if err != nil {
-				return []byte("")
-			}
-			return b
-
+			return sliceToStore(v)
 		}
 
 	case reflect.Struct:
@@ -164,72 +150,75 @@ func (p *Postgres) StoreData(typ reflect.Type, v interface{}) interface{} {
 			return v
 
 		default:
-			b, err := json.Marshal(v)
-			if err != nil {
-				return []byte("")
-			}
+			b, _ := json.Marshal(v)
 			return b
 		}
 	}
-
 }
 
-func (p *Postgres) StringSlice(src []byte) ([]string, error) {
+// Strings
+func (p *Postgres) Strings(src []byte) ([]string, error) {
 	if len(src) == 0 {
-		return []string{}, nil
+		return nil, nil
 	}
 
-	src = bytes.TrimPrefix(src, b_BRACE_LEFT)
-	src = bytes.TrimSuffix(src, b_BRACE_RIGHT)
+	arr := pq.StringArray{}
+	return arr, arr.Scan(src)
+}
+
+// Int64s arr
+func (p *Postgres) Int64s(src []byte) ([]int64, error) {
 	if len(src) == 0 {
-		return []string{}, nil
+		return nil, nil
 	}
 
-	arr := bytes.Split(src, b_COMMA)
-	l := len(arr)
-	v := make([]string, len(arr))
-	for i := 0; i < l; i++ {
-		v[i] = string(bytes.Trim(arr[i], "'"))
-	}
-
-	return v, nil
+	arr := pq.Int64Array{}
+	return arr, arr.Scan(src)
 }
 
-func (p *Postgres) Int64Slice(src []byte) ([]int64, error) {
+// Float64s arr
+func (p *Postgres) Float64s(src []byte) ([]float64, error) {
 	if len(src) == 0 {
-		return []int64{}, nil
-	}
-	var arr = make([]int64, 0)
-	if err := p.ParseNumberSlice(src, &arr); err != nil {
-		return nil, err
+		return nil, nil
 	}
 
-	return arr, nil
+	arr := pq.Float64Array{}
+	return arr, arr.Scan(src)
 }
 
-func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
-	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
-	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
-	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
-
-	if err := json.Unmarshal(src, ptr); err != nil {
-		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
+// Ints arr
+func (p *Postgres) Ints(src []byte) ([]int, error) {
+	if len(src) == 0 {
+		return nil, nil
 	}
-
-	return nil
+	var vals []int
+	err := p.ParseNumberSlice(src, &vals)
+	return vals, err
 }
 
-// HStore db
-func (p *Postgres) HStore(src []byte) (map[string]string, error) {
-	src = bytes.Replace(src, brHSTORE, brJSON, -1)
-	src = append(b_BRACE_LEFT, src...)
-	v := make(map[string]string)
+// func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
+// 	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
+// 	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
+// 	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
+//
+// 	if err := json.Unmarshal(src, ptr); err != nil {
+// 		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
+// 	}
+//
+// 	return nil
+// }
 
-	if err := json.Unmarshal(append(src, b_BRACE_RIGHT...), &v); err != nil {
-		return nil, fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
-	}
-	return v, nil
-}
+// // HStore db
+// func (p *Postgres) HStore(src []byte) (map[string]string, error) {
+// 	src = bytes.Replace(src, brHSTORE, brJSON, -1)
+// 	src = append(b_BRACE_LEFT, src...)
+// 	v := make(map[string]string)
+//
+// 	if err := json.Unmarshal(append(src, b_BRACE_RIGHT...), &v); err != nil {
+// 		return nil, fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
+// 	}
+// 	return v, nil
+// }
 
 // ParseNumberSlice db number slice
 func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
@@ -248,10 +237,25 @@ func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
+// ParseStringSlice db number slice
+func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
+	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
+	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
+	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
+
+	if err := json.Unmarshal(src, ptr); err != nil {
+		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
+	}
+
+	return nil
+}
+
+// QuoteField f
 func (p *Postgres) QuoteField(str string) string {
 	return `"` + str + `"`
 }
 
+// QuoteFieldB f
 func (p *Postgres) QuoteFieldB(s string) []byte {
 	l := len(s)
 
