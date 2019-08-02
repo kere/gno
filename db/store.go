@@ -21,11 +21,11 @@ func sqlUpdateParamsByMapRow(row MapRow) ([]byte, []interface{}) {
 	for k := range row {
 		if row[k] == nil {
 			// value=NULL
-			tmp := append(database.Driver.QuoteFieldB(k), '=')
+			tmp := append(database.Driver.QuoteIdentifierB(k), '=')
 			keys[i] = append(tmp, BNull...)
 		} else {
 			// value != nil
-			tmp := append(database.Driver.QuoteFieldB(k), '=', '$')
+			tmp := append(database.Driver.QuoteIdentifierB(k), '=', '$')
 			keys[i] = append(tmp, []byte(fmt.Sprint(seq))...)
 		}
 
@@ -46,8 +46,22 @@ func sqlInsertParamsByMapRow(row MapRow) ([]byte, []interface{}) {
 	values := make([]interface{}, l)
 
 	for k := range row {
-		keys[i] = database.Driver.QuoteFieldB(k)
+		keys[i] = database.Driver.QuoteIdentifierB(k)
 		values[i] = database.Driver.StoreData(k, row[k])
+		i++
+	}
+	return bytes.Join(keys, BCommaSplit), values
+}
+
+func sqlInsertParams(fields []string, row Row) ([]byte, []interface{}) {
+	n := len(fields)
+	keys := make([][]byte, n)
+	database := Current()
+	values := make([]interface{}, n)
+
+	for i := 0; i < n; i++ {
+		keys[i] = database.Driver.QuoteIdentifierB(fields[i])
+		values[i] = database.Driver.StoreData(fields[i], row[i])
 		i++
 	}
 	return bytes.Join(keys, BCommaSplit), values
@@ -62,7 +76,7 @@ func sqlInsertKeysByMapRow(row MapRow) ([]byte, []string) {
 
 	for k := range row {
 		keys[i] = k
-		bkeys[i] = database.Driver.QuoteFieldB(k)
+		bkeys[i] = database.Driver.QuoteIdentifierB(k)
 		i++
 	}
 	return bytes.Join(bkeys, BCommaSplit), keys

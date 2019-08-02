@@ -46,11 +46,12 @@ func (c *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) 
 
 	if c.isPrepare {
 		buf.Write(bSQLWhere)
-		buf.WriteString(c.GetDatabase().Driver.Adapt(cond, 0))
+		buf.Write(c.GetDatabase().Driver.Adapt(cond, 0))
 		rows, err = c.GetDatabase().QueryRowsPrepare(buf.String(), args...)
 	} else {
 		rows, err = c.GetDatabase().QueryRows(buf.String())
 	}
+	bytePool.Put(buf)
 
 	if err != nil {
 		return -1, err
@@ -70,7 +71,7 @@ func (c *CounterBuilder) TxCount(tx *Tx, cond string, args ...interface{}) (int6
 
 	if c.isPrepare {
 		s.Write(bSQLWhere)
-		s.WriteString(c.GetDatabase().Driver.Adapt(cond, 0))
+		s.Write(c.GetDatabase().Driver.Adapt(cond, 0))
 		row, err = tx.QueryOnePrepare(s.String(), args...)
 	} else {
 		row, err = tx.QueryOne(s.String())

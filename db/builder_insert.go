@@ -79,17 +79,20 @@ func parseInsertM(ins *InsertBuilder, rows MapRows) (string, []interface{}) {
 	buf := bytePool.Get()
 	driver := ins.GetDatabase().Driver
 	buf.Write(bInsSQL)
-	buf.WriteString(driver.QuoteField(ins.table))
+	buf.Write(driver.QuoteIdentifierB(ins.table))
 	buf.Write(bInsBracketL)
 	buf.Write(bkeys)
 	buf.Write(bInsBracketR)
 
 	values := writeInsertMByMapRow(buf, strkeys, rows)
 
-	return buf.String(), values
+	str := buf.String()
+	bytePool.Put(buf)
+
+	return str, values
 }
 
-func parseInsertM2(ins *InsertBuilder, dataset *DataSet) (string, []interface{}) {
+func parseInsertM2(ins *InsertBuilder, dataset DataSet) (string, []interface{}) {
 	if dataset.Len() == 0 {
 		return "", nil
 	}
@@ -103,18 +106,18 @@ func parseInsertM2(ins *InsertBuilder, dataset *DataSet) (string, []interface{})
 	driver := database.Driver
 
 	buf.Write(bInsSQL)
-	buf.Write(driver.QuoteFieldB(ins.table))
+	buf.Write(driver.QuoteIdentifierB(ins.table))
 	buf.Write(bInsBracketL)
 	n := len(keys)
 	for i := 0; i < n; i++ {
-		buf.Write(database.Driver.QuoteFieldB(keys[i]))
+		buf.Write(database.Driver.QuoteIdentifierB(keys[i]))
 		if i < n-1 {
 			buf.WriteByte(',')
 		}
 	}
 	buf.Write(bInsBracketR)
 
-	values := writeInsertMByDataSet(buf, dataset)
+	values := writeInsertMByDataSet(buf, &dataset)
 
 	return buf.String(), values
 }
@@ -132,7 +135,7 @@ func parseInsert(ins *InsertBuilder, row MapRow, hasReturnID bool) (string, []in
 	s := bytes.Buffer{}
 	driver := ins.GetDatabase().Driver
 	s.Write(bInsSQL)
-	s.Write(driver.QuoteFieldB(ins.table))
+	s.Write(driver.QuoteIdentifierB(ins.table))
 	s.Write(bInsBracketL)
 	s.Write(keys)
 	s.Write(bInsBracketR)
@@ -158,8 +161,23 @@ func (ins *InsertBuilder) Insert(row MapRow) (sql.Result, error) {
 }
 
 // InsertMN every n
-func (ins *InsertBuilder) InsertMN(rows MapRows, step int) error {
-	l := rows.Len()
+func (ins *InsertBuilder) InsertMN(rows interface{}, step int) error {
+	var isMapRows bool
+	var l int
+	var drows MapRows
+	var dataset DataSet
+
+	switch rows.(type) {
+	case MapRows:
+		isMapRows = true
+		drows = rows.(MapRows)
+		l = drows.Len()
+	case DataSet:
+		isMapRows = false
+		dataset = rows.(DataSet)
+		l = dataset.Len()
+	}
+
 	count := int(math.Ceil(float64(l) / float64(step)))
 	for i := 0; i < count; i++ {
 		b := i * step
@@ -167,52 +185,41 @@ func (ins *InsertBuilder) InsertMN(rows MapRows, step int) error {
 		if e > l {
 			e = l
 		}
-		_, err := ins.InsertM(rows[b:e])
-		if err != nil {
-			return err
+		if isMapRows {
+			_, err := ins.InsertM(drows[b:e])
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err := ins.InsertM(dataset.RangeI(b, e))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
 // InsertM func
-func (ins *InsertBuilder) InsertM(rows MapRows) (sql.Result, error) {
-	str, vals := parseInsertM(ins, rows)
+func (ins *InsertBuilder) InsertM(rows interface{}) (sql.Result, error) {
+	var sqlstr string
+	var vals []interface{}
+
+	switch rows.(type) {
+	case MapRows:
+		sqlstr, vals = parseInsertM(ins, rows.(MapRows))
+	case DataSet:
+		sqlstr, vals = parseInsertM2(ins, rows.(DataSet))
+	default:
+		return nil, ErrType
+	}
+
 	cdb := ins.GetDatabase()
 
 	if ins.isExec {
-		return cdb.Exec(str, vals...)
+		return cdb.Exec(sqlstr, vals...)
 	}
-	return cdb.ExecPrepare(str, vals...)
-}
-
-// InsertMN2 every n
-func (ins *InsertBuilder) InsertMN2(dataset DataSet, step int) error {
-	l := dataset.Len()
-	count := int(math.Ceil(float64(l) / float64(step)))
-	for i := 0; i < count; i++ {
-		b := i * step
-		e := b + step
-		if e > l {
-			e = l
-		}
-		_, err := ins.InsertM2(dataset.RangeI(b, e))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// InsertM2 func
-func (ins *InsertBuilder) InsertM2(dataset DataSet) (sql.Result, error) {
-	str, vals := parseInsertM2(ins, &dataset)
-	cdb := ins.GetDatabase()
-
-	if ins.isExec {
-		return cdb.Exec(str, vals...)
-	}
-	return cdb.ExecPrepare(str, vals...)
+	return cdb.ExecPrepare(sqlstr, vals...)
 }
 
 // TxInsert return sql.Result transation
@@ -233,17 +240,43 @@ func (ins *InsertBuilder) TxInsert(tx *Tx, data MapRow) (sql.Result, error) {
 }
 
 // TxInsertM return sql.Result transation
-func (ins *InsertBuilder) TxInsertM(tx *Tx, rows MapRows) (sql.Result, error) {
-	str, vals := parseInsertM(ins, rows)
-	if ins.isExec {
-		return tx.Exec(str, vals...)
+func (ins *InsertBuilder) TxInsertM(tx *Tx, rows interface{}) (sql.Result, error) {
+	var sqlstr string
+	var vals []interface{}
+
+	switch rows.(type) {
+	case MapRows:
+		sqlstr, vals = parseInsertM(ins, rows.(MapRows))
+	case DataSet:
+		sqlstr, vals = parseInsertM2(ins, rows.(DataSet))
+	default:
+		return nil, ErrType
 	}
-	return tx.ExecPrepare(str, vals...)
+
+	if ins.isExec {
+		return tx.Exec(sqlstr, vals...)
+	}
+	return tx.ExecPrepare(sqlstr, vals...)
 }
 
 // TxInsertMN return sql.Result transation
-func (ins *InsertBuilder) TxInsertMN(tx *Tx, rows MapRows, step int) error {
-	l := rows.Len()
+func (ins *InsertBuilder) TxInsertMN(tx *Tx, rows interface{}, step int) error {
+	var isMapRows bool
+	var l int
+	var drows MapRows
+	var dataset DataSet
+
+	switch rows.(type) {
+	case MapRows:
+		isMapRows = true
+		drows = rows.(MapRows)
+		l = drows.Len()
+	case DataSet:
+		isMapRows = false
+		dataset = rows.(DataSet)
+		l = dataset.Len()
+	}
+
 	count := int(math.Ceil(float64(l) / float64(step)))
 	for i := 0; i < count; i++ {
 		b := i * step
@@ -251,36 +284,16 @@ func (ins *InsertBuilder) TxInsertMN(tx *Tx, rows MapRows, step int) error {
 		if e > l {
 			e = l
 		}
-		_, err := ins.TxInsertM(tx, rows[b:e])
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// TxInsertM2 return sql.Result transation
-func (ins *InsertBuilder) TxInsertM2(tx *Tx, dataset DataSet) (sql.Result, error) {
-	str, vals := parseInsertM2(ins, &dataset)
-	if ins.isExec {
-		return tx.Exec(str, vals...)
-	}
-	return tx.ExecPrepare(str, vals...)
-}
-
-// TxInsertMN2 return sql.Result transation
-func (ins *InsertBuilder) TxInsertMN2(tx *Tx, dataset DataSet, step int) error {
-	l := dataset.Len()
-	count := int(math.Ceil(float64(l) / float64(step)))
-	for i := 0; i < count; i++ {
-		b := i * step
-		e := b + step
-		if e > l {
-			e = l
-		}
-		_, err := ins.TxInsertM2(tx, dataset.RangeI(b, e))
-		if err != nil {
-			return err
+		if isMapRows {
+			_, err := ins.TxInsertM(tx, drows[b:e])
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err := ins.TxInsertM(tx, dataset.RangeI(b, e))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

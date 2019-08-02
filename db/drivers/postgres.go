@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	bytePool bytebufferpool.Pool
 	brHSTORE = []byte("\"=>\"")
 	brJSON   = []byte("\":\"")
 )
@@ -33,23 +34,27 @@ func (p *Postgres) Name() string {
 }
 
 // Adapt f
-func (p *Postgres) Adapt(sql string, n int) string {
-	arr := strings.Split(sql, sQuestionMark)
+func (p *Postgres) Adapt(sqlstr string, n int) []byte {
+	arr := strings.Split(sqlstr, sQuestionMark)
 	l := len(arr)
 	if l == 0 {
-		return sql
+		return nil
 	}
-	var s strings.Builder
+	buf := bytePool.Get()
 	for i := 0; i < l-1; i++ {
 		if arr[i] == "" {
 			continue
 		}
-		s.WriteString(arr[i])
-		s.Write(bDollar)
-		s.WriteString(fmt.Sprint(i + 1 + n))
+		buf.WriteString(arr[i])
+		buf.WriteByte('$')
+
+		buf.WriteString(fmt.Sprint(i + 1 + n))
 	}
 
-	return s.String()
+	b := buf.Bytes()
+	bytePool.Put(buf)
+
+	return b
 }
 
 // ConnectString f
@@ -84,7 +89,6 @@ func (p *Postgres) LastInsertID(table, pkey string) string {
 }
 
 var (
-	bytePool   bytebufferpool.Pool
 	emptyArray = "{}"
 )
 
@@ -156,7 +160,7 @@ func (p *Postgres) StoreData(key string, v interface{}) interface{} {
 	}
 }
 
-// Strings
+// Strings []string
 func (p *Postgres) Strings(src []byte) ([]string, error) {
 	if len(src) == 0 {
 		return nil, nil
@@ -176,8 +180,8 @@ func (p *Postgres) Int64s(src []byte) ([]int64, error) {
 	return arr, arr.Scan(src)
 }
 
-// Float64s arr
-func (p *Postgres) Float64s(src []byte) ([]float64, error) {
+// Floats arr
+func (p *Postgres) Floats(src []byte) ([]float64, error) {
 	if len(src) == 0 {
 		return nil, nil
 	}
@@ -195,18 +199,6 @@ func (p *Postgres) Ints(src []byte) ([]int, error) {
 	err := p.ParseNumberSlice(src, &vals)
 	return vals, err
 }
-
-// func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
-// 	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
-// 	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
-// 	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
-//
-// 	if err := json.Unmarshal(src, ptr); err != nil {
-// 		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
-// 	}
-//
-// 	return nil
-// }
 
 // // HStore db
 // func (p *Postgres) HStore(src []byte) (map[string]string, error) {
@@ -250,15 +242,15 @@ func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-// QuoteField f
-func (p *Postgres) QuoteField(str string) string {
-	return `"` + str + `"`
+// QuoteIdentifier f
+func (p *Postgres) QuoteIdentifier(str string) string {
+	return pq.QuoteIdentifier(str)
 }
 
-// QuoteFieldB f
-func (p *Postgres) QuoteFieldB(s string) []byte {
+// QuoteIdentifierB f
+func (p *Postgres) QuoteIdentifierB(s string) []byte {
 	l := len(s)
-
+	// when build update params, set: "field"=$1
 	// l+8 : "name"=$1234
 	arr := make([]byte, l+2, l+8)
 	arr[0] = '"'
@@ -268,4 +260,9 @@ func (p *Postgres) QuoteFieldB(s string) []byte {
 	arr[l+1] = '"'
 
 	return arr
+}
+
+// QuoteLiteral f
+func (p *Postgres) QuoteLiteral(literal string) string {
+	return pq.QuoteLiteral(literal)
 }

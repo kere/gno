@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -11,8 +12,8 @@ import (
 	"github.com/kere/gno/libs/util"
 )
 
-// DataType class
-type DataType struct {
+// ColType class
+type ColType struct {
 	Name     string
 	TypeName string
 	Type     reflect.Type
@@ -24,9 +25,9 @@ type DataType struct {
 	Scale     int
 }
 
-// NewDataType new type class
-func NewDataType(typ *sql.ColumnType) DataType {
-	d := DataType{Name: typ.Name(), TypeName: typ.DatabaseTypeName(), Type: typ.ScanType()}
+// NewColType new type class
+func NewColType(typ *sql.ColumnType) ColType {
+	d := ColType{Name: typ.Name(), TypeName: typ.DatabaseTypeName(), Type: typ.ScanType()}
 	var v, v2 int64
 	v, d.LengthOK = typ.Length()
 	d.Length = int(v)
@@ -36,11 +37,11 @@ func NewDataType(typ *sql.ColumnType) DataType {
 	return d
 }
 
-// DataRow class
-type DataRow []interface{}
+// Row class
+type Row []interface{}
 
-// DataRow2MapRow convert to
-func DataRow2MapRow(row DataRow, fields []string) MapRow {
+// Row2MapRow convert to
+func Row2MapRow(row Row, fields []string) MapRow {
 	mapRow := MapRow{}
 	n := len(fields)
 	for i := 0; i < n; i++ {
@@ -55,7 +56,7 @@ type DataColumn []interface{}
 // DataSet data rows
 type DataSet struct {
 	Fields      []string       `json:"fields"`
-	Types       []DataType     `json:"-"`
+	Types       []ColType      `json:"-"`
 	Columns     []DataColumn   `json:"columns"`
 	fieldIndexs map[string]int // 缓存field 索引
 }
@@ -168,7 +169,7 @@ func (d *DataSet) AddMapRow(row MapRow) error {
 }
 
 // AddDataRow add
-func (d *DataSet) AddDataRow(row DataRow) error {
+func (d *DataSet) AddDataRow(row Row) error {
 	n := len(row)
 	if n == 0 {
 		return nil
@@ -297,33 +298,85 @@ func (d *DataSet) TimeAt(i int, field string) (time.Time, error) {
 	}
 }
 
-// // IntsAt index
-// func (d *DataSet) IntsAt(i int, field string) ([]int, error) {
-// 	k := d.FieldI(field)
-// 	if k < 0 {
-// 		return nil, ErrNoField
-// 	}
-// 	v := d.Columns[k][i]
-// 	switch v.(type) {
-// 	case []byte:
-// 		val := v.([]byte)
-//
-// 	default:
-// 		return nil, ErrType
-// 	}
-// }
-// // StrsAt index
-// func (d *DataSet) StrsAt(i int, field string) ([]string, error) {
-// 	k := d.FieldI(field)
-// 	if k < 0 {
-// 		return nil, ErrNoField
-// 	}
-// 	v := d.Columns[k][i]
-// 	switch v.(type) {
-// 	case []byte:
-// 		val := v.([]byte)
-//
-// 	default:
-// 		return nil, ErrType
-// 	}
-// }
+// Int64sAt index
+func (d *DataSet) Int64sAt(i int, field string) ([]int64, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return nil, ErrNoField
+	}
+
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		return Current().Driver.Int64s(v.([]byte))
+
+	default:
+		return nil, ErrType
+	}
+}
+
+// IntsAt index
+func (d *DataSet) IntsAt(i int, field string) ([]int, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return nil, ErrNoField
+	}
+
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		return Current().Driver.Ints(v.([]byte))
+
+	default:
+		return nil, ErrType
+	}
+}
+
+// FloatsAt index
+func (d *DataSet) FloatsAt(i int, field string) ([]float64, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return nil, ErrNoField
+	}
+
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		return Current().Driver.Floats(v.([]byte))
+
+	default:
+		return nil, ErrType
+	}
+}
+
+// StrsAt index
+func (d *DataSet) StrsAt(i int, field string) ([]string, error) {
+	k := d.FieldI(field)
+	if k < 0 {
+		return nil, ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		return Current().Driver.Strings(v.([]byte))
+
+	default:
+		return nil, ErrType
+	}
+}
+
+// ParseJSONAt index
+func (d *DataSet) ParseJSONAt(i int, field string, vo interface{}) error {
+	k := d.FieldI(field)
+	if k < 0 {
+		return ErrNoField
+	}
+	v := d.Columns[k][i]
+	switch v.(type) {
+	case []byte:
+		return json.Unmarshal(v.([]byte), v)
+
+	default:
+		return ErrType
+	}
+}

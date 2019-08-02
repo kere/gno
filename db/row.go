@@ -458,7 +458,7 @@ func (dr MapRow) Floats(field string) []float64 {
 
 	case []byte:
 		v := dr[field].([]byte)
-		val, err := Current().Driver.Float64s(v)
+		val, err := Current().Driver.Floats(v)
 		if err != nil {
 			panic(err)
 		}

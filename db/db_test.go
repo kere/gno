@@ -59,7 +59,7 @@ func TestInsertM(t *testing.T) {
 	ins := NewInsert(table)
 	now := time.Now()
 	l := 7
-	rows := make([]MapRow, l)
+	rows := NewMapRows(l)
 	for i := 0; i < l; i++ {
 		rows[i] = MapRow{"a": fmt.Sprint("a", i), "b": i, "created_at": now, "vals": []float64{float64(i) + 0.1, float64(i)}, "ints": []int{1 + i, 2 + i}, "v_json": User{"tom", 22 + i}, "strings": []string{fmt.Sprint("s", i), fmt.Sprint("s", i+1)}}
 	}
@@ -67,9 +67,13 @@ func TestInsertM(t *testing.T) {
 	ins = NewInsert(table)
 	r, err := ins.InsertM(rows)
 	n, _ := r.RowsAffected()
-	if err != nil || n != 7 {
+	if err != nil {
 		t.Fatal(err)
 	}
+	if n != 7 {
+		t.Fatal("effected rows:", n)
+	}
+
 	q := NewQuery(table)
 	dat, err := q.Query()
 	if err != nil {
@@ -94,11 +98,14 @@ func TestInsertM(t *testing.T) {
 	}
 }
 
-func TestQuery2(t *testing.T) {
+func TestDBQueryRows(t *testing.T) {
 	q := NewQuery(table)
 	rows, err := q.QueryRows()
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(rows) < 4 {
+		t.Fatal(len(rows))
 	}
 
 	row := rows[3]
@@ -118,6 +125,42 @@ func TestQuery2(t *testing.T) {
 	}
 
 	floats := row.Floats("vals")
+	if len(floats) != 2 || floats[1] != 2 {
+		t.Fatal(floats)
+	}
+}
+
+func TestDBQuery(t *testing.T) {
+	q := NewQuery(table)
+	dat, err := q.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dat.Len() < 4 {
+		t.Fatal(dat.Len())
+	}
+
+	i := 3
+	str, _ := dat.StrAt(i, "a")
+	if str != "a2" {
+		t.Fatal(str)
+	}
+
+	strs, _ := dat.StrsAt(i, "strings")
+	if len(strs) != 2 || strs[1] != "s3" {
+		t.Fatal(strs)
+	}
+
+	ints, _ := dat.IntsAt(i, "ints")
+	if len(ints) != 2 || ints[1] != 4 {
+		t.Fatal(ints)
+	}
+	int64s, _ := dat.Int64sAt(i, "ints")
+	if len(int64s) != 2 || int64s[1] != 4 {
+		t.Fatal(int64s)
+	}
+
+	floats, _ := dat.FloatsAt(i, "vals")
 	if len(floats) != 2 || floats[1] != 2 {
 		t.Fatal(floats)
 	}

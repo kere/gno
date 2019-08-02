@@ -31,15 +31,17 @@ func parseUpdate(u *UpdateBuilder, row MapRow) (string, []interface{}) {
 	// s := bytes.Buffer{}
 	driver := u.GetDatabase().Driver
 	buf.Write(bSQLUpdate)
-	buf.WriteString(driver.QuoteField(u.table))
+	buf.Write(driver.QuoteIdentifierB(u.table))
 	buf.Write(bSQLSet)
 	buf.Write(keys)
 	if u.where != "" {
 		buf.Write(bSQLWhere)
-		buf.WriteString(driver.Adapt(u.where, len(values)))
+		buf.Write(driver.Adapt(u.where, len(values)))
 		values = append(values, u.args...)
 	}
-	return buf.String(), values
+	str := buf.String()
+	bytePool.Put(buf)
+	return str, values
 }
 
 // Where sql

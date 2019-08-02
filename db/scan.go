@@ -19,9 +19,9 @@ func ScanToDataSet(rows *sql.Rows) (DataSet, error) {
 	}
 
 	fields := make([]string, colsNum)
-	typItems := make([]DataType, colsNum)
+	typItems := make([]ColType, colsNum)
 	for i := 0; i < colsNum; i++ {
-		typItems[i] = NewDataType(typs[i])
+		typItems[i] = NewColType(typs[i])
 		fields[i] = typs[i].Name()
 	}
 

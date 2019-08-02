@@ -157,8 +157,10 @@ func querybuildCacheKey(q *QueryBuilder, datamode int) string {
 		buf.WriteString(q.where)
 		buf.WriteString(fmt.Sprint(q.args))
 	}
+	src := buf.Bytes()
+	bytePool.Put(buf)
 
-	return fmt.Sprintf("db-%d-%s:%x", datamode, q.GetDatabase().Name, MD5(buf.Bytes()))
+	return fmt.Sprintf("db-%d-%s:%x", datamode, q.GetDatabase().Name, MD5(src))
 }
 
 // ClearCache func
@@ -187,7 +189,7 @@ func parseQuery(q *QueryBuilder) string {
 
 	if q.where != "" {
 		buf.Write(bSQLWhere)
-		buf.WriteString(q.GetDatabase().Driver.Adapt(q.where, 0))
+		buf.Write(q.GetDatabase().Driver.Adapt(q.where, 0))
 	}
 	if q.order != "" {
 		buf.Write(bSQLOrder)

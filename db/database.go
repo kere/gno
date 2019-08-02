@@ -10,15 +10,18 @@ import (
 
 // IDriver interface
 type IDriver interface {
-	Adapt(string, int) string
+	Adapt(string, int) []byte
 	ConnectString() string
-	QuoteField(string) string
-	QuoteFieldB(string) []byte
+
+	QuoteIdentifier(string) string // indentifier
+	QuoteIdentifierB(string) []byte
+	QuoteLiteral(string) string // store value
+
 	LastInsertID(string, string) string
 	StoreData(key string, val interface{}) interface{}
 	Strings([]byte) ([]string, error)
 	Int64s([]byte) ([]int64, error)
-	Float64s([]byte) ([]float64, error)
+	Floats([]byte) ([]float64, error)
 	Ints([]byte) ([]int, error)
 	ParseNumberSlice([]byte, interface{}) error
 	ParseStringSlice([]byte, interface{}) error

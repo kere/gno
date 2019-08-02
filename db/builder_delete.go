@@ -29,12 +29,14 @@ func parseDelete(d *DeleteBuilder) string {
 	driver := Current().Driver
 	buf.Write(bSQLDelete)
 	buf.Write(bSQLFrom)
-	buf.Write(driver.QuoteFieldB(d.table))
+	buf.Write(driver.QuoteIdentifierB(d.table))
 	if d.where != "" {
 		buf.Write(bSQLWhere)
-		buf.WriteString(d.GetDatabase().Driver.Adapt(d.where, 0))
+		buf.Write(d.GetDatabase().Driver.Adapt(d.where, 0))
 	}
-	return buf.String()
+	str := buf.String()
+	bytePool.Put(buf)
+	return str
 }
 
 // Where conditions

@@ -49,14 +49,16 @@ func parseExists(e *ExistsBuilder) string {
 	// s := bytes.Buffer{}
 	buf := bytePool.Get()
 	buf.Write(bExistsSQL)
-	buf.Write(Current().Driver.QuoteFieldB(e.table))
+	buf.Write(Current().Driver.QuoteIdentifierB(e.table))
 
 	if e.where != "" {
 		buf.Write(bSQLWhere)
-		buf.WriteString(e.GetDatabase().Driver.Adapt(e.where, 0))
+		buf.Write(e.GetDatabase().Driver.Adapt(e.where, 0))
 	}
 	buf.Write(bSQLLimitOne)
-	return buf.String()
+	str := buf.String()
+	bytePool.Put(buf)
+	return str
 }
 
 // Exists db

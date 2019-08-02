@@ -4,18 +4,6 @@ import (
 	"database/sql"
 )
 
-// // QueryOne f
-// func QueryOne(table string, where string, params ...interface{}) (MapRow, error) {
-// 	q := QueryBuilder{}
-// 	return q.Table(table).Where(where, params...).QueryOne()
-// }
-//
-// // Query f
-// func Query(table string, where string, params ...interface{}) (DataSet, error) {
-// 	q := QueryBuilder{}
-// 	return q.Table(table).Where(where, params...).Query()
-// }
-
 // Create f
 func Create(table string, row MapRow) error {
 	ins := InsertBuilder{}

@@ -217,21 +217,6 @@ func (b *BaseVO) Order(s string) *QueryBuilder {
 	return b.querybuild
 }
 
-// // Query func
-// func (b *BaseVO) Query(params ...interface{}) (DataSet, error) {
-// 	q := b.getQueryBuilder()
-// 	if len(params) == 1 {
-// 		q.Where(fmt.Sprint(params[0]))
-// 	} else if len(params) > 1 {
-// 		q.Where(fmt.Sprint(params[0]), params[1:]...)
-// 	}
-//
-// 	if b.Fields != "" {
-// 		q.Select(b.Fields)
-// 	}
-// 	return q.Query()
-// }
-
 // QueryRows func
 func (b *BaseVO) QueryRows(params ...interface{}) (MapRows, error) {
 	_, rows, err := b.cQuery(1, 0, params...)
