@@ -172,9 +172,9 @@ func (q *QueryBuilder) ClearCache() {
 	cacheDel(querybuildCacheKey(q, 0))
 }
 
-func parseQuery(q *QueryBuilder) string {
+func (q *QueryBuilder) Parse() (string, []interface{}) {
 	// s := bytes.Buffer{}
-	buf := bytebufferpool.Get()
+	buf := bytePool.Get()
 	buf.Write(bSQLSelect)
 
 	setQueryFields(q, buf)
@@ -213,7 +213,9 @@ func parseQuery(q *QueryBuilder) string {
 		buf.Write(bSQLOffset)
 		buf.WriteString(strconv.FormatInt(int64(q.offset), 10))
 	}
-	return buf.String()
+	str := buf.String()
+	bytePool.Put(buf)
+	return str, q.args
 }
 
 // Query return DataSet
@@ -241,17 +243,18 @@ func (q *QueryBuilder) cQuery(mode int) (DataSet, MapRows, error) {
 	var datarows MapRows
 	var err error
 
+	sqlstr, _ := q.Parse()
 	if mode == 1 {
 		if q.isPrepare {
-			datarows, err = q.GetDatabase().QueryRowsPrepare(parseQuery(q), q.args...)
+			datarows, err = q.GetDatabase().QueryRowsPrepare(sqlstr, q.args...)
 		} else {
-			datarows, err = q.GetDatabase().QueryRows(parseQuery(q), q.args...)
+			datarows, err = q.GetDatabase().QueryRows(sqlstr, q.args...)
 		}
 	} else {
 		if q.isPrepare {
-			dataset, err = q.GetDatabase().QueryPrepare(parseQuery(q), q.args...)
+			dataset, err = q.GetDatabase().QueryPrepare(sqlstr, q.args...)
 		} else {
-			dataset, err = q.GetDatabase().Query(parseQuery(q), q.args...)
+			dataset, err = q.GetDatabase().Query(sqlstr, q.args...)
 		}
 	}
 
@@ -300,24 +303,27 @@ func setQueryFields(q *QueryBuilder, buf *bytebufferpool.ByteBuffer) {
 
 // TxQuery transction
 func (q *QueryBuilder) TxQuery(tx *Tx) (DataSet, error) {
+	sqlstr, _ := q.Parse()
 	if q.isPrepare {
-		return tx.QueryPrepare(parseQuery(q), q.args...)
+		return tx.QueryPrepare(sqlstr, q.args...)
 	}
-	return tx.Query(parseQuery(q), q.args...)
+	return tx.Query(sqlstr, q.args...)
 }
 
 // TxQueryRows transction
 func (q *QueryBuilder) TxQueryRows(tx *Tx) (MapRows, error) {
+	sqlstr, _ := q.Parse()
 	if q.isPrepare {
-		return tx.QueryRowsPrepare(parseQuery(q), q.args...)
+		return tx.QueryRowsPrepare(sqlstr, q.args...)
 	}
-	return tx.QueryRows(parseQuery(q), q.args...)
+	return tx.QueryRows(sqlstr, q.args...)
 }
 
 // TxQueryOne transction
 func (q *QueryBuilder) TxQueryOne(tx *Tx) (MapRow, error) {
+	sqlstr, _ := q.Parse()
 	if q.isPrepare {
-		return tx.QueryOnePrepare(parseQuery(q), q.args...)
+		return tx.QueryOnePrepare(sqlstr, q.args...)
 	}
-	return tx.QueryOne(parseQuery(q), q.args...)
+	return tx.QueryOne(sqlstr, q.args...)
 }

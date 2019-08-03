@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
-
-	"github.com/valyala/bytebufferpool"
 )
 
 type insResult struct {
@@ -100,7 +98,7 @@ func parseInsertM2(ins *InsertBuilder, dataset DataSet) (string, []interface{}) 
 	keys := dataset.Fields
 
 	// buf := bytes.NewBuffer(nil)
-	buf := bytebufferpool.Get()
+	buf := bytePool.Get()
 
 	database := ins.GetDatabase()
 	driver := database.Driver
@@ -119,7 +117,8 @@ func parseInsertM2(ins *InsertBuilder, dataset DataSet) (string, []interface{}) 
 
 	values := writeInsertMByDataSet(buf, &dataset)
 
-	return buf.String(), values
+	str := buf.String()
+	return str, values
 }
 
 func parseInsert(ins *InsertBuilder, row MapRow, hasReturnID bool) (string, []interface{}) {

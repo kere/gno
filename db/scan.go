@@ -27,20 +27,17 @@ func ScanToDataSet(rows *sql.Rows) (DataSet, error) {
 
 	result = DataSet{Types: typItems, Fields: fields, Columns: make([]DataColumn, colsNum)}
 
-	var row, tem []interface{}
+	// var row, tem []interface{}
+	row := make([]interface{}, colsNum)
+	tem := make([]interface{}, colsNum)
+	for i := 0; i < colsNum; i++ {
+		tem[i] = &row[i]
+	}
 
 	for rows.Next() {
-		row = make([]interface{}, colsNum)
-		tem = make([]interface{}, colsNum)
-
-		for i := 0; i < colsNum; i++ {
-			tem[i] = &row[i]
-		}
-
 		if err = rows.Scan(tem...); err != nil {
 			return result, err
 		}
-
 		result.AddDataRow(row)
 	}
 
@@ -58,16 +55,14 @@ func ScanToMapRows(rows *sql.Rows) (MapRows, error) {
 	colsNum := len(cols)
 	mapRows := MapRows{}
 
-	var row, tem []interface{}
+	row := make([]interface{}, colsNum)
+	tem := make([]interface{}, colsNum)
+
+	for i := 0; i < colsNum; i++ {
+		tem[i] = &row[i]
+	}
 
 	for rows.Next() {
-		row = make([]interface{}, colsNum)
-		tem = make([]interface{}, colsNum)
-
-		for i := 0; i < colsNum; i++ {
-			tem[i] = &row[i]
-		}
-
 		if err = rows.Scan(tem...); err != nil {
 			return nil, err
 		}

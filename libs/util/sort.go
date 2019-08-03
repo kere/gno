@@ -165,3 +165,14 @@ func getSortedIntI(val int, arr []int, b, e int, isdesc bool) (int, bool) {
 	}
 	return getSortedIntI(val, arr, i+1, e, isdesc)
 }
+
+// IndexOfStrs f
+func IndexOfStrs(arr []string, v string) int {
+	n := len(arr)
+	for i := 0; i < n; i++ {
+		if arr[i] == v {
+			return i
+		}
+	}
+	return -1
+}
