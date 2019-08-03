@@ -55,7 +55,7 @@ type DataColumn []interface{}
 
 // DataSet data rows
 type DataSet struct {
-	Table       string
+	Table       string         `json:"table"`
 	Fields      []string       `json:"fields"`
 	Types       []ColType      `json:"-"`
 	Columns     []DataColumn   `json:"columns"`

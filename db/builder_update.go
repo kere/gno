@@ -23,7 +23,8 @@ func (u *UpdateBuilder) Table(t string) *UpdateBuilder {
 	return u
 }
 
-func parseUpdate(u *UpdateBuilder, row MapRow) (string, []interface{}) {
+// Parse sql
+func (u *UpdateBuilder) Parse(row MapRow) (string, []interface{}) {
 	// keys, values, _ := keyValueList(ActionUpdate, data)
 	keys, values := sqlUpdateParamsByMapRow(row)
 
@@ -56,7 +57,7 @@ func (u *UpdateBuilder) Where(cond string, args ...interface{}) *UpdateBuilder {
 
 // Update db
 func (u *UpdateBuilder) Update(row MapRow) (sql.Result, error) {
-	sql, vals := parseUpdate(u, row)
+	sql, vals := u.Parse(row)
 	return u.GetDatabase().ExecPrepare(sql, vals...)
 }
 
@@ -98,6 +99,6 @@ func (u *UpdateBuilder) Update(row MapRow) (sql.Result, error) {
 
 // TxUpdate trunsaction
 func (u *UpdateBuilder) TxUpdate(tx *Tx, row MapRow) (sql.Result, error) {
-	sql, vals := parseUpdate(u, row)
+	sql, vals := u.Parse(row)
 	return tx.ExecPrepare(sql, vals...)
 }

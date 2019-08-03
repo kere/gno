@@ -76,46 +76,45 @@ func Test_MapData(t *testing.T) {
 
 func TestSort(t *testing.T) {
 	arr := []int64{10, 322, 3, 43, 65, 30, 230, 44, 56, 76, 20, 430, 659}
-	arrSort := Int64s(arr)
+	arrSort := Int64sOrder(arr)
 	arrSort.Sort()
 
-	index := IndexOfInt64s(arr, 43)
+	index := arrSort.IndexOf(43)
 	if index != 4 {
 		t.Fatal("index:", index)
 	}
-	index = IndexOfInt64s(arr, 45)
+	index = arrSort.IndexOf(45)
 	if index != -1 {
 		t.Fatal("index:", index)
 	}
 
-	fmt.Println()
-	var isok bool
 	arr = []int64{3, 10, 20, 30, 43, 44, 45, 56, 65, 76, 230, 322, 430, 659}
-	fmt.Println(arr)
-	index, _ = SearchInt64s(arr, 50)
-	// if index != 7 || isok {
-	// 	t.Fatal(index)
-	// }
-	fmt.Println("index:", index)
-	fmt.Println("---- 50")
+	arrSort = Int64sOrder(arr)
+	index = arrSort.Search(50)
 
-	index, _ = SearchInt64s(arr, 57)
-	fmt.Println("index:", index)
-	fmt.Println("---- 57")
+	if index != 7 {
+		fmt.Println(arr)
+		t.Fatal(index)
+	}
 
-	fmt.Println()
+	index = arrSort.Search(57)
+	if index != 8 {
+		fmt.Println(arr)
+		t.Fatal(index)
+	}
+
 	arr = []int64{3, 10, 20, 30, 43, 44, 45, 49, 56, 65, 76, 230, 322, 430, 659}
-	fmt.Println(arr)
-	index, isok = SearchInt64s(arr, 50)
-	if index != 8 || isok {
+	arrSort = Int64sOrder(arr)
+	index = arrSort.Search(50)
+	if index != 8 {
+		fmt.Println(arr)
 		t.Fatal(index)
 	}
-	fmt.Println("---- 50")
-	index, isok = SearchInt64s(arr, 48)
-	if index != 7 || isok {
+	index = arrSort.Search(48)
+	if index != 7 {
+		fmt.Println(arr)
 		t.Fatal(index)
 	}
-	fmt.Println("---- 48")
 }
 
 func TestSync(t *testing.T) {

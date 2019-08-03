@@ -172,6 +172,7 @@ func (q *QueryBuilder) ClearCache() {
 	cacheDel(querybuildCacheKey(q, 0))
 }
 
+// Parse sql
 func (q *QueryBuilder) Parse() (string, []interface{}) {
 	// s := bytes.Buffer{}
 	buf := bytePool.Get()
@@ -220,57 +221,75 @@ func (q *QueryBuilder) Parse() (string, []interface{}) {
 
 // Query return DataSet
 func (q *QueryBuilder) Query() (DataSet, error) {
-	dataset, _, err := q.cQuery(0)
+	dataset, err := q.cQuery()
 	return dataset, err
 }
 
 // QueryRows return DataSet
 func (q *QueryBuilder) QueryRows() (MapRows, error) {
-	_, rows, err := q.cQuery(1)
+	rows, err := q.cQueryRows()
 	return rows, err
 }
 
-func (q *QueryBuilder) cQuery(mode int) (DataSet, MapRows, error) {
+func (q *QueryBuilder) cQuery() (DataSet, error) {
 	var key string
 
 	if q.cache {
-		key = querybuildCacheKey(q, mode)
+		key = querybuildCacheKey(q, 0)
 		if exi, _ := cacheIns.IsExists(key); exi {
-			return cacheGet(key, mode)
+			return cacheGetDataSet(key)
 		}
 	}
 	var dataset DataSet
+	var err error
+
+	sqlstr, _ := q.Parse()
+	if q.isPrepare {
+		dataset, err = q.GetDatabase().QueryPrepare(sqlstr, q.args...)
+	} else {
+		dataset, err = q.GetDatabase().Query(sqlstr, q.args...)
+	}
+	dataset.Table = q.table
+
+	if err != nil {
+		return dataset, err
+	}
+
+	if q.cache {
+		cacheSet(key, dataset, q.expire)
+	}
+
+	return dataset, nil
+}
+
+func (q *QueryBuilder) cQueryRows() (MapRows, error) {
+	var key string
+
+	if q.cache {
+		key = querybuildCacheKey(q, 1)
+		if exi, _ := cacheIns.IsExists(key); exi {
+			return cacheGetRows(key)
+		}
+	}
 	var datarows MapRows
 	var err error
 
 	sqlstr, _ := q.Parse()
-	if mode == 1 {
-		if q.isPrepare {
-			datarows, err = q.GetDatabase().QueryRowsPrepare(sqlstr, q.args...)
-		} else {
-			datarows, err = q.GetDatabase().QueryRows(sqlstr, q.args...)
-		}
+	if q.isPrepare {
+		datarows, err = q.GetDatabase().QueryRowsPrepare(sqlstr, q.args...)
 	} else {
-		if q.isPrepare {
-			dataset, err = q.GetDatabase().QueryPrepare(sqlstr, q.args...)
-		} else {
-			dataset, err = q.GetDatabase().Query(sqlstr, q.args...)
-		}
+		datarows, err = q.GetDatabase().QueryRows(sqlstr, q.args...)
 	}
 
 	if err != nil {
-		return dataset, datarows, err
+		return datarows, err
 	}
 
 	if q.cache {
-		if mode == 1 {
-			cacheSet(key, datarows, q.expire)
-		} else {
-			cacheSet(key, dataset, q.expire)
-		}
+		cacheSet(key, datarows, q.expire)
 	}
 
-	return dataset, datarows, nil
+	return datarows, nil
 }
 
 // QueryOne limit=1

@@ -165,3 +165,24 @@ func TestDBQuery(t *testing.T) {
 		t.Fatal(floats)
 	}
 }
+
+func TestQueryCache(t *testing.T) {
+	SetCache(cache.CurrentCache())
+	q := NewQuery(table).Cache()
+	q.Query()
+
+	key := querybuildCacheKey(q, 0)
+	if isok, _ := cacheIns.IsExists(key); !isok {
+		t.Fatal("cache not found")
+	}
+
+	dat, _ := q.Query()
+	if dat.Len() < 4 {
+		t.Fatal(dat.Len())
+	}
+	i := 3
+	str, _ := dat.StrAt(i, "a")
+	if str != "a2" {
+		t.Fatal(str)
+	}
+}
