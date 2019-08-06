@@ -19,7 +19,7 @@ func NewDefault() *Default {
 	d.D.Name = "default"
 	d.D.Dir = ""
 
-	d.D.CSS = []render.IRender{render.NewCSS("default.css", "")}
+	d.D.CSS = []render.IRender{render.NewCSS("default.css")}
 
 	// d.D.Head = []render.IRender{}
 	d.D.Top = []render.IRender{render.NewTemplate("_header.htm")}

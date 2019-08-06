@@ -1,7 +1,6 @@
 package httpd
 
 import (
-	"bytes"
 	"fmt"
 	"net/url"
 	"time"
@@ -32,24 +31,19 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	buf := bytes.NewBuffer(nil)
-
-	err = renderPage(buf, p.Data(), ctx.URI().PathOriginal())
+	err = renderPage(ctx, p.Data(), ctx.URI().PathOriginal())
 	if err != nil {
 		log.App.Error(err)
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		return
 	}
 
-	err = TrySetCache(ctx, p, buf)
+	err = TrySetCache(ctx, p, ctx.Response.Body())
 	if err != nil {
 		log.App.Error(err)
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		return
 	}
-
-	ctx.SetBody(buf.Bytes())
-	// ctx.Write(buf.Bytes())
 }
 
 func gmtNowTime(d time.Time) string {

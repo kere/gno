@@ -1,7 +1,6 @@
 package httpd
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -103,13 +102,12 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	}
 
 	setHeader(p, ctx, last)
-	// ctx.Write(src)
 	ctx.SetBody(src)
 	return true
 }
 
 // TrySetCache TrySet cache
-func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
+func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 	opt := p.Data().CacheOption
 	if opt.Store == CacheStoreNone {
 		setHeader(p, ctx, "")
@@ -123,7 +121,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
 	switch opt.Store {
 	case CacheStoreMem:
 		last = gmtNowTime(time.Now())
-		pageCacheMap.Store(string(key), pCacheElem{LastModified: last, Src: buf.Bytes()})
+		pageCacheMap.Store(string(key), pCacheElem{LastModified: last, Src: body})
 
 	case CacheStoreFile:
 		bstr := util.MD5BytesV(key)
@@ -132,7 +130,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, buf *bytes.Buffer) error {
 		if err != nil {
 			return err
 		}
-		_, err = f.Write(buf.Bytes())
+		_, err = f.Write(body)
 		if err != nil {
 			f.Close()
 			return err

@@ -8,14 +8,14 @@ import (
 )
 
 func main() {
-	site := httpd.Init()
+	httpd.Init("app/app.conf")
 
-	site.RegistGet("/", page.NewDefault())
-	site.RegistGet("/abc/:name", page.NewDefault())
-	site.RegistOpenAPI("/openapi/app", openapi.NewApp())
+	httpd.Site.RegistGet("/", page.NewDefault())
+	httpd.Site.RegistGet("/abc/:name", page.NewDefault())
+	httpd.Site.RegistOpenAPI("/openapi/app", openapi.NewApp())
 
-	site.RegistWS("/ws", websock.NewWS())
+	httpd.Site.RegistWS("/ws", websock.NewWS())
 
 	// httpd.RunMode = httpd.ModePro
-	site.Start()
+	httpd.Site.Start()
 }

@@ -32,7 +32,7 @@ var (
 	// HomeDir of config
 	HomeDir = ""
 	// RunMode dev pro
-	RunMode = "dev"
+	RunMode = ModeDev
 	// Site svr
 	Site *SiteServer
 
