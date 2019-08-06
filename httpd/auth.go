@@ -58,7 +58,7 @@ func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 	}
 	buf.WriteString(u.Hostname())
 
-	str := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+	str := fmt.Sprintf(stri16Formart, md5.Sum(buf.Bytes()))
 	bytebufferpool.Put(buf)
 	return str
 }
@@ -67,7 +67,7 @@ func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 func buildWSSign(req *fasthttp.Request) string {
 	agent := req.Header.UserAgent()
 	src := append(agent, req.URI().Host()...)
-	return fmt.Sprintf("%x", md5.Sum(src))
+	return fmt.Sprintf(stri16Formart, md5.Sum(src))
 }
 
 // buildToken 生成 用户令牌
@@ -76,7 +76,7 @@ func buildToken(src []byte, sn, salt string) string {
 	buf.Write(src)
 	buf.WriteString(salt)
 	buf.WriteString(sn)
-	str := fmt.Sprintf("%x", sha1.Sum(buf.Bytes()))
+	str := fmt.Sprintf(stri16Formart, sha1.Sum(buf.Bytes()))
 	bytebufferpool.Put(buf)
 	return str
 }

@@ -49,4 +49,9 @@ const (
 	headSValContent       = "text/html; charset=utf-8"
 	defaultTemplateSubfix = ".htm"
 	sAuthURL              = "url"
+
+	// Slash string
+	Slash = "/"
+
+	stri16Formart = "%x"
 )

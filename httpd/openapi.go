@@ -18,6 +18,8 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+var openapiMap = make(map[string]apiExec)
+
 const (
 	// ReplyTypeJSON reply json
 	ReplyTypeJSON = 0
@@ -40,6 +42,9 @@ const (
 
 	// HeadOrigin http head
 	HeadOrigin = "Origin"
+
+	methodAuth  = "auth"
+	methodReply = "ReplyType"
 )
 
 // IOpenAPI interface
@@ -49,8 +54,6 @@ type IOpenAPI interface {
 
 type apiExec func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error)
 
-var openapiMap = make(map[string]apiExec)
-
 // RegistOpenAPI init open api
 func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 	v := reflect.ValueOf(openapi)
@@ -58,13 +61,13 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 	l := typ.NumMethod()
 	for i := 0; i < l; i++ {
 		m := typ.Method(i)
-		if m.Name == "Auth" || m.Name == "ReplyType" {
+		if m.Name == methodAuth || m.Name == methodReply {
 			continue
 		}
 
-		openapiMap[rule+"/"+m.Name] = v.Method(i).Interface().(func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error))
+		openapiMap[rule+Slash+m.Name] = v.Method(i).Interface().(func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error))
 
-		s.Router.POST(rule+"/"+m.Name, func(ctx *fasthttp.RequestCtx) {
+		s.Router.POST(rule+Slash+m.Name, func(ctx *fasthttp.RequestCtx) {
 			// if s.Pool == 0 {
 			openAPIHandle(ctx)
 			// 	return
