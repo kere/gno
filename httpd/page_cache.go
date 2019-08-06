@@ -14,8 +14,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-const ()
-
 // PageCacheOption option
 type PageCacheOption struct {
 	PageMode int // page, path, uri

@@ -1,7 +1,6 @@
 package httpd
 
 import (
-	"bytes"
 	"crypto/md5"
 	"encoding/json"
 	"errors"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/util"
+	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 )
 
@@ -105,10 +105,13 @@ func SendAPI(uri string, method string, dat util.MapData) (util.MapData, error) 
 
 	// ts+method+jsonStr + token;
 	ts := fmt.Sprint(time.Now().Unix())
-
-	buf := bytes.NewBufferString(ts + method + ts)
+	buf := bytebufferpool.Get()
+	buf.WriteString(ts)
+	buf.WriteString(method)
+	buf.WriteString(ts)
 	buf.Write(src)
 	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+	bytebufferpool.Put(buf)
 
 	req, err := http.NewRequest(http.MethodPost, uri+"/"+method, strings.NewReader(vals.Encode()))
 	if err != nil {

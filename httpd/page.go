@@ -9,7 +9,6 @@ type IPage interface {
 	Data() *PageData
 	SetData(*PageData)
 	Auth(ctx *fasthttp.RequestCtx) error
-	// Before(ctx *fasthttp.RequestCtx) error
 	Page(ctx *fasthttp.RequestCtx) error
 }
 

@@ -1,12 +1,12 @@
 package httpd
 
 import (
-	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
 	"fmt"
 	"net/url"
 
+	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 )
 
@@ -43,7 +43,8 @@ func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 	method := req.PostArgs().Peek(APIFieldMethod)
 
 	// method + ts + src + agent + ts + ptoken + hostname
-	buf := bytes.NewBuffer(method)
+	buf := bytebufferpool.Get()
+	buf.Write(method)
 	buf.Write(ts)
 	buf.Write(src)
 	buf.Write(req.Header.UserAgent())
@@ -57,7 +58,9 @@ func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 	}
 	buf.WriteString(u.Hostname())
 
-	return fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+	str := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+	bytebufferpool.Put(buf)
+	return str
 }
 
 // userAgent + hostname
@@ -69,10 +72,11 @@ func buildWSSign(req *fasthttp.Request) string {
 
 // buildToken 生成 用户令牌
 func buildToken(src []byte, sn, salt string) string {
-	buf := bytes.NewBufferString(salt)
+	buf := bytebufferpool.Get()
 	buf.Write(src)
 	buf.WriteString(salt)
 	buf.WriteString(sn)
-
-	return fmt.Sprintf("%x", sha1.Sum(buf.Bytes()))
+	str := fmt.Sprintf("%x", sha1.Sum(buf.Bytes()))
+	bytebufferpool.Put(buf)
+	return str
 }
