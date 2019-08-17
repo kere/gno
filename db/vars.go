@@ -1,5 +1,13 @@
 package db
 
+import "github.com/valyala/bytebufferpool"
+
+var (
+	bytePool bytebufferpool.Pool
+	dbpool   *databasePool
+	// dbConf conf.Conf
+)
+
 // 月份 1,01,Jan,January
 // 日　 2,02,_2
 // 时　 3,03,15,PM,pm,AM,am

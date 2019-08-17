@@ -76,16 +76,6 @@ func InStrings(val string, arr []string) bool {
 	return index != l
 }
 
-// // InInt64s 是否在数组中出现
-// func InInt64s(val int64, arr []int64) bool {
-// 	for _, v := range arr {
-// 		if v == val {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
 // InInts 是否在数组中出现
 func InInts(val int, arr []int) bool {
 	l := len(arr)
@@ -164,4 +154,28 @@ func SameInts(arr1, arr2 []int) bool {
 	}
 
 	return true
+}
+
+// RangeFloats 取一段
+func RangeFloats(arr []float64, a, b int) []float64 {
+	l := len(arr)
+	if a < 0 {
+		a = 0
+	}
+	if b == 0 || b > l {
+		b = l - 1
+	}
+	return arr[a : b+1]
+}
+
+// RangeInts 取一段
+func RangeInts(arr []int, a, b int) []int {
+	l := len(arr)
+	if a < 0 {
+		a = 0
+	}
+	if b == 0 || b > l {
+		b = l - 1
+	}
+	return arr[a : b+1]
 }

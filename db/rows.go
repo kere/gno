@@ -19,15 +19,15 @@ func NewMapRowsN(l, n int) MapRows {
 	return make([]MapRow, l, n)
 }
 
-// // Insert current dataset
-// func (ds MapRows) Insert(table string) error {
-// 	if ds.Len() == 0 {
-// 		return nil
-// 	}
-// 	ins := InsertBuilder{}
-// 	_, err := ins.Table(table).InsertM(ds)
-// 	return err
-// }
+// Insert current dataset
+func (ds MapRows) Insert(table string) error {
+	if ds.Len() == 0 {
+		return nil
+	}
+	ins := InsertBuilder{}
+	_, err := ins.Table(table).InsertM(ds)
+	return err
+}
 
 // IsEmpty func
 func (ds MapRows) IsEmpty() bool {

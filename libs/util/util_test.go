@@ -136,4 +136,17 @@ func TestSync(t *testing.T) {
 		fmt.Println(arr, "===========")
 		t.Fatal(counter)
 	}
+
+	s := []byte("110010")
+	v := BitStr2Uint(s)
+	if v != 50 {
+		t.Fatal(v)
+	}
+	if !IsTrueAtBitUint(v, 1) {
+		t.Fatal(s)
+	}
+	if IsTrueAtBitUint(v, 2) {
+		t.Fatal(s)
+	}
+
 }

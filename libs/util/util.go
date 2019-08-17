@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -13,6 +14,8 @@ import (
 var (
 	// DBTimeFormat 数据库默认时间格式
 	DBTimeFormat = time.RFC3339
+
+	bytesPool sync.Pool
 )
 
 // PathToURL convert path to url

@@ -9,13 +9,6 @@ import (
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/myerr"
-	"github.com/valyala/bytebufferpool"
-)
-
-var (
-	bytePool bytebufferpool.Pool
-	dbpool   *databasePool
-	// dbConf conf.Conf
 )
 
 func init() {
