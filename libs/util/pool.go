@@ -15,17 +15,17 @@ func GetRow() []float64 {
 
 // GetRowN from pool
 func GetRowN(n int) []float64 {
-	v := colPool.Get()
+	v := rowPool.Get()
 	if v == nil {
 		return make([]float64, n)
 	}
 	row := v.([]float64)
 	l := len(row)
 	if n < l {
-		return row[:n+1]
+		return row[:n]
 	}
 
-	for i := l - 1; i < n; i++ {
+	for i := l; i < n; i++ {
 		row = append(row, 0)
 	}
 	return row
@@ -33,7 +33,7 @@ func GetRowN(n int) []float64 {
 
 // GetRowN0 from pool, with 0 value
 func GetRowN0(n int) []float64 {
-	v := colPool.Get()
+	v := rowPool.Get()
 	if v == nil {
 		return make([]float64, n)
 	}
@@ -68,10 +68,10 @@ func GetColumnN(n int) []float64 {
 	col := v.([]float64)
 	l := len(col)
 	if n < l {
-		return col[:n+1]
+		return col[:n]
 	}
 
-	for i := l - 1; i < n; i++ {
+	for i := l; i < n; i++ {
 		col = append(col, 0)
 	}
 	return col
