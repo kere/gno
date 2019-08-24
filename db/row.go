@@ -165,7 +165,7 @@ func (dr MapRow) Bytes2String() MapRow {
 	for k, v := range dr {
 		switch v.(type) {
 		case []byte:
-			dr[k] = util.BytesToStr(v.([]byte))
+			dr[k] = util.Bytes2Str(v.([]byte))
 		}
 	}
 	return dr
@@ -243,7 +243,7 @@ func (dr MapRow) String(field string) string {
 		return dr[field].(string)
 
 	case []byte:
-		return util.BytesToStr(dr[field].([]byte))
+		return util.Bytes2Str(dr[field].([]byte))
 
 	default:
 		return fmt.Sprint(dr[field])
@@ -382,7 +382,7 @@ func (dr MapRow) Int64s(field string) []int64 {
 	case string:
 		s := dr[field].(string)
 		var v []int64
-		if err := Current().Driver.ParseNumberSlice(util.StrToBytes(s), &v); err != nil {
+		if err := Current().Driver.ParseNumberSlice(util.Str2Bytes(s), &v); err != nil {
 			panic(err)
 		}
 		return v
@@ -421,7 +421,7 @@ func (dr MapRow) Ints(field string) []int {
 	case string:
 		v := dr[field].(string)
 		var val []int
-		if err := Current().Driver.ParseNumberSlice(util.StrToBytes(v), &val); err != nil {
+		if err := Current().Driver.ParseNumberSlice(util.Str2Bytes(v), &val); err != nil {
 			panic(err)
 		}
 		return val
@@ -514,7 +514,7 @@ func (dr MapRow) Strings(field string) []string {
 		}
 
 		var val []string
-		Current().Driver.ParseStringSlice(util.StrToBytes(s), &val)
+		Current().Driver.ParseStringSlice(util.Str2Bytes(s), &val)
 
 		return val
 

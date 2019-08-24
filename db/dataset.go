@@ -72,7 +72,7 @@ func PrintDataSet(dat *DataSet) {
 			v := dat.Columns[k][i]
 			switch v.(type) {
 			case []byte:
-				fmt.Print(util.BytesToStr(v.([]byte)), "\t")
+				fmt.Print(util.Bytes2Str(v.([]byte)), "\t")
 			default:
 				fmt.Print(dat.Columns[k][i], "\t")
 			}
@@ -263,7 +263,7 @@ func (d *DataSet) StrAt(i int, field string) (string, error) {
 	v := d.Columns[k][i]
 	switch v.(type) {
 	case []byte:
-		return util.BytesToStr(v.([]byte)), nil
+		return util.Bytes2Str(v.([]byte)), nil
 	default:
 		return fmt.Sprint(v), nil
 	}

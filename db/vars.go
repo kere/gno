@@ -25,10 +25,17 @@ const (
 	// ActionDelete delete
 	ActionDelete = 9
 
+	// ActionUpdateStr update
+	ActionUpdateStr = "update"
+
+	// ActionInsertStr insert
+	ActionInsertStr = "insert"
+
 	// timeClassName s
 	timeClassName = "time.Time"
-	// ColumnBytePrefix prefix
-	ColumnBytePrefix = "byte_"
+	// // ColumnBytePrefix prefix
+	// ColumnBytePrefix = "byte_"
+
 	//FieldCount count
 	FieldCount = "count"
 	//FieldJSON json
@@ -79,6 +86,7 @@ var (
 
 	//BCommaSplit ,
 	BCommaSplit = []byte(",")
+
 	//SCommaSplit ,
 	SCommaSplit = ","
 	// BEmptyString ''

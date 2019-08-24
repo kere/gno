@@ -82,7 +82,7 @@ func (sc *StructConverter) buildFieldInfo() {
 		field := f.Tag.Get("json")
 
 		if field == "" {
-			if f.Name == "BaseVO" {
+			if f.Name == skipFieldBaseVO || f.Name == skipFieldTable {
 				continue
 			}
 			field = f.Name
@@ -193,10 +193,11 @@ const (
 	typAutoTime  = "autotime"
 	typPlus      = "plus"
 	typPlus1     = "plus1"
-	typVersion   = "version"
-	vNil         = "<nil>"
-	vAll         = "all"
-	vBaseVO      = "BaseVO"
+	// typVersion      = "version"
+	vNil            = "<nil>"
+	vAll            = "all"
+	skipFieldBaseVO = "BaseVO"
+	skipFieldTable  = "Table"
 )
 
 // Struct2DataRow to maprow
@@ -209,9 +210,9 @@ func (sc *StructConverter) Struct2DataRow(action int) MapRow {
 	var fieldVal reflect.Value
 	isupdate := action == ActionUpdate
 
-	actionType := "insert"
+	actionType := ActionInsertStr
 	if isupdate {
-		actionType = "update"
+		actionType = ActionUpdateStr
 	}
 
 	maprow := MapRow{}
@@ -221,7 +222,7 @@ func (sc *StructConverter) Struct2DataRow(action int) MapRow {
 		dbField := field.Tag.Get(tagJSON)
 
 		if dbField == "" {
-			if field.Name == vBaseVO {
+			if field.Name == skipFieldBaseVO || field.Name == skipFieldTable {
 				continue
 			}
 			dbField = field.Name

@@ -43,7 +43,7 @@ const (
 	// HeadOrigin http head
 	HeadOrigin = "Origin"
 
-	methodAuth  = "auth"
+	methodAuth  = "Auth"
 	methodReply = "ReplyType"
 )
 

@@ -1,11 +1,5 @@
 package db
 
-import (
-	"bytes"
-	"encoding/json"
-	"reflect"
-)
-
 // MapRows datarow list
 type MapRows []MapRow
 
@@ -157,68 +151,4 @@ func (ds MapRows) DataSet(fields []string) DataSet {
 	dataset = DataSet{Fields: fields, Columns: cols}
 
 	return dataset
-}
-
-// VORows class
-type VORows []IVO
-
-// ToJSON []byte
-func (ds VORows) ToJSON(action int) []byte {
-	l := len(ds)
-	buf := bytes.NewBuffer([]byte("["))
-
-	for i := 0; i < l; i++ {
-		if ds[i] == nil {
-			continue
-		}
-
-		row := ds[i].ToMapRow(action)
-		src, err := json.Marshal(row)
-		if err != nil {
-			continue
-		}
-		if i > 0 {
-			buf.Write(BCommaSplit)
-		}
-		buf.Write(src)
-	}
-
-	buf.WriteString("]")
-
-	return buf.Bytes()
-}
-
-// Encode to
-func (ds VORows) Encode() [][]interface{} {
-	count := len(ds)
-	if count < 1 {
-		return make([][]interface{}, 0)
-	}
-
-	sc := NewStructConvert(ds[0])
-	dbFields := sc.DBFields()
-	fields := sc.Fields()
-	colSize := len(dbFields)
-	values := make([][]interface{}, len(ds)+1)
-	columns := make([]interface{}, colSize)
-
-	var i int
-	var k int
-	var tmp []interface{}
-
-	for i = range dbFields {
-		columns[i] = string(dbFields[i])
-	}
-	values[0] = columns
-
-	for i = 0; i < count; i++ {
-		tmp = make([]interface{}, colSize)
-		for k = range fields {
-			tmp[k] = reflect.ValueOf(ds[i]).Elem().FieldByName(fields[k].Name).Interface()
-		}
-
-		values[i+1] = tmp
-	}
-
-	return values
 }

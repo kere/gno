@@ -76,61 +76,21 @@ func GetConfig() *conf.Configuration {
 func Init(name string) {
 	ConfigName = name
 	config = conf.Load(name)
-
 	dir := filepath.Dir(name)
 	HomeDir, _ = filepath.Abs(filepath.Join(dir, ".."))
 
 	a := config.GetConf("site")
-	Site = &SiteServer{
-		Listen: a.DefaultString("listen", ":8080"),
-		Router: fasthttprouter.New(),
-	}
-
-	//  log
-	if config.IsSet("log") {
-		l := config.GetConf("log")
-
-		// if _, err := os.Stat("var/log"); err != nil {
-		// 	if os.IsNotExist(err) {
-		// 		os.Mkdir("var/log", os.ModePerm)
-		// 	}
-		// }
-		log.Init("var/log/", l.DefaultString("logname", "app"), l.DefaultString("logstore", log.StoreTypeStd), l.DefaultString("level", "info"))
-
-	} else {
-		log.Init("", "app", log.StoreTypeStd, "")
-	}
-	Site.Log = log.Get("app")
-
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
 
-	// ErrorURL
-	Site.ErrorURL = a.DefaultString("error_url", "/error")
-	// LoginURL
-	Site.LoginURL = a.DefaultString("login_url", "/login")
-
-	// Secret
-	Site.Secret = a.DefaultString("secret", "")
-	Site.Nonce = fmt.Sprint(time.Now().Unix())
-
-	// PID
-	Site.PID = a.DefaultString("pid", "")
-	// Pool
-	// s.Pool = a.DefaultInt("pool", 0)
-	// initPool(s.Pool)
-
-	// Lang
-	Site.Lang = []byte(a.DefaultString("lang", "zh"))
-
-	// Timeout
-	// s.Timeout = time.Second * time.Duration(a.DefaultInt("timeout", 2))
-
-	// MaxConnsPerIP
-	Site.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 0)
-	// Concurrency
-	Site.Concurrency = a.DefaultInt("concurrency", 2048)
-	Site.Name = a.DefaultString("name", "httpd")
+	// AssetsURL
+	render.AssetsURL = a.DefaultString("assets_url", "/assets")
+	// JsVersion CSSVersion
+	render.JSVersion = a.DefaultBytes("js_version", nil)
+	render.CSSVersion = a.DefaultBytes("css_version", nil)
+	// Template Delim
+	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
+	render.TemplateRightDelim = a.DefaultString("template_right_delim", "")
 
 	// DB
 	if config.IsSet("db") {
@@ -141,15 +101,56 @@ func Init(name string) {
 		cache.Init(config.GetConf("cache"))
 		db.SetCache(cache.CurrentCache())
 	}
+	Site = New(name)
+}
 
-	// AssetsURL
-	render.AssetsURL = a.DefaultString("assets_url", "/assets")
-	// JsVersion CSSVersion
-	render.JSVersion = a.DefaultBytes("js_version", nil)
-	render.CSSVersion = a.DefaultBytes("css_version", nil)
-	// Template Delim
-	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
-	render.TemplateRightDelim = a.DefaultString("template_right_delim", "")
+// New Server
+func New(name string) *SiteServer {
+	c := conf.Load(name)
+	a := config.GetConf("site")
+	site := &SiteServer{
+		Listen: a.DefaultString("listen", ":8080"),
+		Router: fasthttprouter.New(),
+	}
+
+	//  log
+	if c.IsSet("log") {
+		l := c.GetConf("log")
+		log.Init("var/log/", l.DefaultString("logname", "app"), l.DefaultString("logstore", log.StoreTypeStd), l.DefaultString("level", "info"))
+	} else {
+		log.Init("", "app", log.StoreTypeStd, "")
+	}
+
+	site.Log = log.Get("app")
+
+	// ErrorURL
+	site.ErrorURL = a.DefaultString("error_url", "/error")
+	// LoginURL
+	site.LoginURL = a.DefaultString("login_url", "/login")
+
+	// Secret
+	site.Secret = a.DefaultString("secret", "")
+	site.Nonce = fmt.Sprint(time.Now().Unix())
+
+	// PID
+	site.PID = a.DefaultString("pid", "")
+	// Pool
+	// s.Pool = a.DefaultInt("pool", 0)
+	// initPool(s.Pool)
+
+	// Lang
+	site.Lang = []byte(a.DefaultString("lang", "zh"))
+
+	// Timeout
+	// s.Timeout = time.Second * time.Duration(a.DefaultInt("timeout", 2))
+
+	// MaxConnsPerIP
+	site.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 0)
+	// Concurrency
+	site.Concurrency = a.DefaultInt("concurrency", 2048)
+	site.Name = a.DefaultString("name", "httpd")
+
+	return site
 }
 
 // Start server listen

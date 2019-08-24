@@ -2,10 +2,10 @@ package db
 
 // ExistsBuilder class
 type ExistsBuilder struct {
-	table string
-	where string
-	args  []interface{}
 	builder
+	table     string
+	where     string
+	args      []interface{}
 	isPrepare bool
 }
 

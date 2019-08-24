@@ -6,23 +6,16 @@ import (
 )
 
 // VO value object
-type VO struct {
-	BaseVO
+type convVO struct {
 	Code       string    `json:"code"`
 	Name       string    `json:"name"`
 	FinishedAt time.Time `json:"finished_at"`
 }
 
-func TestVO(t *testing.T) {
+func TestConvVO(t *testing.T) {
 	now := time.Now()
 	row := MapRow{"code": "code1", "name": "tom01", "finished_at": now}
-	// vo := VO{}
-	// row.CopyToVO(&vo)
-	// if vo.Code != row.String("code") && vo.FinishedAt.String() != now.String() {
-	// 	t.Fatal()
-	// }
-
-	vo := VO{}
+	vo := convVO{}
 	row.CopyToWithJSON(&vo)
 	if vo.Code != row.String("code") && vo.FinishedAt.String() != now.String() {
 		t.Fatal()
@@ -30,7 +23,7 @@ func TestVO(t *testing.T) {
 }
 
 func TestIsEmpty(t *testing.T) {
-	vo := VO{}
+	vo := convVO{}
 	cv := NewStructConvert(vo)
 	row := cv.Struct2DataRow(ActionInsert)
 

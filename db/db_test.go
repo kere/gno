@@ -186,3 +186,59 @@ func TestQueryCache(t *testing.T) {
 		t.Fatal(str)
 	}
 }
+
+type testUsr struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+type testVO struct {
+	A       string    `json:"a"`
+	B       int       `json:"b"`
+	Vals    []float64 `json:"vals"`
+	Strs    []string  `json:"strings"`
+	Ints    []int     `json:"ints"`
+	Dat     testUsr   `json:"v_json"`
+	Created time.Time `json:"created_at"`
+}
+
+func (v *testVO) Table() string {
+	return "temp"
+}
+
+func TestIVO(t *testing.T) {
+	now := time.Now().AddDate(0, -10, 0)
+	vo := testVO{A: "vo01", B: 100, Vals: []float64{11.1, 12.2, 13.3}, Strs: []string{"vo1", "vo2"}, Ints: []int{10, 11, 12}, Dat: testUsr{"Ins", 10}, Created: now}
+
+	row := VO2InsertMapRow(&vo)
+	if len(row) == 0 || len((row["vals"].([]float64))) != 3 {
+		t.Fatal(row)
+	}
+
+	err := VOCreate(&vo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := NewQuery(vo.Table()).Where("a=? and b=?", vo.A, vo.B)
+	dat, err := q.QueryOne()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dat.IsEmpty() {
+		t.Fatal("failed to insert")
+	}
+	if dat.String("a") != vo.A || dat.Int("b") != vo.B {
+		t.Fatal(dat)
+	}
+
+	u := NewUpdate(vo.Table()).Where("a=? and b=?", vo.A, vo.B)
+
+	vo = testVO{A: "vo02", B: 300, Vals: []float64{31.1, 32.2, 33.3}, Strs: []string{"vo30", "vo31"}, Ints: []int{30, 31, 32}, Dat: testUsr{"Upd", 30}, Created: now.AddDate(1, 0, 0)}
+	row = VO2InsertMapRow(&vo)
+	_, err = u.Update(row)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}

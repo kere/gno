@@ -38,7 +38,7 @@ func (t JS) Render(w io.Writer) error {
 	if t.FileName != "" {
 		w.Write(bJsSrc)
 		if strings.HasPrefix(t.FileName, "http:") || strings.HasPrefix(t.FileName, "https:") {
-			w.Write(util.StrToBytes(t.FileName))
+			w.Write(util.Str2Bytes(t.FileName))
 
 		} else {
 			var filename string
@@ -68,7 +68,7 @@ func (t JS) Render(w io.Writer) error {
 	w.Write(BytesLargeThan) // >
 
 	if t.Src != "" {
-		w.Write(util.StrToBytes(t.Src))
+		w.Write(util.Str2Bytes(t.Src))
 	}
 
 	w.Write(bJsTagEnd)

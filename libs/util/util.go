@@ -27,8 +27,8 @@ func PathToURL(items ...string) string {
 	return strings.Replace(s, "\\", "/", -1)
 }
 
-// BytesToStr bytes convert to string
-func BytesToStr(b []byte) string {
+// Bytes2Str bytes convert to string
+func Bytes2Str(b []byte) string {
 	// return *(*string)(unsafe.Pointer(&s))
 	var s string
 	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
@@ -38,8 +38,8 @@ func BytesToStr(b []byte) string {
 	return s
 }
 
-// StrToBytes bytes convert to string
-func StrToBytes(s string) []byte {
+// Str2Bytes bytes convert to string
+func Str2Bytes(s string) []byte {
 	var b []byte
 	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
 	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))

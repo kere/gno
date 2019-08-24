@@ -23,7 +23,7 @@ type PageData struct {
 
 // Init page
 func (d *PageData) Init(title, name, dir string) {
-	d.Title = util.StrToBytes(title)
+	d.Title = util.Str2Bytes(title)
 	d.Name = name
 	d.Dir = dir
 }

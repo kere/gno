@@ -25,7 +25,7 @@ func PutBytes(arr []byte) {
 
 // BitStr2Uint uint
 func BitStr2Uint(b []byte) uint64 {
-	s := BytesToStr(b)
+	s := Bytes2Str(b)
 	v, err := strconv.ParseUint(s, 2, 64)
 	if err != nil {
 		return 0
