@@ -93,11 +93,10 @@ define(
           xhr = getXHR();
           xhr.open(type, url, async);
           //设置请求头
-          if (type === "post" && !contentType) {
-            //若是post提交，则设置content-Type 为application/x-www-four-urlencoded
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-          } else if (contentType) {
+          if (contentType) {
             xhr.setRequestHeader("Content-Type", contentType);
+          }else{
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
           }
 
           for (var key in headers) {
@@ -125,7 +124,7 @@ define(
         var url = options.url || "", //请求的链接
             type = (options.type || "get").toLowerCase(), //请求的方法,默认为get
             data = options.data || {}, //请求的数据
-            contentType = options.contentType || "", //请求头
+            contentType = options.contentType || null, //请求头
             dataType = options.dataType || "", //请求的类型
             headers = options.headers || [], //请求headers
             async = options.async === undefined ? true : options.async, //是否异步，默认为true.
@@ -144,6 +143,9 @@ define(
 			url : "/home/openapi/data",
       NewClient : function(path, timeout){
         return new Client(path, timeout);
+      },
+      NewUpload : function(path){
+        return new Upload(path);
       },
 
       serverTime : {
@@ -191,7 +193,6 @@ define(
       },
     };
 
-    // ajax.setCookie('lang', navigator.language || navigator.userLanguage);
     var Client = function(path){
         this.path = path || comp.url;
         this.isrun = false;
@@ -345,6 +346,44 @@ define(
 
         return promise;
     }
+
+    var Upload = function(path){
+        this.path = path;
+        this.pfield = 'accpt';
+        this.verField = "_data_version";
+    }
+
+    Upload.prototype.upload = function(blob, filename){
+      var xhr = new XMLHttpRequest();
+      var ts = comp.serverTime.utctime().toString(), ptoken = window[this.pfield] || '';
+      xhr.open('POST', this.path, true);
+
+      var str = ts+blob.name +  blob.size + blob.lastModified + blob.type+navigator.userAgent+ts+ptoken + window.location.hostname;
+      console.log(str);
+      // xhr.setRequestHeader("Content-Type", "multipart/form-data");
+      xhr.setRequestHeader('Accto', accto(str));
+      xhr.setRequestHeader('Accts', ts);
+      xhr.setRequestHeader('AccPage', ptoken);
+      var promise = new Promise(function(resolve, reject){
+        xhr.onload = function(e) {
+          resolve(e);
+        };
+        xhr.onerror = function(e) {
+          reject(e);
+        };
+      });
+
+      var formData = new FormData();
+			formData.append('filename', filename ? filename : "");
+			formData.append('file', blob);
+			formData.append('name', blob.name);
+			formData.append('size', blob.size);
+			formData.append('lastModified', blob.lastModified);
+			formData.append('type', blob.type);
+      xhr.send(formData);
+
+      return promise;
+    };
 
     var WS = function(path){
         this.path = path;

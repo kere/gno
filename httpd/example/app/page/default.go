@@ -20,6 +20,7 @@ func NewDefault() *Default {
 	d.D.Dir = ""
 
 	d.D.CSS = []render.IRender{render.NewCSS("default.css")}
+	d.D.JS = []render.IRender{render.NewJS("vue.js")}
 
 	// d.D.Head = []render.IRender{}
 	d.D.Top = []render.IRender{render.NewTemplate("_header.htm")}

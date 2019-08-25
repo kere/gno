@@ -78,8 +78,7 @@ func openAPIHandle(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-// OpenAPIReply response
-func OpenAPIReply(ctx *fasthttp.RequestCtx, data interface{}) error {
-
-	return nil
-}
+// // OpenAPIReply response
+// func OpenAPIReply(ctx *fasthttp.RequestCtx, data interface{}) error {
+// 	return nil
+// }

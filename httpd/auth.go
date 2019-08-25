@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/kere/gno/libs/util"
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 )
@@ -34,7 +35,7 @@ func isAPIOK(req *fasthttp.Request, src []byte) bool {
 	pToken := req.Header.Peek(APIFieldPageToken)
 	u32 := buildAPIToken(req, src, pToken)
 	// auth api token
-	return u32 == string(apiToken)
+	return u32 == util.Bytes2Str(apiToken)
 }
 
 // ts+method+ts+jsonStr + token;
@@ -77,6 +78,32 @@ func buildToken(src []byte, sn, salt string) string {
 	buf.WriteString(salt)
 	buf.WriteString(sn)
 	str := fmt.Sprintf(stri16Formart, sha1.Sum(buf.Bytes()))
+	bytebufferpool.Put(buf)
+	return str
+}
+
+// ts+blob.name +  blob.size + blob.lastModified + blob.type+navigator.userAgent+ts+ptoken + window.location.hostname;
+func buildUploadToken(req *fasthttp.Request, name, size, last, typ, pToken []byte) string {
+	ts := req.Header.Peek(APIFieldTS)
+	// method + ts + src + agent + ts + ptoken + hostname
+	buf := bytebufferpool.Get()
+	buf.Write(ts)
+	buf.Write(name)
+	buf.Write(size)
+	buf.Write(last)
+	buf.Write(typ)
+	buf.Write(req.Header.UserAgent())
+	buf.Write(ts)
+	buf.Write(pToken)
+
+	origin := req.Header.Peek(HeadOrigin)
+	u, err := url.Parse(string(origin))
+	if err != nil {
+		return ""
+	}
+	buf.WriteString(u.Hostname())
+
+	str := fmt.Sprintf(stri16Formart, md5.Sum(buf.Bytes()))
 	bytebufferpool.Put(buf)
 	return str
 }

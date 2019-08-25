@@ -1,18 +1,16 @@
 require.config({
 	waitSeconds :30,
-	baseUrl : "/assets/js/",
+	baseUrl : "/assets/js",
 	paths: {
-
+		'Compressor' : 'compressorjs',
+		'imageUpload': 'vue-imageUpload'
 	}
 });
 
 require(
-	['ajax', 'util'],
-	function (ajax, util){
+	['ajax', 'util', 'imageUpload', 'Compressor'],
+	function (ajax, util, imageUpload, Compressor){
     var client = ajax.NewClient("/openapi/app");
-    client.send("PageData", {name:'tom', age: 22}).then(function(result){
-      console.log(result)
-    })
 
     if ("WebSocket" in window) {
        // 打开一个 web socket
@@ -33,4 +31,20 @@ require(
        // 浏览器不支持 WebSocket
        alert("您的浏览器不支持 WebSocket!");
     }
+
+
+    var main = new Vue({
+      el : '#main-div',
+			components : {
+				'image-upload' : imageUpload
+			},
+      data: {
+      },
+      methods : { },
+      mounted : function(){
+		    client.send("PageData", {name:'tom', age: 22}).then(function(result){
+		      console.log(result)
+		    })
+      }
+    })
 });
