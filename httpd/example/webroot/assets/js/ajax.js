@@ -39,11 +39,9 @@ define(
         }
 
         xhr.onerror = (e) => {
-          console.log("onerror:------");
           reject(xhr);
         }
         xhr.ontimeout = () => {
-          console.log("timeout:------");
           reject('timeout');
         }
       });

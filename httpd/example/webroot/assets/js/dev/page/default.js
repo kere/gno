@@ -39,7 +39,32 @@ require(
 			},
       data: {
       },
-      methods : { },
+      methods : {
+        _onClick : function(){
+					util.$.addClass('#box2', 'm-t-lg');
+        },
+        _onClick2 : function(){
+					util.$.removeClass('#box2', 'm-t-lg');
+        },
+        _onClick3 : function(){
+					util.tool.showSuccess(5);
+        },
+        _onClick4 : function(){
+					util.tool.hideToast();
+        },
+        _onClick5 : function(){
+					util.$.show('#box2');
+        },
+        _onClick6 : function(){
+					util.$.hide('#box2');
+        },
+        _onClick7 : function(){
+					util.tool.viewImage('http://n.sinaimg.cn/blog/250/w640h410/20190826/f58a-icuacrz5631047.jpg');
+        },
+        _onClick8 : function(e){
+					util.tool.taggle(e);
+        },
+			},
       mounted : function(){
     		var client = ajax.NewClient("/openapi/app");
 				client.timeout = 3;

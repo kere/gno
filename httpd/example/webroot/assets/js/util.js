@@ -1,285 +1,679 @@
 define('util', ['zepto'], function(){
-	var util = {}
-
-  util.env = () => {
-    var o = {}
-    var agent = navigator.userAgent.toLowerCase();
-    if(/android/.test(agent)){
-      o.os = 'android';
-    }else if(/iphone|ipod|ipad|ios/.test(agent)) {
-      o.os = 'ios';
-    }else if(/windows/.test(agent)){
-      o.os = 'windows';
-    }
-    o.iswxwork = /wxwork/.test(agent);
-    o.inwx = /micromessenger/.test(agent);
-
-    return o;
-  }
-
-	util.language = () => {
-	var lang = util.getCookie('lang');
-		if(!lang){
-			lang = navigator.language || navigator.userLanguage;
+	function indexOfSortedI(val, arr, b, e, desc){
+		if(b == e){
+			return arr[b] == val ? b : -1;
+		}else if(b>e){
+			return -1
 		}
-		return lang.replace('_', '-').toLowerCase();
-	}
+		var l = e-b+1, i = b+Math.floor(l/2), v = arr[i];
 
-  util.money = (v) => {
-    return util.numStr(v, 2);
-  }
-
-  util.getElement = ($el, name) => {
-    var arr = name.split('.')
-    if(arr.length!=2) return
-    var $t = $el.getElementsByTagName(arr[0]);
-    for (var i in $t) {
-      if($t[i].className == arr[1]){
-        return $t[i];
-      }
-    }
-  }
-
-	util.arrayEq = (arr1, arr2) => {
-		if(typeof(arr1)!='object' || !arr1.length){
-			return arr1 === arr2;
-		}
-		if(arr1.length!= arr2.length) return false;
-
-		for (var i = 0; i < arr1.length; i++) {
-			if(!util.objectEq(arr1[i], arr2[i])){
-				return false;
+		if(v == val){
+			return i;
+		}else if(v > val){
+			if(desc){
+				return indexOfSortedI(val, arr, i+1, e)
 			}
+			// small zone
+			return indexOfSortedI(val, arr, b, i-1)
+		}else{
+			if(desc){
+				return indexOfSortedI(val, arr, b, i-1)
+			}
+			return indexOfSortedI(val, arr, i+1, e)
 		}
-		return true;
 	}
-	util.objectEq = (o1, o2) => {
-		if(o1 == null && o2 == null){
-			return true;
+
+	// b begin; e end index
+	function getSortedI(field, val, arr, b, e, desc) {
+		if(b == e){
+			return arr[b][field] == val ? b : -1;
+		}else if(b>e){
+			return -1
 		}
-		if(!o1 || !o2){
+		var l = e-b+1, i = b+Math.floor(l/2), v;
+		v = arr[i][field]
+
+		if(v == val){
+			return i;
+		}else if(v > val){
+			if(desc){
+				return getSortedI(field, val, arr, i+1, e)
+			}
+			// small zone
+			return getSortedI(field, val, arr, b, i-1)
+		}else{
+			if(desc){
+				return getSortedI(field, val, arr, b, i-1)
+			}
+			return getSortedI(field, val, arr, i+1, e)
+		}
+	}
+
+	var util = {
+		DATE_DAY : 86400000,
+		DATE_HOUR : 3600000,
+	  env : () => {
+	    var o = {}
+	    var agent = navigator.userAgent.toLowerCase();
+	    if(/android/.test(agent)){
+	      o.os = 'android';
+	    }else if(/iphone|ipod|ipad|ios/.test(agent)) {
+	      o.os = 'ios';
+	    }else if(/windows/.test(agent)){
+	      o.os = 'windows';
+	    }
+	    o.iswxwork = /wxwork/.test(agent);
+	    o.inwx = /micromessenger/.test(agent);
+
+	    return o;
+	  },
+
+		language : function() {
+			var lang = this.getCookie('lang');
+			if(!lang){
+				lang = navigator.language || navigator.userLanguage;
+			}
+			return lang.replace('_', '-').toLowerCase();
+		},
+
+	  num2str : (v, deci) => {
+			if(!v) return '';
+			if(typeof(v)== 'string') v= parseFloat(v);
+
+			var isPad = false;
+			if(deci < 0){
+				var s = v.toString(), arr = v.toString().split('.')
+				if(arr.length == 1) return s;
+				deci = -deci;
+				isPad = true;
+			}
+
+	    if(deci==0){
+	      return v.toFixed(deci);
+	    }
+	    var deciV = Math.pow(10, deci);
+	    var s = (Math.round(v * deciV)/deciV).toFixed(deci);
+			if(!isPad) return s;
+
+			var arr = new Array(s.length);
+			for (var i = 0; i < s.length; i++) {
+				arr[i] = s[i];
+			}
+
+			for (var i = s.length-1; i > -1; i--) {
+				if(arr[i]!= '0') break;
+				arr.pop();
+			}
+
+			return arr.join('');
+	  },
+
+		// n 长度，年月日小时分钟
+		timeAgoStr : function(b, e, n) {
+			if(!n) n = 2;
+	    var arr = this.timeAgo(b, e), str='';
+	    var l = arr.length, isskip = true, i, k=0;
+	    for (i = l-1; i > -1; i--) {
+	      if(isskip && arr[i].value==0) continue;
+	      isskip = false;
+	      str += arr[i].value + arr[i].label + ' ';
+				k++
+				if(k == n) break;
+	    }
+	    return str;
+	  },
+
+		timeAgo : (b, e) => {
+	    var diff;
+	    if(typeof(b)=='number' && typeof(e) == 'undefined'){
+	      diff = b;
+	    }else{
+	      diff = Math.abs(e.getTime() - b.getTime());
+	    }
+	    var v, n, arr=[];
+
+	    for(var i=0;i<6;i++) {
+	      switch (i) {
+	        case 0: // second
+	          v = diff % 60000;
+	          arr.push({value:Math.floor(v/1000), 'label':'秒', 'ext': 's'});
+	          diff= Math.floor(diff/60000);
+	          break;
+	        case 1: // 分钟
+	          v = diff % 60;
+	          arr.push({value:v, 'label':'分', 'ext': 'm'});
+	          diff= Math.floor(diff/60);
+	          break;
+	        case 2: //小时
+	          v = diff % 24;
+	          arr.push({value:v, 'label':'小时', 'ext': 'h'});
+	          diff= Math.floor(diff/24);
+	          break;
+	        case 3: //天
+	          v = diff % 30;
+	          arr.push({value:v, 'label':'天', 'ext': 'd'});
+	          diff= Math.floor(diff/30);
+	          break;
+	        case 4: //月
+	          v = diff % 12;
+	          arr.push({value:v, 'label':'月', 'ext': 'n'});
+	          diff= Math.floor(diff/12);
+	          break;
+	        case 5:
+	          arr.push({value:v, 'label':'年', 'ext': 'y'});
+	          break;
+	      }
+	      if(Math.floor(diff) < 0) break;
+	    }
+
+	    return arr;
+		},
+
+		str2date : (str) => {
+	    if(!str) return;
+	    if(typeof str != 'string') return str;
+
+			str = str.replace(/[A-Za-z日]/g, ' ').substr(0,19);
+	    str = str.replace(/[年月]/g, '-');
+
+	    var d = new Date(Date.parse(str));
+	    if(!d || isNaN(d.getFullYear())){
+	      str = str.replace(/[-]/g, '/');
+	      return new Date(Date.parse(str));
+	    }
+	    return d;
+		},
+
+		date2str : function(time, ctype) {
+			if(!time){
+				return '';
+			}
+	    ctype = ctype ? ctype : 'date';
+
+			switch(typeof(time)){
+				case 'number':
+					time = new Date(time);
+					break;
+				case 'string':
+					time = this.str2date(time);
+					break;
+			}
+			switch (ctype) {
+				case 'date':
+					return time.getFullYear()+'-'+this.lpad(time.getMonth()+1, '0', 2)+'-'+this.lpad(time.getDate(), '0', 2)
+	      case 'date2':
+	        return this.lpad(time.getMonth()+1, '0', 2)+'-'+this.lpad(time.getDate(), '0', 2)
+	      case 'dateCH':
+	        return time.getFullYear()+'年'+this.lpad(time.getMonth()+1, '0', 2)+'月'+this.lpad(time.getDate(), '0', 2) + '日'
+	      case 'date2CH':
+	        return this.lpad(time.getMonth()+1, '0', 2)+'月'+this.lpad(time.getDate(), '0', 2) + '日'
+				case 'datetime':
+					return time.getFullYear()+'-'+this.lpad(time.getMonth()+1, '0', 2)+'-'+this.lpad(time.getDate(), '0', 2)+' '+this.lpad(time.getHours(), '0', 2)+':'+this.lpad(time.getMinutes(), '0', 2)
+				case 'time':
+					return this.lpad(time.getHours(), '0', 2)+':'+this.lpad(time.getMinutes(), '0', 2)
+			}
+			return 'unknow'
+		},
+
+		lpad : (str, padString, l) => {
+			if(typeof(str)!='string')
+				str = str.toString();
+			while (str.toString().length < l)
+				str = padString + str;
+			return str;
+		},
+
+		//pads right
+		rpad : (str, padString, l) => {
+			if(typeof(str)!='string')
+				str = str.toString();
+			while (str.toString().length < l)
+				str = str + padString;
+			return str;
+		},
+
+		find : (field, value, arr) => {
+			if(!arr)
+				return null;
+
+			var i,len = arr.length
+			for(i=0;i<len;i++)
+				if(arr[i] && arr[i][field] == value){
+					return arr[i];
+				}
+			return null;
+		},
+
+		indexOfSortedI : (val, arr) => {
+			if(!arr) return -1;
+			var isdesc = false;
+			if(arr.length> 1)
+				isdesc = arr[0] > arr[1];
+			return indexOfSortedI(val, arr, 0, arr.length-1, isdesc);
+		},
+
+		findSortedI : (field, val, arr) => {
+			if(!arr) return -1;
+			var isdesc = false;
+			if(arr.length> 1)
+				isdesc = arr[0][field] > arr[1][field];
+			return getSortedI(field, val, arr, 0, arr.length-1, isdesc);
+		},
+
+		findSorted : (field, val, arr) => {
+			if(!arr) return null;
+			var isdesc = false;
+			if(arr.length> 1)
+				isdesc = arr[0][field] > arr[1][field];
+			var i = getSortedI(field, val, arr, 0, arr.length-1, isdesc);
+			if(i < 0) return null;
+			return arr[i];
+		},
+
+		findIndex : (field, value, data) => {
+			if(!data)
+				return -1;
+
+			var i,len = data.length
+			for(i=0;i<len;i++)
+				if(data[i] && data[i][field] == value){
+					return i;
+				}
+			return -1;
+		},
+
+		inArray : (val, arr) => {
+			for(var i in arr){
+				if(arr[i]==val)
+					return true;
+			}
 			return false;
-		}
-		if(typeof(o1)!='object'){
-			return o1 === o2;
-		}
-		if (o1.hasOwnProperty('length')) {
-			return util.arrayEq(o1, o2);
-		}
-		// 检查key是否对应
-		var k ;
-		for (k in o2) {
-			if(k.substr(0,2)=='__'){
-				continue;
-			}
-			if (!o1.hasOwnProperty(k)) {
-				return false;
-			}
-		}
+		},
 
-		for (k in o1) {
-			if(k.substr(0,2)=='__'){
-				continue;
+	  setCookie :  (name,value,days) => {
+			var expires = ""
+      if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*86400000));
+        expires = "; expires="+date.toGMTString();
+      }
+      document.cookie = name+"="+value+expires+"; path=/";
+	  },
+
+		getCookie :  (name) => {
+	    var nameEQ = name + "=";
+	    var ca = document.cookie.split(';');
+	    for(var i=0;i < ca.length;i++) {
+	        var c = ca[i];
+	        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+	        if (c.indexOf(nameEQ) == 0){
+	          var s = c.substring(nameEQ.length,c.length);
+	          if(s[0] == '"'){
+	            return s.substring(1, s.length-1);
+	          }
+	          return c.substring(nameEQ.length,c.length);
+	        }
+	    }
+	    return '';
+	  },
+
+	  deleteCookie : (name) => {
+	      util.SetCookie(name,"",-1);
+	  },
+
+	  copy : (o) => {
+	    var dat = {};
+			if(typeof(o) == 'object' && o.hasOwnProperty('length')){
+				dat = new Array(o.length);
 			}
-			if(typeof(o1[k])=='object') {
-				if(util.objectEq(o1[k], o2[k])){
+	    for (var k in o) {
+	      if (!o.hasOwnProperty(k) || k.substr(0,2)=="__") continue;
+				if(o[k]== null){
+					dat[k] = null
 					continue;
+				}
+	      if(typeof(o[k]) == 'object'){
+	        dat[k] = util.copy(o[k])
+	      }else{
+	        dat[k] = o[k];
+	      }
+	    }
+	    return dat;
+	  },
+
+		$ : {
+			get : function(id, n) {
+				var el;
+				if(typeof(id) !== 'string')
+					el = id
+				else if(id[0] === '#')
+					el = document.getElementById(id.substr(1));
+
+				if(!n){
+					return el;
+				}
+
+		    var arr = n.split('.'), tag = arr[0], t;
+				if(tag === ''){
+					t = el.children;
 				}else{
+		    	t = el.getElementsByTagName(tag);
+				}
+
+				if(arr.length == 1){
+					return t;
+				}
+				return this.childrenFilter(t, arr[1]);
+			},
+
+			childrenFilter : function(list, cls) {
+				var eles = [], item;
+				for (var i = 0; i < list.length; i++) {
+					item = list[i];
+					if(this.hasClass(item, cls)){
+						eles.push(item);
+					}
+					if(item.children.length > 0){
+						eles = eles.concat(this.childrenFilter(item.children, cls));
+					}
+				}
+				return eles
+			},
+
+			each : function(el, f) {
+				el = this.get(el);
+				if(!(el instanceof Array)){
+					return f(el);
+				}
+
+				for (var i = 0; i < el.length; i++) {
+					f(el[i]);
+				}
+			},
+
+			addClass : function(el, clas) {
+				el = this.get(el);
+				if(this.hasClass(el, clas)) return;
+				if(el.className.length==0){
+					el.className = clas;
+				}else{
+					el.className += ' ' +clas;
+				}
+			},
+
+			hasClass : function(el, clas) {
+				el = this.get(el);
+				if(!el.className){
 					return false;
 				}
-			}
-			if (o1[k] != o2[k]) {
+				var arr = el.className.split(' ');
+				for (var i = 0; i < arr.length; i++) {
+					if(arr[i]==clas) return true;
+				}
 				return false;
+			},
+
+			removeClass : function(el, clas)  {
+				el = this.get(el);
+				if(!el.className){
+					return;
+				}
+				var arr = el.className.split(' ');
+				for (var i = 0; i < arr.length; i++) {
+					if(arr[i]==clas) {
+						arr.splice(i, 1);
+					};
+				}
+				el.className = arr.join(' ');
+			},
+
+			show : function(el){
+				el = this.get(el);
+
+				if(this.hasClass(el, 'hide')){
+					this.removeClass(el, 'hide');
+
+					if(this.hasClass(el, 'fade')){
+						var ths = this;
+						setTimeout(function(){
+							ths.addClass(el, 'in');
+						}, 50)
+					}
+				}
+
+				if(el.style.display == 'none'){
+					el.style.display = '';
+				}
+			},
+
+			hide : function(el){
+				el = this.get(el);
+
+				if(this.hasClass(el, 'fade')){
+					this.removeClass(el, 'in');
+					var ths = this;
+					setTimeout(function(){
+						ths.addClass(el, 'hide');
+					}, 200)
+				}else{
+					this.addClass(el, 'hide');
+				}
 			}
 		}
-		return true;
 	}
 
-  util.numStr = (v, deci) => {
-		if(!v) return '';
-		if(typeof(v)== 'string') v= parseFloat(v);
+	util.tool = {
+  	toastHtml : `<div class="weui-mask_bk"></div>
+<div class="weui-toast">
+  <i class="toast-success weui-icon-success-no-circle weui-icon_toast hide"></i>
+  <p class="toast-success weui-toast__content hide">已完成</p>
+  <i class="toast-loading weui-loading weui-icon_toast hide"></i>
+  <p class="toast-loading weui-toast__content hide">数据加载中</p>
+</div>`,
+		showLoading : function(n){
+			this.loading(0, n);
+		},
+		showSuccess : function(n){
+			this.loading(1, n);
+		},
+		loading : function(itype, n){
+			var el = util.$.get('#toast');
+			if(!el){
+				el = document.createElement("DIV");
+				el.id = 'toast';
+				el.className = 'weui-toast fade hide';
+				el.innerHTML = this.toastHtml;
+				document.body.appendChild(el);
+			}
+			var aaa = util.$.get(el, '.toast-success');
 
-		var isPad = false;
-		if(deci < 0){
-			var s = v.toString(), arr = v.toString().split('.')
-			if(arr.length == 1) return s;
-			deci = -deci;
-			isPad = true;
-		}
+			util.$.show(el);
+			if(itype==1){
+				util.$.each(util.$.get(el, '.toast-loading'), e => {
+					util.$.hide(e)
+				})
+				util.$.each(util.$.get(el, '.toast-success'), e => {
+					util.$.show(e)
+				})
+			}else{
+				util.$.each(util.$.get(el, '.toast-success'), e => {
+					util.$.hide(e)
+				})
+				util.$.each(util.$.get(el, '.toast-loading'), e => {
+					util.$.show(e)
+				})
+			}
 
-    if(deci==0){
-      return v.toFixed(deci);
-    }
-    var deciV = Math.pow(10, deci);
-    var s = (Math.round(v * deciV)/deciV).toFixed(deci);
-		if(!isPad) return s;
+			n = n || 1;
+			setTimeout(function(){
+				if(itype==1){
+					util.$.each(util.$.get(el, '.toast-success'), e => {
+						util.$.hide(e)
+					})
+				}else{
+					util.$.each(util.$.get(el, '.toast-loading'), e => {
+						util.$.hide(e)
+					})
+				}
+				util.$.hide(el);
+			}, n * 1000);
+		},
 
-		var arr = new Array(s.length);
-		for (var i = 0; i < s.length; i++) {
-			arr[i] = s[i];
-		}
+		hideToast : ()=>{
+			var el = util.$.get('#toast');
+			util.$.each(util.$.get(el, '.toast-success'), e => {
+				util.$.hide(e)
+			})
+			util.$.each(util.$.get(el, '.toast-loading'), e => {
+				util.$.hide(e)
+			})
+			util.$.hide(el);
+		},
 
-		for (var i = s.length-1; i > -1; i--) {
-			if(arr[i]!= '0') break;
-			arr.pop();
-		}
-		return arr.join('');
-  }
+	  viewImage : function(url) {
+			var el = util.$.get('#viewImage');
+	    if(!el){
+				el = document.createElement("DIV");
+				el.id = 'viewImage';
+				el.className = 'fade hide';
+				el.innerHTML = '<div style="z-index:1000;position:fixed;width:100%;height:100%;top:0;left:0;text-align:center;top:0;left:0;"><div style="width:100%;height:100%;background: #000;opacity: 0.6;" class="view-image fade in"></div><img src="" style="z-index:1001;max-width:98%;max-height:98%;transform: translate(-50%, -50%);top:50%;position:absolute;"></div>';
+				document.body.appendChild(el);
 
-  util.weekCH = (v) => {
-		if(v==null || typeof v =='undefined') return '';
-    var weeks = ['天', '一', '二', '三', '四', '五', '六' ];
-    switch (typeof v) {
-      case "number":
-        return weeks[parseInt(v)];
-      default:
-        return weeks[util.str2date(v).getDay()];
-    }
-  }
+	      el.addEventListener('click', function(e){
+					util.$.hide(el);
+	      })
+	    }
 
-	util.DATE_DAY = 86400000;
-	util.DATE_HOUR = 3600000;
+			var imgs = util.$.get(el, 'img');
+			imgs[0].src = url;
+			util.$.show(el);
+	  },
 
-	// n 长度，年月日小时分钟
-	util.timeAgoStr = (b, e, n) => {
-		if(!n) n = 2;
-    var arr = util.timeAgo(b, e), str='';
-    var l = arr.length, isskip = true, i, k=0;
-    for (i = l-1; i > -1; i--) {
-      if(isskip && arr[i].value==0) continue;
-      isskip = false;
-      str += arr[i].value + arr[i].label + ' ';
-			k++
-			if(k == n) break;
-    }
-    return str;
-  }
+	  taggle : function(e){
+	    var el = e.currentTarget;
+	    if(e.currentTarget){
+				if(util.$.hasClass(el, 'parent-pp')){
+					el = el.parentElement.parentElement;
+				}else if(util.$.hasClass(el, 'parent-p')){
+					el = el.parentElement;
+				}
+	    }else{
+	      el = e;
+	    }
+			var box = el.nextElementSibling;
+			if(util.$.hasClass(el, 'open')){
+				util.$.hide(box);
+				util.$.removeClass(el, 'open');
+				return 'close';
+			}
+			util.$.show(box);
+			util.$.addClass(el, 'open');
+			return 'open'
+	  }
 
-	util.timeAgo = (b, e) => {
-    var diff;
-    if(typeof(b)=='number' && typeof(e) == 'undefined'){
-      diff = b;
-    }else{
-      diff = Math.abs(e.getTime() - b.getTime());
-    }
-    var v, n, arr=[];
-
-    for(var i=0;i<6;i++) {
-      switch (i) {
-        case 0: // second
-          v = diff % 60000;
-          arr.push({value:Math.floor(v/1000), 'label':'秒', 'ext': 's'});
-          diff= Math.floor(diff/60000);
-          break;
-        case 1: // 分钟
-          v = diff % 60;
-          arr.push({value:v, 'label':'分', 'ext': 'm'});
-          diff= Math.floor(diff/60);
-          break;
-        case 2: //小时
-          v = diff % 24;
-          arr.push({value:v, 'label':'小时', 'ext': 'h'});
-          diff= Math.floor(diff/24);
-          break;
-        case 3: //天
-          v = diff % 30;
-          arr.push({value:v, 'label':'天', 'ext': 'd'});
-          diff= Math.floor(diff/30);
-          break;
-        case 4: //月
-          v = diff % 12;
-          arr.push({value:v, 'label':'月', 'ext': 'n'});
-          diff= Math.floor(diff/12);
-          break;
-        case 5:
-          arr.push({value:v, 'label':'年', 'ext': 'y'});
-          break;
-      }
-      if(Math.floor(diff) < 0) break;
-    }
-
-    return arr;
 	}
 
-	util.clone = (obj) => {
-    var newObj = {}
-    for (let key in obj) {
-        if (typeof obj[key] !== 'object') {
-            newObj[key] = obj[key];
-        } else {
-            newObj[key] = util.clone(obj[key]);
-        }
-    }
-    return newObj;
-  }
 
-	util.str2date = (str) => {
-    if(!str) return;
-    if(typeof str != 'string') return str;
+  // util.getElement = ($el, name) => {
+  //   var arr = name.split('.')
+  //   if(arr.length!=2) return
+  //   var $t = $el.getElementsByTagName(arr[0]);
+  //   for (var i in $t) {
+  //     if($t[i].className == arr[1]){
+  //       return $t[i];
+  //     }
+  //   }
+  // }
 
-		str = str.replace(/[A-Za-z日]/g, ' ').substr(0,19);
-    str = str.replace(/[年月]/g, '-');
+	// util.arrayEq = (arr1, arr2) => {
+	// 	if(typeof(arr1)!='object' || !arr1.length){
+	// 		return arr1 === arr2;
+	// 	}
+	// 	if(arr1.length!= arr2.length) return false;
+	//
+	// 	for (var i = 0; i < arr1.length; i++) {
+	// 		if(!util.objectEq(arr1[i], arr2[i])){
+	// 			return false;
+	// 		}
+	// 	}
+	// 	return true;
+	// }
+	//
+	// util.objectEq = (o1, o2) => {
+	// 	if(o1 == null && o2 == null){
+	// 		return true;
+	// 	}
+	// 	if(!o1 || !o2){
+	// 		return false;
+	// 	}
+	// 	if(typeof(o1)!='object'){
+	// 		return o1 === o2;
+	// 	}
+	// 	if (o1.hasOwnProperty('length')) {
+	// 		return util.arrayEq(o1, o2);
+	// 	}
+	// 	// 检查key是否对应
+	// 	var k ;
+	// 	for (k in o2) {
+	// 		if(k.substr(0,2)=='__'){
+	// 			continue;
+	// 		}
+	// 		if (!o1.hasOwnProperty(k)) {
+	// 			return false;
+	// 		}
+	// 	}
+	//
+	// 	for (k in o1) {
+	// 		if(k.substr(0,2)=='__'){
+	// 			continue;
+	// 		}
+	// 		if(typeof(o1[k])=='object') {
+	// 			if(util.objectEq(o1[k], o2[k])){
+	// 				continue;
+	// 			}else{
+	// 				return false;
+	// 			}
+	// 		}
+	// 		if (o1[k] != o2[k]) {
+	// 			return false;
+	// 		}
+	// 	}
+	// 	return true;
+	// }
 
-    var d = new Date(Date.parse(str));
-    if(!d || isNaN(d.getFullYear())){
-      str = str.replace(/[-]/g, '/');
-      return new Date(Date.parse(str));
-    }
-    return d;
-	}
 
-	util.date2str = (time, ctype) => {
-		if(!time){
-			return '';
-		}
-    ctype = ctype ? ctype : 'date';
+  // util.weekCH = (v) => {
+	// 	if(v==null || typeof v =='undefined') return '';
+  //   var weeks = ['天', '一', '二', '三', '四', '五', '六' ];
+  //   switch (typeof v) {
+  //     case "number":
+  //       return weeks[parseInt(v)];
+  //     default:
+  //       return weeks[util.str2date(v).getDay()];
+  //   }
+  // }
 
-		switch(typeof(time)){
-			case 'number':
-				time = new Date(time);
-				break;
-			case 'string':
-				time = util.str2date(time);
-				break;
-		}
-		switch (ctype) {
-			case 'date':
-				return time.getFullYear()+'-'+util.lpad(time.getMonth()+1, '0', 2)+'-'+util.lpad(time.getDate(), '0', 2)
-      case 'date2':
-        return util.lpad(time.getMonth()+1, '0', 2)+'-'+util.lpad(time.getDate(), '0', 2)
-      case 'dateCH':
-        return time.getFullYear()+'年'+util.lpad(time.getMonth()+1, '0', 2)+'月'+util.lpad(time.getDate(), '0', 2) + '日'
-      case 'date2CH':
-        return util.lpad(time.getMonth()+1, '0', 2)+'月'+util.lpad(time.getDate(), '0', 2) + '日'
-			case 'datetime':
-				return time.getFullYear()+'-'+util.lpad(time.getMonth()+1, '0', 2)+'-'+util.lpad(time.getDate(), '0', 2)+' '+util.lpad(time.getHours(), '0', 2)+':'+util.lpad(time.getMinutes(), '0', 2)
-			case 'time':
-				return util.lpad(time.getHours(), '0', 2)+':'+util.lpad(time.getMinutes(), '0', 2)
-		}
-		return 'unknow'
-	}
+	// util.getUrlParameter = (sParam) => {
+  //   var sPageURL = window.location.search.substring(1);
+  //   var sURLVariables = sPageURL.split('&');
+  //   for (var i = 0; i < sURLVariables.length; i++)
+  //   {
+  //     var sParameterName = sURLVariables[i].split('=');
+  //     if (sParameterName[0] == sParam)
+  //     {
+  //         return decodeURI(sParameterName[1]);
+  //     }
+  //   }
+	// };
 
-	util.getUrlParameter = (sParam) => {
-    var sPageURL = window.location.search.substring(1);
-    var sURLVariables = sPageURL.split('&');
-    for (var i = 0; i < sURLVariables.length; i++)
-    {
-      var sParameterName = sURLVariables[i].split('=');
-      if (sParameterName[0] == sParam)
-      {
-          return decodeURI(sParameterName[1]);
-      }
-    }
-	};
-
-	util.getUrlRouterParam = (index) => {
-    var arr = window.location.pathname.split('/'),
-      l = arr.length,
-      i = l-1-index;
-    if (i<0) return null;
-
-    return arr[i];
-  }
+	// util.getUrlRouterParam = (index) => {
+  //   var arr = window.location.pathname.split('/'),
+  //     l = arr.length,
+  //     i = l-1-index;
+  //   if (i<0) return null;
+	//
+  //   return arr[i];
+  // }
 
 	// util.cipherString = function(rsaData, nick, pwd){
 	// 	var rsa = new RSAKey(),
@@ -318,312 +712,55 @@ define('util', ['zepto'], function(){
 	// 	return decrypted.toString(CryptoJS.enc.Utf8)
 	// };
 
-	util.lpad = (str, padString, l) => {
-    if(typeof(str)!='string')
-      str = str.toString();
-    while (str.toString().length < l)
-      str = padString + str;
-    return str;
-	};
 
-	//pads right
-	util.rpad = (str, padString, l) => {
-    if(typeof(str)!='string')
-      str = str.toString();
-    while (str.toString().length < l)
-      str = str + padString;
-    return str;
-	};
+	// // in2Array array inclued val
+	// util.in2Array = (val, arr) => {
+	// 	for(var i in arr){
+	// 		if(val.toString().indexOf(arr[i].toString())>-1)
+	// 			return true;
+	// 	}
+	// 	return false;
+	// }
 
-  util.find =(field, value, arr) => {
-		if(!arr)
-			return null;
 
-		var i,len = arr.length
-		for(i=0;i<len;i++)
-			if(arr[i] && arr[i][field] == value){
-				return arr[i];
-			}
-		return null;
-	}
 
-	function indexOfSortedI(val, arr, b, e, desc){
-		if(b == e){
-			return arr[b] == val ? b : -1;
-		}else if(b>e){
-			return -1
-		}
-		var l = e-b+1, i = b+Math.floor(l/2), v = arr[i];
+	// randomElement 随机element
+  // util.randomElement = (arr) => {
+  //   return arr[Math.floor(Math.random() * arr.length)]
+  // }
 
-		if(v == val){
-			return i;
-		}else if(v > val){
-			if(desc){
-				return indexOfSortedI(val, arr, i+1, e)
-			}
-			// small zone
-			return indexOfSortedI(val, arr, b, i-1)
-		}else{
-			if(desc){
-				return indexOfSortedI(val, arr, b, i-1)
-			}
-			return indexOfSortedI(val, arr, i+1, e)
-		}
-	}
+	// // 洗牌
+  // util.shuffle = (array)  => {
+  //   var currentIndex = array.length, temporaryValue, randomIndex;
+  //   // While there remain elements to shuffle...
+  //   while (0 !== currentIndex) {
+	//
+  //     // Pick a remaining element...
+  //     randomIndex = Math.floor(Math.random() * currentIndex);
+  //     currentIndex -= 1;
+	//
+  //     // And swap it with the current element.
+  //     temporaryValue = array[currentIndex];
+  //     array[currentIndex] = array[randomIndex];
+  //     array[randomIndex] = temporaryValue;
+  //   }
+	//
+  //   return array;
+  // }
 
-  util.indexOfSortedI = (val, arr) => {
-		if(!arr) return -1;
-		var isdesc = false;
-		if(arr.length> 1)
-			isdesc = arr[0] > arr[1];
-		return indexOfSortedI(val, arr, 0, arr.length-1, isdesc);
-	}
 
-	// b begin; e end index
-	function getSortedI(field, val, arr, b, e, desc) {
-		if(b == e){
-			return arr[b][field] == val ? b : -1;
-		}else if(b>e){
-			return -1
-		}
-		var l = e-b+1, i = b+Math.floor(l/2), v;
-		v = arr[i][field]
 
-		if(v == val){
-			return i;
-		}else if(v > val){
-			if(desc){
-				return getSortedI(field, val, arr, i+1, e)
-			}
-			// small zone
-			return getSortedI(field, val, arr, b, i-1)
-		}else{
-			if(desc){
-				return getSortedI(field, val, arr, b, i-1)
-			}
-			return getSortedI(field, val, arr, i+1, e)
-		}
-	}
-
-  util.findSortedI = (field, val, arr) => {
-		if(!arr) return -1;
-		var isdesc = false;
-		if(arr.length> 1)
-			isdesc = arr[0][field] > arr[1][field];
-		return getSortedI(field, val, arr, 0, arr.length-1, isdesc);
-	}
-
-  util.findSorted = (field, val, arr) => {
-		if(!arr) return null;
-		var isdesc = false;
-		if(arr.length> 1)
-			isdesc = arr[0][field] > arr[1][field];
-		var i = getSortedI(field, val, arr, 0, arr.length-1, isdesc);
-		if(i < 0) return null;
-		return arr[i];
-	}
-
-	util.inArray = (val, arr) => {
-		for(var i in arr){
-			if(arr[i]==val)
-				return true;
-		}
-		return false;
-	}
-	util.in2Array = (val, arr) => {
-		for(var i in arr){
-			if(val.toString().indexOf(arr[i].toString())>-1)
-				return true;
-		}
-		return false;
-	}
-
-	util.findIndex = (field, value, data) => {
-		if(!data)
-			return -1;
-
-		var i,len = data.length
-		for(i=0;i<len;i++)
-			if(data[i] && data[i][field] == value){
-				return i;
-			}
-		return -1;
-	}
-
-  util.setCookie =  (name,value,days) => {
-		var expires = ""
-      if (days) {
-          var date = new Date();
-          date.setTime(date.getTime()+(days*86400000));
-          expires = "; expires="+date.toGMTString();
-      }
-      document.cookie = name+"="+value+expires+"; path=/";
-  };
-
-	util.getCookie =  (name) => {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1,c.length);
-        if (c.indexOf(nameEQ) == 0){
-          var s = c.substring(nameEQ.length,c.length);
-          if(s[0] == '"'){
-            return s.substring(1, s.length-1);
-          }
-          return c.substring(nameEQ.length,c.length);
-        }
-    }
-    return '';
-  };
-
-  util.deleteCookie = (name) => {
-      util.SetCookie(name,"",-1);
-  };
-
-  util.randomElement = (arr) => {
-    return arr[Math.floor(Math.random() * arr.length)]
-  }
-
-	// 洗牌
-  util.shuffle = (array)  => {
-    var currentIndex = array.length, temporaryValue, randomIndex;
-    // While there remain elements to shuffle...
-    while (0 !== currentIndex) {
-
-      // Pick a remaining element...
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex -= 1;
-
-      // And swap it with the current element.
-      temporaryValue = array[currentIndex];
-      array[currentIndex] = array[randomIndex];
-      array[randomIndex] = temporaryValue;
-    }
-
-    return array;
-  }
-
-  util.showLoading = ()=> {
-    var $el;
-    if($('#toast').length==0){
-      $('body').append(util.toast());
-    }
-
-    $el = $('#toast');
-    $el.removeClass('hide');
-    $el.find('.toast-success').hide();
-    $el.find('.toast-loading').show();
-    setTimeout(function(){$el.addClass('in');}, 50);
-    setTimeout(function(){util.hideToast()}, 10000);
-  }
-
-  util.viewImage = (url) => {
-    if($('#viewImage').length==0){
-      var $t = $('<div id="viewImage" class="fade hide" style="z-index:1000;position:fixed;width:100%;height:100%;top:0;left:0;text-align:center;top:0;left:0;"><div style="width:100%;height:100%;background: #000;opacity: 0.6;" class="view-image fade in"></div><img src="" style="z-index:1001;max-width:98%;max-height:98%;transform: translate(-50%, -50%);top:50%;position:absolute;"></div>');
-      $('body').append($t);
-      $t[0].addEventListener('click', function(e){
-        var $t = $(e.currentTarget)
-        $t.removeClass('in');
-        setTimeout(function(){
-          $t.addClass('hide');
-        },150)
-      })
-    }
-    var $t = $('#viewImage');
-    $t.find('img').attr('src', url);
-    $t.removeClass('hide').addClass('in');
-  }
-
-  util.toast = () => {
-    return $('<div id="toast" class="weui-toast fade hide">'+
-      '<div class="weui-mask_bk"></div>'+
-      '<div class="weui-toast">'+
-          '<i class="toast-success weui-icon-success-no-circle weui-icon_toast"></i>'+
-          '<p class="toast-success weui-toast__content">已完成</p>'+
-          '<i class="toast-loading weui-loading weui-icon_toast"></i>'+
-          '<p class="toast-loading weui-toast__content">数据加载中</p>'+
-      '</div>'+
-    '</div>');
-  }
-  util.showSuccess = () => {
-    var $el;
-    if($('#toast').length==0){
-      $('body').append(util.toast());
-    }
-
-    $el = $('#toast');
-    $el.removeClass('hide');
-    $el.find('.toast-success').show();
-    $el.find('.toast-loading').hide();
-    setTimeout(function(){$el.addClass('in');}, 50);
-    setTimeout(function(){util.hideToast()}, 10000);
-  }
-
-  util.hideToast = ()=>{
-    var $el = $('#toast');
-    $el.removeClass('in');
-    setTimeout(function(){$el.addClass('hide');}, 150);
-  }
-
-  util.taggle = function(e, isCloseOther){
-    var $t;
-    if(e.currentTarget){
-      $t = $(e.currentTarget);
-      if($t.hasClass('parent-pp')){
-        $t = $t.parent().parent();
-      } else if($t.hasClass('parent-p')){
-        $t = $t.parent();
-      }
-    }else{
-      $t = e;
-    }
-
-    // index = index ? '-'+index : '';
-    var $box = $t.next('.default-hide');
-    if($t.hasClass('open')){
-      if($box.hasClass('fade')){
-        $box.removeClass('in');
-        setTimeout(function(){
-          $t.removeClass('open');
-        }, 150)
-      }else{
-        $t.removeClass('open');
-      }
-
-      return 'close';
-    }else{
-      $t.addClass('open')
-      setTimeout(function(){
-        $box.addClass('in');
-      }, 10)
-			if(isCloseOther){
-				$t.siblings('.open').removeClass('open');
-      	$t.parent().siblings().find('.open').removeClass('open');
-			}
-      return 'open';
-    }
-  }
-
-  util.copy = (o) => {
-    var dat = {};
-		if(typeof(o) == 'object' && o.hasOwnProperty('length')){
-			dat = new Array(o.length);
-		}
-    for (var k in o) {
-      if (!o.hasOwnProperty(k) || k.substr(0,2)=="__") continue;
-			if(o[k]== null){
-				dat[k] = null
-				continue;
-			}
-      if(typeof(o[k]) == 'object'){
-        dat[k] = util.copy(o[k])
-      }else{
-        dat[k] = o[k];
-      }
-    }
-    return dat;
-  }
+	// util.clone = (obj) => {
+  //   var newObj = {}
+  //   for (let key in obj) {
+  //       if (typeof obj[key] !== 'object') {
+  //           newObj[key] = obj[key];
+  //       } else {
+  //           newObj[key] = util.clone(obj[key]);
+  //       }
+  //   }
+  //   return newObj;
+  // }
 
 	return util;
 });
