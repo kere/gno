@@ -12,6 +12,7 @@ import (
 
 func openAPIHandle(ctx *fasthttp.RequestCtx) {
 	uri := string(ctx.URI().Path())
+
 	itemExec, isok := openapiMap[uri]
 	if !isok {
 		err := errors.New(uri + " openapi not found")
@@ -35,13 +36,17 @@ func openAPIHandle(ctx *fasthttp.RequestCtx) {
 		}()
 	}
 
-	pArgs := ctx.Request.PostArgs()
-	src := pArgs.Peek(APIFieldSrc)
+	// application/x-www-form-urlencoded;charset=UTF-8
+	// pArgs := ctx.Request.PostArgs()
+	// src := pArgs.Peek(APIFieldSrc)
+
+	// application/json;charset=UTF-8
+	src := ctx.Request.Body()
+	// fmt.Println(string(src))
 
 	var params util.MapData
 	if len(src) > 0 {
-		err := json.Unmarshal(src, &params)
-		if err != nil {
+		if err := json.Unmarshal(src, &params); err != nil {
 			doAPIError(ctx, err)
 			return
 		}

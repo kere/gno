@@ -1,15 +1,14 @@
 package httpd
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/kere/gno/libs/log"
@@ -26,12 +25,14 @@ const (
 	// ReplyTypeText reply text
 	ReplyTypeText = 1
 
-	// APIFieldSrc post field
-	APIFieldSrc = "_src"
+	// // APIFieldSrc post field
+	// APIFieldSrc = "_src"
+
 	// APIFieldTS post field
 	APIFieldTS = "Accts"
 	// APIFieldMethod post field
-	APIFieldMethod = "method"
+	APIFieldMethod = "Api"
+
 	// APIFieldToken post field
 	APIFieldToken = "Accto"
 	// APIFieldPageToken post field
@@ -93,39 +94,55 @@ func doAPIError(ctx *fasthttp.RequestCtx, err error) {
 	ctx.Error(err.Error(), http.StatusInternalServerError)
 }
 
+const (
+	clientAgent = "Go-http-client"
+)
+
 // SendAPI send api method
 func SendAPI(uri string, method string, dat util.MapData) (util.MapData, error) {
-	// data:       {'_src': jsonStr, 'now': now, 'token': md5(str), 'method': method},
-	// str = now+method+now+jsonStr+now;
+	// str = ts+method+ts+jsonStr+ts;
 	src, err := json.Marshal(dat)
 	if err != nil {
 		return nil, err
 	}
 
-	vals := url.Values{}
-	vals.Add(APIFieldSrc, string(src))
-	vals.Add(APIFieldMethod, method)
+	// vals := url.Values{}
+	// vals.Add(APIFieldSrc, string(src))
+	// vals.Add(APIFieldMethod, method)
 
-	// ts+method+jsonStr + token;
-	ts := fmt.Sprint(time.Now().Unix())
-	buf := bytebufferpool.Get()
-	buf.WriteString(ts)
-	buf.WriteString(method)
-	buf.WriteString(ts)
-	buf.Write(src)
-	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
-	bytebufferpool.Put(buf)
-
-	req, err := http.NewRequest(http.MethodPost, uri+"/"+method, strings.NewReader(vals.Encode()))
+	reader := bytes.NewReader(src)
+	req, err := http.NewRequest(http.MethodPost, uri+"/"+method, reader)
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set(APIFieldMethod, method)
+	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	req.Header.Set("User-Agent", clientAgent)
+
+	// write head token
+	// method + ts + src + agent + ts + ptoken + hostname
+	ts := fmt.Sprint(time.Now().Unix())
+	buf := bytebufferpool.Get()
+	buf.WriteString(method)
+	buf.WriteString(ts)
+	buf.Write(src)
+	buf.WriteString(clientAgent)
+	buf.WriteString(ts)
+
+	// u, err := url.Parse(uri)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// buf.WriteString(u.Hostname())
+
+	// fmt.Println("Client:", buf.String())
+	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+	bytebufferpool.Put(buf)
+
 	req.Header.Set(APIFieldTS, ts)
 	req.Header.Set(APIFieldToken, token)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{}
-
 	resq, err := client.Do(req)
 	if err != nil {
 		return nil, err

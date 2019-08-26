@@ -10,7 +10,6 @@ require.config({
 require(
 	['ajax', 'util', 'imageUpload', 'Compressor'],
 	function (ajax, util, imageUpload, Compressor){
-    var client = ajax.NewClient("/openapi/app");
 
     if ("WebSocket" in window) {
        // 打开一个 web socket
@@ -42,8 +41,14 @@ require(
       },
       methods : { },
       mounted : function(){
+    		var client = ajax.NewClient("/openapi/app");
+				client.timeout = 3;
 		    client.send("PageData", {name:'tom', age: 22}).then(function(result){
-		      console.log(result)
+		      console.log("-----1-----", result)
+		    })
+
+		    client.send("PageData", null).then(function(result){
+		      console.log("-----2-----", result)
 		    })
       }
     })

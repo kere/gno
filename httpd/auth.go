@@ -41,9 +41,11 @@ func isAPIOK(req *fasthttp.Request, src []byte) bool {
 // ts+method+ts+jsonStr + token;
 func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 	ts := req.Header.Peek(APIFieldTS)
-	method := req.PostArgs().Peek(APIFieldMethod)
+	method := req.Header.Peek(APIFieldMethod)
 
+	// method := req.PostArgs().Peek(APIFieldMethod)
 	// method + ts + src + agent + ts + ptoken + hostname
+
 	buf := bytebufferpool.Get()
 	buf.Write(method)
 	buf.Write(ts)
@@ -58,6 +60,11 @@ func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 		return ""
 	}
 	buf.WriteString(u.Hostname())
+
+	// fmt.Println(buf.String())
+	// req.Header.VisitAll(func(key []byte, value []byte) {
+	// 	fmt.Println(string(key), string(value))
+	// })
 
 	str := fmt.Sprintf(stri16Formart, md5.Sum(buf.Bytes()))
 	bytebufferpool.Put(buf)
