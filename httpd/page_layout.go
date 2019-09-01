@@ -30,10 +30,10 @@ var (
 )
 
 // renderPage func
-func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
+func renderPage(site *SiteServer, w io.Writer, pd *PageData, bPath []byte) error {
 	// <html>
 	w.Write(bytesHTMLBegin)
-	w.Write(Site.Lang)
+	w.Write(site.Lang)
 	w.Write(bytesHTMLBegin2)
 
 	// head -------------------------
@@ -48,9 +48,11 @@ func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
 	w.Write([]byte(RunMode))
 	w.Write(bRenderS2)
 
-	token := buildToken(bPath, Site.Secret, Site.Nonce)
+	token := buildToken(bPath, site.Secret, site.Nonce)
 
 	w.Write([]byte(token))
+
+	opt := render.Opt{AssetsURL: site.AssetsURL, JSVersion: site.JSVersion, CSSVersion: site.CSSVersion}
 
 	w.Write(bRenderS3)
 	for _, r := range pd.Head {
@@ -58,14 +60,18 @@ func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
 			return err
 		}
 	}
+
 	for _, r := range pd.CSS {
-		if err := r.Render(w); err != nil {
+		if err := r.RenderWith(w, opt); err != nil {
 			return err
 		}
 	}
-	for _, r := range pd.JS {
-		if err := r.Render(w); err != nil {
-			return err
+
+	if pd.JSPosition == JSPositionHead {
+		for _, r := range pd.JS {
+			if err := r.RenderWith(w, opt); err != nil {
+				return err
+			}
 		}
 	}
 	w.Write(bHeadEnd)
@@ -88,6 +94,14 @@ func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
 	} else {
 		for _, r := range pd.Body {
 			if err = r.Render(w); err != nil {
+				return err
+			}
+		}
+	}
+
+	if pd.JSPosition == JSPositionBottom {
+		for _, r := range pd.JS {
+			if err := r.RenderWith(w, opt); err != nil {
 				return err
 			}
 		}

@@ -33,6 +33,11 @@ func NewScript(src string) JS {
 
 // Render f
 func (t JS) Render(w io.Writer) error {
+	return t.RenderWith(w, Opt{})
+}
+
+// RenderWith f
+func (t JS) RenderWith(w io.Writer, opt Opt) error {
 	w.Write(bJsTagBegin)
 
 	if t.FileName != "" {
@@ -45,11 +50,14 @@ func (t JS) Render(w io.Writer) error {
 			if os.PathSeparator == '\\' {
 				filename = strings.Replace(t.FileName, "\\", "/", -1)
 			}
-			w.Write([]byte(AssetsURL + "/js/" + filename))
+			w.Write(util.Str2Bytes(opt.AssetsURL))
+			w.Write(util.Str2Bytes("/js/"))
+			w.Write(util.Str2Bytes(filename))
 		}
-		if len(JSVersion) > 0 {
+
+		if opt.JSVersion != "" {
 			w.Write(bVerStr)
-			w.Write(JSVersion)
+			w.Write(util.Str2Bytes(opt.JSVersion))
 		}
 		w.Write(BytesQuote)
 	}

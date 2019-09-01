@@ -1,5 +1,9 @@
 package db
 
+import (
+	"github.com/valyala/bytebufferpool"
+)
+
 // ExistsBuilder class
 type ExistsBuilder struct {
 	builder
@@ -47,7 +51,9 @@ var (
 
 func parseExists(e *ExistsBuilder) string {
 	// s := bytes.Buffer{}
-	buf := bytePool.Get()
+	// buf := bytePool.Get()
+	buf := bytebufferpool.Get()
+
 	buf.Write(bExistsSQL)
 	buf.Write(Current().Driver.QuoteIdentifierB(e.table))
 
@@ -57,7 +63,9 @@ func parseExists(e *ExistsBuilder) string {
 	}
 	buf.Write(bSQLLimitOne)
 	str := buf.String()
-	bytePool.Put(buf)
+	// bytePool.Put(buf)
+	bytebufferpool.Put(buf)
+
 	return str
 }
 

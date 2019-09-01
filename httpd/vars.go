@@ -1,22 +1,5 @@
 package httpd
 
-var (
-	// HeaderEtag etag
-	HeaderEtag = []byte("ETag")
-
-	// HeaderCacheCtl cache
-	HeaderCacheCtl = []byte("Cache-Control")
-
-	// HeaderIfNoneMatch If-None-Match
-	HeaderIfNoneMatch = []byte("If-None-Match")
-
-	// HeaderLastModified Last-Modified
-	HeaderLastModified = []byte("Last-Modified")
-
-	// HeaderIfModifiedSince = "If-Modified-Since"
-	HeaderIfModifiedSince = []byte("If-Modified-Since")
-)
-
 const (
 	//CacheModePage 按照页面名称缓存
 	CacheModePage = 1

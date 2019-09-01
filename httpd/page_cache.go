@@ -2,6 +2,7 @@ package httpd
 
 import (
 	"fmt"
+	"hash/crc32"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -21,8 +22,8 @@ type PageCacheOption struct {
 	Store    int // 0: mem 1:file
 }
 
-// pCacheElem class
-type pCacheElem struct {
+// pCache class
+type pCache struct {
 	LastModified string // Last-Modified: Fri, 12 May 2006 18:53:33 GMT
 	Src          []byte
 }
@@ -31,20 +32,23 @@ var pageCacheMap = &sync.Map{}
 
 // pageCachedKey key
 func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) []byte {
+	var src []byte
 	switch opt.PageMode {
 	case CacheModePage:
 		pdata := p.Data()
-		return []byte(pdata.Dir + pdata.Name)
-
-	case CacheModePagePath:
-		return ctx.URI().Path()
+		src = []byte(pdata.Dir + pdata.Name)
 
 	case CacheModePageURI:
-		return ctx.URI().RequestURI()
+		src = ctx.URI().RequestURI()
 
 	default:
-		return nil
+		src = ctx.URI().Path()
 	}
+	ieee := crc32.NewIEEE()
+	// io.WriteString(ieee, str)
+	ieee.Write(src)
+	v64 := uint64(ieee.Sum32())
+	return util.IntZipTo62(v64)
 }
 
 // TryCache try to get cache
@@ -65,34 +69,32 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 
 	switch opt.Store {
 	case CacheStoreMem:
-		if v, isCached := pageCacheMap.Load(string(key)); isCached {
-			pe := v.(pCacheElem)
-			src = pe.Src
-			last = pe.LastModified
-		} else {
+		v, isCached := pageCacheMap.Load(string(key))
+		if !isCached {
 			return false
 		}
+		pe := v.(pCache)
+		src = pe.Src
+		last = pe.LastModified
 
 	case CacheStoreFile:
-		bstr := util.MD5BytesV(key)
-		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", bstr))
+		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", key))
 		file, err := os.OpenFile(name, os.O_RDONLY, os.ModePerm)
 		if os.IsNotExist(err) {
 			return false
 		}
+		defer file.Close()
 		src, _ = ioutil.ReadAll(file)
 		stat, err := file.Stat()
 		if err != nil {
 			log.App.Error(err)
-			file.Close()
 			return false
 		}
 		last = gmtNowTime(stat.ModTime())
-		file.Close()
 	}
 
 	// check use cache ?
-	last0 := string(ctx.Request.Header.PeekBytes(HeaderIfModifiedSince))
+	last0 := util.Bytes2Str(ctx.Request.Header.Peek(fasthttp.HeaderIfModifiedSince))
 
 	if last != "" && last == last0 {
 		ctx.SetStatusCode(http.StatusNotModified)
@@ -119,11 +121,10 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 	switch opt.Store {
 	case CacheStoreMem:
 		last = gmtNowTime(time.Now())
-		pageCacheMap.Store(string(key), pCacheElem{LastModified: last, Src: body})
+		pageCacheMap.Store(string(key), pCache{LastModified: last, Src: body})
 
 	case CacheStoreFile:
-		bstr := util.MD5BytesV(key)
-		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", bstr))
+		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", key))
 		f, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return err
@@ -149,4 +150,14 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 // ClearCache Clear cache
 func ClearCache() error {
 	return nil
+}
+
+func gmtNowTime(d time.Time) string {
+	lc, err := time.LoadLocation("GMT")
+	if err != nil {
+		panic(err)
+	}
+	gmt := d.In(lc)
+
+	return gmt.Format(LastModifiedFormat)
 }

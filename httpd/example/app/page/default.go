@@ -18,26 +18,26 @@ func NewDefault() *Default {
 	d.D.Title = []byte("Default Page")
 	d.D.Name = "default"
 	d.D.Dir = ""
-
-	d.D.CSS = []render.IRender{render.NewCSS("default.css")}
-	d.D.JS = []render.IRender{render.NewJS("vue.js")}
-
-	// d.D.Head = []render.IRender{}
-	d.D.Top = []render.IRender{render.NewTemplate("_header.htm")}
-
-	// d.D.CacheOption.PageMode = httpd.CacheModePagePath
-	d.D.CacheOption.Store = httpd.CacheStoreNone
-	// d.D.CacheOption.Store = httpd.CacheStoreMem
-	// d.D.CacheOption.HTTPHead = 300
-
 	// requirejs
 	data := make(map[string]string, 0)
 	data["defer"] = ""
 	data["async"] = "true"
 
-	data["data-main"] = render.AssetsURL + util.PathToURL("/js/", httpd.RunMode+"/page", d.D.Dir, d.D.Name)
+	data["data-main"] = httpd.Site.AssetsURL + util.PathToURL("/js/", httpd.RunMode+"/page", d.D.Dir, d.D.Name)
 	data["src"] = "/assets/js/require.js"
-	d.D.Bottom = []render.IRender{render.NewTemplate("_bottom.htm"), render.Script("", data)}
+
+	// css := render.NewCSS("https://cdn.jsdelivr.net/npm/element-ui@2.11.1/lib/theme-chalk/index.css")
+	d.D.CSS = []render.IRenderWith{render.NewCSS("default.css")}
+	d.D.JS = []render.IRenderWith{render.NewJS("vue.js"), render.Script("", data)}
+
+	// d.D.Head = []render.IRender{}
+	d.D.Top = []render.IRender{render.NewTemplate("_header.htm")}
+
+	// d.D.CacheOption.PageMode = httpd.CacheModePagePath
+	// d.D.CacheOption.Store = httpd.CacheStoreNone
+	d.D.CacheOption.Store = httpd.CacheStoreMem
+
+	d.D.Bottom = []render.IRender{render.NewTemplate("_bottom.htm")}
 	return d
 }
 

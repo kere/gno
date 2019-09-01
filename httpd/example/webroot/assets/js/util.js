@@ -1,4 +1,4 @@
-define('util', ['zepto'], function(){
+define('util', [], function(){
 	function indexOfSortedI(val, arr, b, e, desc){
 		if(b == e){
 			return arr[b] == val ? b : -1;
@@ -342,18 +342,25 @@ define('util', ['zepto'], function(){
 	  },
 
 		$ : {
-			get : function(id, n) {
+			get : function(sel, cls) {
 				var el;
-				if(typeof(id) !== 'string')
-					el = id
-				else if(id[0] === '#')
-					el = document.getElementById(id.substr(1));
+				if(typeof(sel) === 'string'){
+					var tmp = sel.split(' ');
+					if(tmp[0][0] === '#'){
+						el = document.getElementById(tmp[0].substr(1));
+					}
+					if(tmp.length == 2){
+						cls = tmp[1];
+					}
+				} else {
+					el = sel;
+				}
 
-				if(!n){
+				if(!cls){
 					return el;
 				}
 
-		    var arr = n.split('.'), tag = arr[0], t;
+		    var arr = cls.split('.'), tag = arr[0], t;
 				if(tag === ''){
 					t = el.children;
 				}else{
@@ -370,25 +377,28 @@ define('util', ['zepto'], function(){
 				var eles = [], item;
 				for (var i = 0; i < list.length; i++) {
 					item = list[i];
+					if(typeof(item.className)!=='string') continue;
 					if(this.hasClass(item, cls)){
 						eles.push(item);
 					}
 					if(item.children.length > 0){
-						eles = eles.concat(this.childrenFilter(item.children, cls));
+						var items = this.childrenFilter(item.children, cls)
+						if(items) eles = eles.concat();
 					}
 				}
-				return eles
+
+				return eles.length > 0 ? eles: null;
 			},
 
 			each : function(el, f) {
 				el = this.get(el);
-				if(!(el instanceof Array)){
-					return f(el);
+				if(el.length > 0){
+					for (var i = 0; i < el.length; i++) {
+						f(el[i]);
+					}
+					return;
 				}
-
-				for (var i = 0; i < el.length; i++) {
-					f(el[i]);
-				}
+				return f(el);
 			},
 
 			addClass : function(el, clas) {
@@ -463,13 +473,6 @@ define('util', ['zepto'], function(){
 	}
 
 	util.tool = {
-  	toastHtml : `<div class="weui-mask_bk"></div>
-<div class="weui-toast">
-  <i class="toast-success weui-icon-success-no-circle weui-icon_toast hide"></i>
-  <p class="toast-success weui-toast__content hide">已完成</p>
-  <i class="toast-loading weui-loading weui-icon_toast hide"></i>
-  <p class="toast-loading weui-toast__content hide">数据加载中</p>
-</div>`,
 		showLoading : function(n){
 			this.loading(0, n);
 		},
@@ -482,10 +485,15 @@ define('util', ['zepto'], function(){
 				el = document.createElement("DIV");
 				el.id = 'toast';
 				el.className = 'weui-toast fade hide';
-				el.innerHTML = this.toastHtml;
+				el.innerHTML = `<div class="weui-mask"></div>
+<div class="weui-toast">
+  <i class="toast-success weui-icon-success-no-circle weui-icon_toast hide"></i>
+  <p class="toast-success weui-toast__content hide">已完成</p>
+  <i class="toast-loading weui-loading weui-icon_toast hide"></i>
+  <p class="toast-loading weui-toast__content hide">数据加载中</p>
+</div>`
 				document.body.appendChild(el);
 			}
-			var aaa = util.$.get(el, '.toast-success');
 
 			util.$.show(el);
 			if(itype==1){
@@ -528,6 +536,30 @@ define('util', ['zepto'], function(){
 				util.$.hide(e)
 			})
 			util.$.hide(el);
+		},
+
+		showBusy : function(el, n){
+			var t = util.$.get(el, 'div.el-loading-mask');
+			if(!t){
+				t = document.createElement("DIV");
+				t.className = 'el-loading-mask';
+				t.innerHTML = `<div class="el-loading-spinner"><svg viewBox="25 25 50 50" class="circular"><circle cx="50" cy="50" r="20" fill="none" class="path"></circle></svg></div>`
+				el.appendChild(t);
+			}else{
+				t = t[0];
+			}
+
+			util.$.show(t);
+			n = n || 3;
+			setTimeout(function(){
+				util.$.hide(t);
+			}, n * 1000)
+		},
+
+		hideBusy : function(el){
+			var t = util.$.get(el, 'div.el-loading-mask');
+			if(!t) return;
+			util.$.hide(t[0]);
 		},
 
 	  viewImage : function(url) {

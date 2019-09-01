@@ -1,10 +1,8 @@
 package db
 
-import "github.com/valyala/bytebufferpool"
-
 var (
-	bytePool bytebufferpool.Pool
-	dbpool   *databasePool
+	// bytePool bytebufferpool.Pool
+	dbpool *databasePool
 	// dbConf conf.Conf
 )
 

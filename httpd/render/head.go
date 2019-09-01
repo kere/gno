@@ -2,6 +2,8 @@ package render
 
 import (
 	"io"
+
+	"github.com/kere/gno/libs/util"
 )
 
 // Head render
@@ -16,6 +18,6 @@ func NewHead(v string) Head {
 
 // Render func
 func (h Head) Render(w io.Writer) error {
-	w.Write([]byte(h.Value))
+	w.Write(util.Str2Bytes(h.Value))
 	return nil
 }

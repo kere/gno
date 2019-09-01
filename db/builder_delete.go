@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+
+	"github.com/valyala/bytebufferpool"
 )
 
 // DeleteBuilder class
@@ -24,7 +26,8 @@ func (d *DeleteBuilder) Table(t string) *DeleteBuilder {
 }
 
 func parseDelete(d *DeleteBuilder) string {
-	buf := bytePool.Get()
+	// buf := bytePool.Get()
+	buf := bytebufferpool.Get()
 	// s := bytes.Buffer{}
 	driver := Current().Driver
 	buf.Write(bSQLDelete)
@@ -35,7 +38,9 @@ func parseDelete(d *DeleteBuilder) string {
 		buf.Write(d.GetDatabase().Driver.Adapt(d.where, 0))
 	}
 	str := buf.String()
-	bytePool.Put(buf)
+	// bytePool.Put(buf)
+	bytebufferpool.Put(buf)
+
 	return str
 }
 

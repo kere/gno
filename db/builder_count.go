@@ -1,7 +1,7 @@
 package db
 
 import (
-	"bytes"
+	"github.com/valyala/bytebufferpool"
 )
 
 // CounterBuilder class
@@ -36,7 +36,7 @@ func (c *CounterBuilder) GetPrepare() bool {
 // Count db
 func (c *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) {
 	// s := bytes.Buffer{}
-	buf := bytePool.Get()
+	buf := bytebufferpool.Get()
 	// driver := database.Driver
 	buf.WriteString("SELECT count(1) as count FROM ")
 	buf.WriteString(c.table)
@@ -51,7 +51,8 @@ func (c *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) 
 	} else {
 		rows, err = c.GetDatabase().QueryRows(buf.String())
 	}
-	bytePool.Put(buf)
+	// bytePool.Put(buf)
+	bytebufferpool.Put(buf)
 
 	if err != nil {
 		return -1, err
@@ -61,20 +62,22 @@ func (c *CounterBuilder) Count(cond string, args ...interface{}) (int64, error) 
 
 //TxCount transaction Count db
 func (c *CounterBuilder) TxCount(tx *Tx, cond string, args ...interface{}) (int64, error) {
-	s := bytes.Buffer{}
+	// s := bytes.Buffer{}
+	buf := bytebufferpool.Get()
+
 	// driver := database.Driver
-	s.WriteString("SELECT count(1) as count FROM ")
-	s.WriteString(c.table)
+	buf.WriteString("SELECT count(1) as count FROM ")
+	buf.WriteString(c.table)
 
 	var row MapRow
 	var err error
 
 	if c.isPrepare {
-		s.Write(bSQLWhere)
-		s.Write(c.GetDatabase().Driver.Adapt(cond, 0))
-		row, err = tx.QueryOnePrepare(s.String(), args...)
+		buf.Write(bSQLWhere)
+		buf.Write(c.GetDatabase().Driver.Adapt(cond, 0))
+		row, err = tx.QueryOnePrepare(buf.String(), args...)
 	} else {
-		row, err = tx.QueryOne(s.String())
+		row, err = tx.QueryOne(buf.String())
 	}
 
 	if err != nil {

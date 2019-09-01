@@ -6,16 +6,26 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+const (
+	// JSPositionHead top head
+	JSPositionHead = 1
+	// JSPositionBottom bottom
+	JSPositionBottom = 9
+)
+
 // PageData class
 type PageData struct {
-	Name, Dir     string
-	Title         []byte
-	Secret, Nonce string
-	CacheOption   PageCacheOption
+	Name, Dir string
+	Title     []byte
+	// Secret, Nonce string
+	CacheOption PageCacheOption
+	JSPosition  int
 
-	Head   []render.IRender
-	CSS    []render.IRender
-	JS     []render.IRender
+	Head []render.IRender
+
+	JS  []render.IRenderWith
+	CSS []render.IRenderWith
+
 	Top    []render.IRender
 	Body   []render.IRender
 	Bottom []render.IRender

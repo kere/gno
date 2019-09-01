@@ -26,18 +26,12 @@ const (
 )
 
 var (
-	// ConfigName config file name
-	ConfigName = "app/app.conf"
-
 	// HomeDir of config
 	HomeDir = ""
 	// RunMode dev pro
 	RunMode = ModeDev
 	// Site svr
-	Site *SiteServer
-
-	config conf.Configuration
-
+	Site     *SiteServer
 	quitChan = make(chan os.Signal)
 )
 
@@ -49,68 +43,61 @@ type SiteServer struct {
 	// Location *time.Location
 	Router *fasthttprouter.Router
 
-	// AssetsURL string
 	ErrorURL string
 	LoginURL string
+
+	AssetsURL  string
+	JSVersion  string
+	CSSVersion string
 
 	Secret string
 	Nonce  string
 
 	Log *log.Logger
 
-	PID  string
-	Lang []byte
-
-	// Timeout       time.Duration
-	MaxConnsPerIP int
-	Concurrency   int //连接并发数
-	// Pool int
-}
-
-// GetConfig return Configuration
-func GetConfig() *conf.Configuration {
-	return &config
+	PID        string
+	Lang       []byte
+	Server     *fasthttp.Server
+	ConfigName string
+	C          conf.Configuration
 }
 
 // Init Server
 func Init(name string) {
-	ConfigName = name
-	config = conf.Load(name)
+	Site = New(name)
+
 	dir := filepath.Dir(name)
 	HomeDir, _ = filepath.Abs(filepath.Join(dir, ".."))
 
-	a := config.GetConf("site")
+	a := Site.C.GetConf("site")
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
 
-	// AssetsURL
-	render.AssetsURL = a.DefaultString("assets_url", "/assets")
-	// JsVersion CSSVersion
-	render.JSVersion = a.DefaultBytes("js_version", nil)
-	render.CSSVersion = a.DefaultBytes("css_version", nil)
 	// Template Delim
 	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
 	render.TemplateRightDelim = a.DefaultString("template_right_delim", "")
 
 	// DB
-	if config.IsSet("db") {
-		db.Init("app", config.GetConf("db"))
+	if Site.C.IsSet("db") {
+		db.Init("app", Site.C.GetConf("db"))
 	}
 
-	if config.IsSet("cache") {
-		cache.Init(config.GetConf("cache"))
+	if Site.C.IsSet("cache") {
+		cache.Init(Site.C.GetConf("cache"))
 		db.SetCache(cache.CurrentCache())
 	}
-	Site = New(name)
 }
 
 // New Server
 func New(name string) *SiteServer {
 	c := conf.Load(name)
-	a := config.GetConf("site")
+
+	a := c.GetConf("site")
 	site := &SiteServer{
-		Listen: a.DefaultString("listen", ":8080"),
-		Router: fasthttprouter.New(),
+		ConfigName: name,
+		C:          c,
+		Listen:     a.DefaultString("listen", ":8080"),
+		Router:     fasthttprouter.New(),
 	}
 
 	//  log
@@ -141,14 +128,17 @@ func New(name string) *SiteServer {
 	// Lang
 	site.Lang = []byte(a.DefaultString("lang", "zh"))
 
-	// Timeout
-	// s.Timeout = time.Second * time.Duration(a.DefaultInt("timeout", 2))
-
-	// MaxConnsPerIP
-	site.MaxConnsPerIP = a.DefaultInt("max_conns_per_ip", 0)
-	// Concurrency
-	site.Concurrency = a.DefaultInt("concurrency", 2048)
 	site.Name = a.DefaultString("name", "httpd")
+	site.AssetsURL = a.DefaultString("assets_url", "/assets")
+
+	// JsVersion CSSVersion
+	site.JSVersion = a.DefaultString("js_version", "")
+	site.CSSVersion = a.DefaultString("css_version", "")
+
+	site.Server = &fasthttp.Server{
+		ErrorHandler: site.ErrorHandler,
+		Handler:      site.Router.Handler,
+	}
 
 	return site
 }
@@ -175,12 +165,6 @@ func (s *SiteServer) Start() {
 
 	fmt.Println("RunMode:", RunMode)
 	fmt.Println("Listen:", s.Listen)
-	svr := &fasthttp.Server{
-		MaxConnsPerIP: s.MaxConnsPerIP,
-		Concurrency:   s.Concurrency,
-		ErrorHandler:  s.ErrorHandler,
-		Handler:       s.Router.Handler,
-	}
 
 	util.ListenSignal(func(sign os.Signal) {
 		if sign == os.Interrupt {
@@ -188,7 +172,7 @@ func (s *SiteServer) Start() {
 				os.Remove(s.PID)
 			}
 
-			if err := svr.Shutdown(); err != nil {
+			if err := s.Server.Shutdown(); err != nil {
 				fmt.Println(err)
 			}
 		}
@@ -199,7 +183,7 @@ func (s *SiteServer) Start() {
 		<-quitChan
 	}()
 
-	if err := svr.ListenAndServe(s.Listen); err != nil {
+	if err := s.Server.ListenAndServe(s.Listen); err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
@@ -208,4 +192,25 @@ func (s *SiteServer) Start() {
 // ErrorHandler do error
 func (s *SiteServer) ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 
+}
+
+var (
+	cssURL string
+	jsURL  string
+)
+
+// CSSRender new
+func (s *SiteServer) CSSRender(name string) render.CSS {
+	if cssURL == "" {
+		cssURL = s.AssetsURL + "/css/"
+	}
+	return render.NewCSS(cssURL + name)
+}
+
+// JSRender new
+func (s *SiteServer) JSRender(name string) render.JS {
+	if jsURL == "" {
+		jsURL = s.AssetsURL + "/js/"
+	}
+	return render.NewJS(jsURL + name)
 }

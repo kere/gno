@@ -9,7 +9,7 @@ define(
       // XHR
       var xhr = new XMLHttpRequest();
       xhr.open('post', options.url, options.async);
-      xhr.timeout = options.timeout;
+      xhr.timeout = options.timeout * 1000;
 
       //设置请求头
       //   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
@@ -20,16 +20,6 @@ define(
       }
 
       var promise = new Promise(function(resolve, reject){
-        //添加监听
-        // xhr.onreadystatechange = function() {
-        //   if (xhr.readyState === 4) {
-        //     if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
-        //       resolve(xhr.response);
-        //     } else {
-        //       reject(xhr);
-        //     }
-        //   }
-        // };
         xhr.onload = (e) => {
           if (xhr.status == 200) {
             resolve(xhr.response);
@@ -168,15 +158,17 @@ define(
       opt = opt || {}
 
       if(opt.loading){
-        util.showLoading();
+        util.tool.showLoading(this.timeout);
       }
-
-      if(opt.target){
-        var $t = opt.target;
-        if(typeof $t == 'string'){
-          $t = $($t);
-        }
-        $t.addClass('weui-btn_loading');
+      if(opt.disable){
+        util.$.each(opt.disable, (e) => {
+          e.setAttribute("disabled", true);
+        })
+      }
+      if(opt.busy){
+        util.$.each(opt.busy, (e) => {
+          util.tool.showBusy(e, this.timeout);
+        })
       }
 
       var ts = comp.serverTime.utctime().toString(),
@@ -194,37 +186,37 @@ define(
       }).then(result =>{
         clas.isrun = false;
         if(opt.loading){
-          util.hideToast();
+          util.tool.hideToast();
+        }
+        if(opt.disable){
+          util.$.each(opt.disable, (e) => {
+            e.removeAttribute("disabled");
+          })
+        }
+        if(opt.busy){
+          util.$.each(opt.busy, (e) => {
+            util.tool.hideBusy(e);
+          })
         }
 
-        if(opt.target){
-          var $t = opt.target;
-          if(typeof $t == 'string'){
-            $t = $($t);
-          }
-          $t.removeClass('weui-btn_loading');
-        }
         if(result=="") return null;
 
 				if(typeof(result)=='string'){
         	result = JSON.parse(result);
 				}
+
         clas.trySetDataVer(result);
 
 				return result;
-
       }).catch(function (err, status){
         clas.isrun = false;
         if(opt.loading){
-          util.hideToast();
+          util.tool.hideToast();
         }
-
-        if(opt.target){
-          var $t = opt.target;
-          if(typeof $t == 'string'){
-            $t = $($t);
-          }
-          $t.removeClass('weui-btn_loading');
+        if(opt.disable){
+          util.$.each(opt.disable, (e) => {
+            e.removeAttribute("disabled");
+          })
         }
 
         return Promise.reject(err);

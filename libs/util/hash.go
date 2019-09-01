@@ -72,7 +72,7 @@ func IntZipTo62(u64 uint64) []byte {
 func IntZipBaseStr(num uint64, s []byte) []byte {
 	l := uint64(len(s))
 
-	result := []byte{}
+	result := make([]byte, 0, 32)
 	// v, m := calculateZip(l, num)
 	v, m := num/l, num%l
 	result = append(result, s[m])

@@ -10,6 +10,7 @@ import (
 
 func main() {
 	httpd.Init("app/app.conf")
+	// httpd.RunMode = httpd.ModePro
 
 	httpd.Site.RegistGet("/", page.NewDefault())
 	httpd.Site.RegistGet("/abc/:name", page.NewDefault())

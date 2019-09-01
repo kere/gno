@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+
+	"github.com/valyala/bytebufferpool"
 )
 
 type insResult struct {
@@ -74,7 +76,9 @@ func parseInsertM(ins *InsertBuilder, rows MapRows) (string, []interface{}) {
 
 	bkeys, strkeys := sqlInsertKeysByMapRow(rows[0])
 
-	buf := bytePool.Get()
+	// buf := bytePool.Get()
+	buf := bytebufferpool.Get()
+
 	driver := ins.GetDatabase().Driver
 	buf.Write(bInsSQL)
 	buf.Write(driver.QuoteIdentifierB(ins.table))
@@ -85,7 +89,8 @@ func parseInsertM(ins *InsertBuilder, rows MapRows) (string, []interface{}) {
 	values := writeInsertMByMapRow(buf, strkeys, rows)
 
 	str := buf.String()
-	bytePool.Put(buf)
+	// bytePool.Put(buf)
+	bytebufferpool.Put(buf)
 
 	return str, values
 }
@@ -98,7 +103,8 @@ func parseInsertM2(ins *InsertBuilder, dataset DataSet) (string, []interface{}) 
 	keys := dataset.Fields
 
 	// buf := bytes.NewBuffer(nil)
-	buf := bytePool.Get()
+	// buf := bytePool.Get()
+	buf := bytebufferpool.Get()
 
 	database := ins.GetDatabase()
 	driver := database.Driver
@@ -118,6 +124,8 @@ func parseInsertM2(ins *InsertBuilder, dataset DataSet) (string, []interface{}) 
 	values := writeInsertMByDataSet(buf, &dataset)
 
 	str := buf.String()
+	bytebufferpool.Put(buf)
+
 	return str, values
 }
 

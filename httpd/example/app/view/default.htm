@@ -10,19 +10,21 @@
   <image-upload></image-upload>
 
   div content
-  <div id="box2" class="fade in" style="height:200px;background: #FCFCFC">
-
+  <div id="box2" class="fade in" style="height:200px;background: #FCFCFC; position: relative">
+    <h1>Box2 -------------- </h1>
   </div>
-  <button @click="_onClick">addClass</button>
+  <button @click="_onClick1">addClass</button>
   <button @click="_onClick2">removeClass</button>
   <button @click="_onClick3">showLoading</button>
   <button @click="_onClick4">hideToast</button>
   <button @click="_onClick5">show</button>
   <button @click="_onClick6">hide</button>
   <button @click="_onClick7">open image</button>
+  <button @click="_onClick8">show busy</button>
+  <button @click="_onClick9">hide busy</button>
 
   <div>
-    <button class="parent-p" @click="_onClick8">taggle</button>
+    <button class="parent-p" @click="_onClickTaggle">taggle</button>
   </div>
   <div class="hide fade">
     taggle

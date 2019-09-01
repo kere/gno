@@ -5,19 +5,20 @@ import (
 )
 
 var (
-	// JSVersion js ?v=001
-	JSVersion []byte
-
-	// CSSVersion js ?v=001
-	CSSVersion []byte
-
-	// AssetsURL url
-	AssetsURL = ""
+	// // JSVersion js ?v=001
+	// JSVersion []byte
+	//
+	// // CSSVersion js ?v=001
+	// CSSVersion []byte
+	//
+	// // AssetsURL url
+	// AssetsURL = ""
 
 	// TemplateLeftDelim for template
 	TemplateLeftDelim = ""
 	// TemplateRightDelim for template
 	TemplateRightDelim = ""
+
 	// BytesEqual equal
 	BytesEqual = []byte("=")
 	// BytesQuote quote
@@ -34,7 +35,19 @@ var (
 	bVerStr      = []byte("?gv=")
 )
 
+// Opt render
+type Opt struct {
+	AssetsURL  string
+	JSVersion  string
+	CSSVersion string
+}
+
 // IRender interface
 type IRender interface {
 	Render(io.Writer) error
+}
+
+// IRenderWith interface
+type IRenderWith interface {
+	RenderWith(io.Writer, Opt) error
 }

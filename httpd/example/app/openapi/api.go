@@ -1,7 +1,7 @@
 package openapi
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
@@ -25,12 +25,6 @@ func (a App) Auth(ctx *fasthttp.RequestCtx) error {
 // PageData func
 func (a App) PageData(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error) {
 	// fmt.Println(args)
-
-	return util.MapData{"isok": true}, nil
-}
-
-// ImageUpload func
-func (a App) ImageUpload(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error) {
-	fmt.Println(args)
+	time.Sleep(time.Second)
 	return util.MapData{"isok": true}, nil
 }

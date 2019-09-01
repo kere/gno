@@ -3,7 +3,6 @@ package httpd
 import (
 	"fmt"
 	"net/url"
-	"time"
 
 	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/util"
@@ -11,10 +10,10 @@ import (
 )
 
 // pageHandle page http handle
-func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
+func pageHandle(site *SiteServer, p IPage, ctx *fasthttp.RequestCtx) {
 	err := p.Auth(ctx)
 	if err != nil {
-		u, _ := url.Parse(Site.LoginURL)
+		u, _ := url.Parse(site.LoginURL)
 		u.Query().Add(sAuthURL, string(ctx.RequestURI()))
 		ctx.Redirect(u.String(), fasthttp.StatusSeeOther)
 		return
@@ -31,7 +30,7 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	err = renderPage(ctx, p.Data(), ctx.URI().PathOriginal())
+	err = renderPage(site, ctx, p.Data(), ctx.URI().PathOriginal())
 	if err != nil {
 		log.App.Error(err)
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
@@ -46,16 +45,6 @@ func pageHandle(p IPage, ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func gmtNowTime(d time.Time) string {
-	lc, err := time.LoadLocation("GMT")
-	if err != nil {
-		panic(err)
-	}
-	gmt := d.In(lc)
-
-	return gmt.Format(LastModifiedFormat)
-}
-
 func setHeader(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
 	ctx.SetContentTypeBytes(contentTypePage)
 	// set response header
@@ -65,12 +54,12 @@ func setHeader(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
 	mode := p.Data().CacheOption.HTTPHead
 	switch {
 	case mode == 1:
-		ctx.Response.Header.SetBytesK(HeaderEtag, fmt.Sprintf("%x", util.MD5(lastModified)))
-		ctx.Response.Header.SetBytesK(HeaderLastModified, lastModified)
+		ctx.Response.Header.Set(fasthttp.HeaderETag, fmt.Sprintf("%x", util.MD5(lastModified)))
+		ctx.Response.Header.Set(fasthttp.HeaderLastModified, lastModified)
 	case mode > 1:
-		ctx.Response.Header.SetBytesK(HeaderCacheCtl, fmt.Sprint(headSValMaxAge, mode))
-		ctx.Response.Header.SetBytesK(HeaderLastModified, lastModified)
+		ctx.Response.Header.Set(fasthttp.HeaderCacheControl, fmt.Sprint(headSValMaxAge, mode))
+		ctx.Response.Header.Set(fasthttp.HeaderLastModified, lastModified)
 	default:
-		ctx.Response.Header.SetBytesK(HeaderCacheCtl, headSValNoCache)
+		ctx.Response.Header.Set(fasthttp.HeaderCacheControl, headSValNoCache)
 	}
 }

@@ -3,6 +3,9 @@ package render
 import (
 	"html/template"
 	"io"
+
+	"github.com/kere/gno/libs/util"
+	"github.com/valyala/bytebufferpool"
 )
 
 // Text class
@@ -34,24 +37,42 @@ func NewString(src string) String {
 
 // Render func
 func (t String) Render(w io.Writer) error {
-	w.Write([]byte(t.Source))
+	w.Write(util.Str2Bytes(t.Source))
+	return nil
+}
+
+// RenderWith func
+func (t String) RenderWith(w io.Writer, opt Opt) error {
+	w.Write(util.Str2Bytes(t.Source))
 	return nil
 }
 
 // Script return string
-func Script(src string, data map[string]string) IRender {
-	str := "<script"
+func Script(src string, data map[string]string) String {
+	buf := bytebufferpool.Get()
+	buf.WriteString("<script")
 
-	var s string
+	// var s string
 	if len(data) > 0 {
-		s = " "
+		// s = " "
+		buf.WriteByte(' ')
 		for k, v := range data {
-			s += k + "=\"" + v + "\" "
+			// s += k + "=\"" + v + "\" "
+			buf.WriteString(k)
+			buf.WriteString("=\"")
+			buf.WriteString(v)
+			buf.WriteString("\" ")
 		}
 	} else {
-		s = " type=\"text/javascript\""
+		buf.WriteString(" type=\"text/javascript\"")
 	}
 
-	str += s + ">" + src + "</script>"
-	return NewString(str)
+	// str += s + ">" + src + "</script>"
+	buf.WriteString(">")
+	buf.WriteString(src)
+	buf.WriteString("</script>")
+	r := NewString(buf.String())
+	bytebufferpool.Put(buf)
+
+	return r
 }

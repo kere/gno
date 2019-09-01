@@ -146,7 +146,8 @@ func (q *QueryBuilder) CacheExpire(expire int) *QueryBuilder {
 
 func querybuildCacheKey(q *QueryBuilder, datamode int) string {
 	// s := bytes.Buffer{}
-	buf := bytePool.Get()
+	// buf := bytePool.Get()
+	buf := bytebufferpool.Get()
 
 	buf.WriteString(q.table)
 	setQueryFields(q, buf)
@@ -158,7 +159,8 @@ func querybuildCacheKey(q *QueryBuilder, datamode int) string {
 		buf.WriteString(fmt.Sprint(q.args))
 	}
 	src := buf.Bytes()
-	bytePool.Put(buf)
+	// bytePool.Put(buf)
+	bytebufferpool.Put(buf)
 
 	return fmt.Sprintf("db-%d-%s:%x", datamode, q.GetDatabase().Name, MD5(src))
 }
@@ -175,7 +177,9 @@ func (q *QueryBuilder) ClearCache() {
 // Parse sql
 func (q *QueryBuilder) Parse() (string, []interface{}) {
 	// s := bytes.Buffer{}
-	buf := bytePool.Get()
+	// buf := bytePool.Get()
+	buf := bytebufferpool.Get()
+
 	buf.Write(bSQLSelect)
 
 	setQueryFields(q, buf)
@@ -215,7 +219,9 @@ func (q *QueryBuilder) Parse() (string, []interface{}) {
 		buf.WriteString(strconv.FormatInt(int64(q.offset), 10))
 	}
 	str := buf.String()
-	bytePool.Put(buf)
+	// bytePool.Put(buf)
+	bytebufferpool.Put(buf)
+
 	return str, q.args
 }
 

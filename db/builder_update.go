@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+
+	"github.com/valyala/bytebufferpool"
 )
 
 // UpdateBuilder class
@@ -28,7 +30,9 @@ func (u *UpdateBuilder) Parse(row MapRow) (string, []interface{}) {
 	// keys, values, _ := keyValueList(ActionUpdate, data)
 	keys, values := sqlUpdateParamsByMapRow(row)
 
-	buf := bytePool.Get()
+	// buf := bytePool.Get()
+	buf := bytebufferpool.Get()
+
 	// s := bytes.Buffer{}
 	driver := u.GetDatabase().Driver
 	buf.Write(bSQLUpdate)
@@ -41,7 +45,9 @@ func (u *UpdateBuilder) Parse(row MapRow) (string, []interface{}) {
 		values = append(values, u.args...)
 	}
 	str := buf.String()
-	bytePool.Put(buf)
+	// bytePool.Put(buf)
+	bytebufferpool.Put(buf)
+
 	return str, values
 }
 

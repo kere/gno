@@ -4,6 +4,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/kere/gno/libs/util"
 )
 
 // CSS class
@@ -18,17 +20,13 @@ func NewCSS(fileName string) CSS {
 	return CSS{FileName: fileName}
 }
 
-// Render func
-func (t CSS) Render(w io.Writer) error {
+// RenderWith func
+func (t CSS) RenderWith(w io.Writer, opt Opt) error {
 	w.Write(bCSSTagBegin)
 
 	filename := t.FileName
 	if strings.HasPrefix(filename, "http") {
 		w.Write([]byte(filename))
-		if len(CSSVersion) > 0 {
-			w.Write(bVerStr)
-			w.Write(CSSVersion)
-		}
 		w.Write(bCSSTagEnd)
 		return nil
 	}
@@ -37,15 +35,14 @@ func (t CSS) Render(w io.Writer) error {
 		filename = strings.Replace(t.FileName, "\\", "/", -1)
 	}
 
-	// if t.Theme == "" {
-	w.Write([]byte(AssetsURL + "/css/" + filename))
-	// } else {
-	// 	w.Write([]byte(AssetsURL + "/css/" + t.Theme + "/" + filename))
-	// }
+	// w.Write([]byte(opt.AssetsURL + "/css/" + t.Theme + "/" + filename))
+	w.Write(util.Str2Bytes(opt.AssetsURL))
+	w.Write(util.Str2Bytes("/css/"))
+	w.Write(util.Str2Bytes(filename))
 
-	if len(CSSVersion) > 0 {
+	if opt.CSSVersion != "" {
 		w.Write(bVerStr)
-		w.Write(CSSVersion)
+		w.Write(util.Str2Bytes(opt.CSSVersion))
 	}
 
 	if t.Data != nil {
