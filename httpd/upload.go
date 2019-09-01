@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/kere/gno/libs/util"
 	"github.com/valyala/bytebufferpool"
@@ -15,8 +16,8 @@ import (
 // IUpload interface
 type IUpload interface {
 	Auth(ctx *fasthttp.RequestCtx) error
-	Success(name, folder string) error
-	StoreDir() string
+	Success(ctx *fasthttp.RequestCtx, token, ext, folder string, now time.Time) error
+	StoreDir(now time.Time) string
 }
 
 func uploadFileName(name, size, last, typ []byte) string {
@@ -28,6 +29,15 @@ func uploadFileName(name, size, last, typ []byte) string {
 	str := fmt.Sprintf(stri16Formart, md5.Sum(buf.Bytes()))
 	bytebufferpool.Put(buf)
 	return str
+}
+
+func doUploadErr(ctx *fasthttp.RequestCtx, err error) bool {
+	if err == nil {
+		return false
+	}
+	ctx.WriteString(err.Error())
+	ctx.SetStatusCode(fasthttp.StatusBadRequest)
+	return true
 }
 
 // RegistUpload router
@@ -52,56 +62,50 @@ func (s *SiteServer) RegistUpload(rule string, up IUpload) {
 		}
 
 		err := up.Auth(ctx)
-		if err != nil {
-			ctx.WriteString(err.Error())
-			ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		if doUploadErr(ctx, err) {
 			return
 		}
 
 		fileHeader, err := ctx.FormFile("file")
-		if err != nil {
-			ctx.WriteString(err.Error())
-			ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		if doUploadErr(ctx, err) {
 			return
 		}
 
 		file, err := fileHeader.Open()
-		if err != nil {
-			ctx.WriteString(err.Error())
-			ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		if doUploadErr(ctx, err) {
 			return
 		}
 		defer file.Close()
 
 		src, err := ioutil.ReadAll(file)
-		if err != nil {
-			ctx.WriteString(err.Error())
-			ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		if doUploadErr(ctx, err) {
 			return
 		}
 
 		h := md5.New()
 		h.Write(src)
+		token := fmt.Sprintf("%x", h.Sum(nil))
 
 		ext := filepath.Ext(util.Bytes2Str(name))
-		storeName := fmt.Sprintf("%x%s", h.Sum(nil), ext)
-		folder := up.StoreDir()
+
+		now := time.Now()
+		folder := up.StoreDir(now)
+
 		_, err = os.Stat(folder)
 		if os.IsNotExist(err) {
-			os.Mkdir(folder, os.ModeDir)
+			os.MkdirAll(folder, os.ModeDir)
 		}
 
-		newFile := filepath.Join(folder, storeName)
+		newFile := filepath.Join(folder, token+ext)
 		_, err = os.Stat(newFile)
 		if os.IsExist(err) {
-			ctx.WriteString(newFile)
+			err = up.Success(ctx, token, ext, folder, now)
+			doUploadErr(ctx, err)
 			return
 		}
 
 		nf, err := os.OpenFile(newFile, os.O_CREATE|os.O_RDWR, 0666)
-		if err != nil {
-			ctx.WriteString(err.Error())
-			ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		if doUploadErr(ctx, err) {
 			return
 		}
 
@@ -117,8 +121,10 @@ func (s *SiteServer) RegistUpload(rule string, up IUpload) {
 		// 	return
 		// }
 
-		ctx.WriteString(newFile)
-		up.Success(storeName, folder)
+		err = up.Success(ctx, token, ext, folder, now)
+		if doUploadErr(ctx, err) {
+			return
+		}
 
 	})
 }

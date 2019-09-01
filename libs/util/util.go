@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"path/filepath"
@@ -17,6 +18,15 @@ var (
 
 	bytesPool sync.Pool
 )
+
+// ConvertA2B f
+func ConvertA2B(from, to interface{}) error {
+	src, err := json.Marshal(from)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(src, to)
+}
 
 // PathToURL convert path to url
 func PathToURL(items ...string) string {
