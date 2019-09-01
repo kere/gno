@@ -591,6 +591,9 @@ func (dr MapRow) JSONParse(field string, v interface{}) error {
 
 // Time default
 func (dr MapRow) Time(field string) time.Time {
+	if dr.IsNull(field) {
+		return EmptyTime
+	}
 	return dr.TimeParse(field, DateTimeFormat)
 }
 

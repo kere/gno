@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -277,4 +278,72 @@ func (sc *StructConverter) Struct2DataRow(action int) MapRow {
 	}
 
 	return maprow
+}
+
+// Row2VO f
+func Row2VO(row MapRow, vo interface{}) {
+	vof := reflect.ValueOf(vo)
+	if vof.Kind() == reflect.Ptr {
+		vof = vof.Elem()
+	}
+	typ := reflect.TypeOf(vo)
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+
+	n := typ.NumField()
+
+	for i := 0; i < n; i++ {
+		ftyp := typ.Field(i)
+		fv := vof.Field(i)
+
+		key := ftyp.Tag.Get("json")
+		if val, isok := row[key]; isok {
+
+			switch ftyp.Type.Kind() {
+			case reflect.Slice:
+				switch ftyp.Type.String() {
+				case "[]int":
+					fv.Set(reflect.ValueOf(row.Ints(key)))
+				case "[]float64":
+					fv.Set(reflect.ValueOf(row.Floats(key)))
+				case "[]int64":
+					fv.Set(reflect.ValueOf(row.Int64s(key)))
+				case "[]string":
+					fv.Set(reflect.ValueOf(row.Strings(key)))
+				default:
+					fv.Set(reflect.ValueOf(val))
+				}
+			case reflect.Struct:
+				switch ftyp.Type.String() {
+				case "time.Time":
+					fv.Set(reflect.ValueOf(row.Time(key)))
+
+				default:
+					prt := fv
+					if fv.CanAddr() {
+						prt = fv.Addr()
+					}
+					json.Unmarshal(row.Bytes(key), prt.Interface())
+				}
+
+			case reflect.Int64, reflect.Int, reflect.Int32:
+				fv.SetInt(row.Int64(key))
+
+			case reflect.String:
+				switch row[key].(type) {
+				case time.Time:
+					t := row.Time(key)
+					fv.SetString(t.Format(DateTimeFormat))
+
+				default:
+					fv.SetString(row.String(key))
+				}
+
+			default:
+				fv.Set(reflect.ValueOf(val))
+			}
+			// fmt.Println(val, f.Type.String(), f.Type.Kind())
+		}
+	}
 }

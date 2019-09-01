@@ -26,6 +26,37 @@ type User struct {
 	Age  int    `json:"age"`
 }
 
+type DataRow struct {
+	A         string    `json:"a"`
+	B         int       `json:"b"`
+	Vals      []float64 `json:"vals"`
+	Ints      []int     `json:"ints"`
+	VJSON     User      `json:"v_json"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func TestConvert(t *testing.T) {
+	row := MapRow{"a": "TestA", "b": -1, "vals": []float64{1, 2}, "ints": []int{1, 2}, "v_json": "{\"name\":\"tome\", \"age\": 22}", "created_at": time.Now()}
+	vo := DataRow{}
+
+	Row2VO(row, &vo)
+
+	if vo.A != row.String("a") {
+		t.Fatal()
+	}
+	if vo.B != row.Int("b") {
+		t.Fatal()
+	}
+	vals := row.Floats("vals")
+	if len(vo.Vals) != len(vals) || vo.Vals[0] != vals[0] {
+		t.Fatal()
+	}
+
+	if vo.VJSON.Name != "tome" || vo.VJSON.Age != 22 {
+		t.Fatal()
+	}
+}
+
 func TestInsert(t *testing.T) {
 	Current().Exec("truncate table " + table)
 	ins := NewInsert(table)
