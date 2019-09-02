@@ -27,28 +27,38 @@ func (t Text) Render(w io.Writer) error {
 
 // String class
 type String struct {
-	Source string
+	Source []byte
 }
 
 // NewString new
 func NewString(src string) String {
+	return String{Source: util.Str2Bytes(src)}
+}
+
+// NewStringB  by []byte
+func NewStringB(src []byte) String {
 	return String{Source: src}
 }
 
 // Render func
 func (t String) Render(w io.Writer) error {
-	w.Write(util.Str2Bytes(t.Source))
+	w.Write(t.Source)
 	return nil
 }
 
 // RenderWith func
 func (t String) RenderWith(w io.Writer, opt Opt) error {
-	w.Write(util.Str2Bytes(t.Source))
+	w.Write(t.Source)
 	return nil
 }
 
 // Script return string
 func Script(src string, data map[string]string) String {
+	return ScriptB(util.Str2Bytes(src), data)
+}
+
+// ScriptB return string
+func ScriptB(src []byte, data map[string]string) String {
 	buf := bytebufferpool.Get()
 	buf.WriteString("<script")
 
@@ -69,7 +79,7 @@ func Script(src string, data map[string]string) String {
 
 	// str += s + ">" + src + "</script>"
 	buf.WriteString(">")
-	buf.WriteString(src)
+	buf.Write(src)
 	buf.WriteString("</script>")
 	r := NewString(buf.String())
 	bytebufferpool.Put(buf)
