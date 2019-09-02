@@ -82,6 +82,36 @@ func PrintDataSet(dat *DataSet) {
 	fmt.Println("length:", l)
 }
 
+// DataSetStrf stringify bytes rows
+func DataSetStrf(dataset DataSet) {
+	l := dataset.Len()
+	n := len(dataset.Fields)
+	cols := dataset.Columns
+	if l == 0 {
+		return
+	}
+
+	// get columns of bytes
+	arr := make([]int, 0, n)
+	for k := 0; k < n; k++ {
+		switch cols[k][0].(type) {
+		case []byte:
+			arr = append(arr, k)
+		}
+	}
+
+	n = len(arr)
+	if n == 0 {
+		return
+	}
+
+	for i := 0; i < l; i++ {
+		for k := 0; k < n; k++ {
+			cols[arr[k]][i] = util.Bytes2Str((cols[arr[k]][i]).([]byte))
+		}
+	}
+}
+
 // NewDataSet new
 func NewDataSet(fields []string) DataSet {
 	return DataSet{Fields: fields, Columns: make([]DataColumn, len(fields))}
@@ -108,11 +138,6 @@ func (d *DataSet) FieldI(field string) int {
 		}
 	}
 	return -1
-}
-
-// First datarow
-func (d *DataSet) First() MapRow {
-	return d.MapRowAt(0)
 }
 
 // RangeI datarow

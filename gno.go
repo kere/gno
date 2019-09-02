@@ -14,8 +14,8 @@ var (
 )
 
 // GetConfig return Configuration
-func GetConfig() *conf.Configuration {
-	return httpd.GetConfig()
+func GetConfig() conf.Configuration {
+	return httpd.Site.C
 }
 
 // Init gno
