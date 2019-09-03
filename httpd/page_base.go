@@ -2,7 +2,6 @@ package httpd
 
 import (
 	"github.com/kere/gno/httpd/render"
-	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
 
@@ -16,7 +15,7 @@ const (
 // PageData class
 type PageData struct {
 	Name, Dir string
-	Title     []byte
+	Title     string
 	// Secret, Nonce string
 	CacheOption PageCacheOption
 	JSPosition  int
@@ -33,7 +32,7 @@ type PageData struct {
 
 // Init page
 func (d *PageData) Init(title, name, dir string) {
-	d.Title = util.Str2Bytes(title)
+	d.Title = title
 	d.Name = name
 	d.Dir = dir
 }

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/kere/gno/httpd/render"
+	"github.com/kere/gno/libs/util"
 )
 
 var (
@@ -41,7 +42,7 @@ func renderPage(site *SiteServer, w io.Writer, pd *PageData, bPath []byte) error
 	w.Write(metaCharset)
 
 	w.Write(bTitleBegin)
-	w.Write(pd.Title)
+	w.Write(util.Str2Bytes(pd.Title))
 	w.Write(bTitleEnd)
 
 	w.Write(bRenderS1)
@@ -50,7 +51,7 @@ func renderPage(site *SiteServer, w io.Writer, pd *PageData, bPath []byte) error
 
 	token := buildToken(bPath, site.Secret, site.Nonce)
 
-	w.Write([]byte(token))
+	w.Write(util.Str2Bytes(token))
 
 	opt := render.Opt{AssetsURL: site.AssetsURL, JSVersion: site.JSVersion, CSSVersion: site.CSSVersion}
 
