@@ -2,9 +2,7 @@ package httpd
 
 import (
 	"io"
-	"path/filepath"
 
-	"github.com/kere/gno/httpd/render"
 	"github.com/kere/gno/libs/util"
 )
 
@@ -31,10 +29,10 @@ var (
 )
 
 // renderPage func
-func renderPage(site *SiteServer, w io.Writer, pd *PageData, bPath []byte) error {
+func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
 	// <html>
 	w.Write(bytesHTMLBegin)
-	w.Write(site.Lang)
+	w.Write(util.Str2Bytes(pd.SiteData.Lang))
 	w.Write(bytesHTMLBegin2)
 
 	// head -------------------------
@@ -49,11 +47,11 @@ func renderPage(site *SiteServer, w io.Writer, pd *PageData, bPath []byte) error
 	w.Write([]byte(RunMode))
 	w.Write(bRenderS2)
 
-	token := buildToken(bPath, site.Secret, site.Nonce)
+	token := buildToken(bPath, pd.SiteData.Secret, pd.SiteData.Nonce)
 
 	w.Write(util.Str2Bytes(token))
 
-	opt := render.Opt{AssetsURL: site.AssetsURL, JSVersion: site.JSVersion, CSSVersion: site.CSSVersion}
+	// opt := render.Opt{AssetsURL: pd.AssetsURL, JSVersion: pd.JSVersion, CSSVersion: pd.CSSVersion}
 
 	w.Write(bRenderS3)
 	for _, r := range pd.Head {
@@ -63,14 +61,14 @@ func renderPage(site *SiteServer, w io.Writer, pd *PageData, bPath []byte) error
 	}
 
 	for _, r := range pd.CSS {
-		if err := r.RenderWith(w, opt); err != nil {
+		if err := r.RenderWith(w, pd); err != nil {
 			return err
 		}
 	}
 
 	if pd.JSPosition == JSPositionHead {
 		for _, r := range pd.JS {
-			if err := r.RenderWith(w, opt); err != nil {
+			if err := r.RenderWith(w, pd); err != nil {
 				return err
 			}
 		}
@@ -87,22 +85,22 @@ func renderPage(site *SiteServer, w io.Writer, pd *PageData, bPath []byte) error
 		}
 	}
 
-	if len(pd.Body) == 0 {
-		r := render.NewTemplate(filepath.Join(pd.Dir, pd.Name+defaultTemplateSubfix))
+	// if len(pd.Body) == 0 {
+	// 	r := NewTemplate(filepath.Join(pd.Dir, pd.Name+defaultTemplateSubfix))
+	// 	if err = r.Render(w); err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	for _, r := range pd.Body {
 		if err = r.Render(w); err != nil {
 			return err
 		}
-	} else {
-		for _, r := range pd.Body {
-			if err = r.Render(w); err != nil {
-				return err
-			}
-		}
 	}
+	// }
 
 	if pd.JSPosition == JSPositionBottom {
 		for _, r := range pd.JS {
-			if err := r.RenderWith(w, opt); err != nil {
+			if err := r.RenderWith(w, pd); err != nil {
 				return err
 			}
 		}

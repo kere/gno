@@ -18,14 +18,14 @@ type IVO interface {
 
 // VO2InsertMapRow convert to MapRow
 func VO2InsertMapRow(vo IVO) MapRow {
-	cv := NewStructConvert(vo)
-	return cv.Struct2DataRow(ActionInsert)
+	cv := NewConvert(vo)
+	return cv.ToMapRow(ActionInsert)
 }
 
 // VO2UpdateMapRow convert to MapRow
 func VO2UpdateMapRow(vo IVO) MapRow {
-	cv := NewStructConvert(vo)
-	return cv.Struct2DataRow(ActionUpdate)
+	cv := NewConvert(vo)
+	return cv.ToMapRow(ActionUpdate)
 }
 
 // VOCreate func

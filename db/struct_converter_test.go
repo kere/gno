@@ -24,8 +24,8 @@ func TestConvVO(t *testing.T) {
 
 func TestIsEmpty(t *testing.T) {
 	vo := convVO{}
-	cv := NewStructConvert(vo)
-	row := cv.Struct2DataRow(ActionInsert)
+	cv := NewConvert(vo)
+	row := cv.ToMapRow(ActionInsert)
 
 	if row.IsEmpty() {
 		t.Fatal("is empty failed", row)
@@ -33,8 +33,8 @@ func TestIsEmpty(t *testing.T) {
 
 	vo.Name = "tom"
 	vo.FinishedAt = time.Now()
-	cv = NewStructConvert(vo)
-	row = cv.Struct2DataRow(ActionUpdate)
+	cv = NewConvert(vo)
+	row = cv.ToMapRow(ActionUpdate)
 
 	if len(row) != 3 {
 		t.Fatal("is empty failed", row)

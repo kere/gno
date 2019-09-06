@@ -174,3 +174,11 @@ func TestPool(t *testing.T) {
 		t.Fatal(r)
 	}
 }
+
+func TestCamelCase(t *testing.T) {
+	s := "created_at_some"
+	str := CamelCase(s)
+	if str != "CreatedAtSome" {
+		t.Fatal(str)
+	}
+}

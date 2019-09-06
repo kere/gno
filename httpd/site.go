@@ -8,7 +8,6 @@ import (
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/kere/gno/db"
-	"github.com/kere/gno/httpd/render"
 	"github.com/kere/gno/libs/cache"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
@@ -35,23 +34,28 @@ var (
 	quitChan = make(chan os.Signal)
 )
 
-// SiteServer class
-type SiteServer struct {
-	Name   string
-	Listen string
-
-	// Location *time.Location
-	Router *fasthttprouter.Router
-
-	ErrorURL string
-	LoginURL string
-
+// SiteData class
+type SiteData struct {
+	Lang       string
 	AssetsURL  string
 	JSVersion  string
 	CSSVersion string
 
 	Secret string
 	Nonce  string
+
+	ErrorURL string
+	LoginURL string
+}
+
+// SiteServer class
+type SiteServer struct {
+	Name   string
+	Listen string
+
+	// Location *time.Location
+	Router   *fasthttprouter.Router
+	SiteData *SiteData
 
 	Log *log.Logger
 
@@ -74,8 +78,8 @@ func Init(name string) {
 	RunMode = a.DefaultString("mode", "dev")
 
 	// Template Delim
-	render.TemplateLeftDelim = a.DefaultString("template_left_delim", "")
-	render.TemplateRightDelim = a.DefaultString("template_right_delim", "")
+	TemplateLeftDelim = a.DefaultString("template_left_delim", "")
+	TemplateRightDelim = a.DefaultString("template_right_delim", "")
 
 	// DB
 	if Site.C.IsSet("db") {
@@ -96,6 +100,7 @@ func New(name string) *SiteServer {
 	site := &SiteServer{
 		ConfigName: name,
 		C:          c,
+		SiteData:   &SiteData{},
 		Listen:     a.DefaultString("listen", ":8080"),
 		Router:     fasthttprouter.New(),
 	}
@@ -111,13 +116,13 @@ func New(name string) *SiteServer {
 	site.Log = log.Get("app")
 
 	// ErrorURL
-	site.ErrorURL = a.DefaultString("error_url", "/error")
+	site.SiteData.ErrorURL = a.DefaultString("error_url", "/error")
 	// LoginURL
-	site.LoginURL = a.DefaultString("login_url", "/login")
+	site.SiteData.LoginURL = a.DefaultString("login_url", "/login")
 
 	// Secret
-	site.Secret = a.DefaultString("secret", "")
-	site.Nonce = fmt.Sprint(time.Now().Unix())
+	site.SiteData.Secret = a.DefaultString("secret", "")
+	site.SiteData.Nonce = fmt.Sprint(time.Now().Unix())
 
 	// PID
 	site.PID = a.DefaultString("pid", "")
@@ -129,11 +134,11 @@ func New(name string) *SiteServer {
 	site.Lang = []byte(a.DefaultString("lang", "zh"))
 
 	site.Name = a.DefaultString("name", "httpd")
-	site.AssetsURL = a.DefaultString("assets_url", "/assets")
+	site.SiteData.AssetsURL = a.DefaultString("assets_url", "/assets")
 
 	// JsVersion CSSVersion
-	site.JSVersion = a.DefaultString("js_version", "")
-	site.CSSVersion = a.DefaultString("css_version", "")
+	site.SiteData.JSVersion = a.DefaultString("js_version", "")
+	site.SiteData.CSSVersion = a.DefaultString("css_version", "")
 
 	site.Server = &fasthttp.Server{
 		ErrorHandler: site.ErrorHandler,
@@ -199,18 +204,18 @@ var (
 	jsURL  string
 )
 
-// CSSRender new
-func (s *SiteServer) CSSRender(name string) render.CSS {
-	if cssURL == "" {
-		cssURL = s.AssetsURL + "/css/"
-	}
-	return render.NewCSS(cssURL + name)
-}
-
-// JSRender new
-func (s *SiteServer) JSRender(name string) render.JS {
-	if jsURL == "" {
-		jsURL = s.AssetsURL + "/js/"
-	}
-	return render.NewJS(jsURL + name)
-}
+// // CSSRender new
+// func (s *SiteServer) CSSRender(name string) CSS {
+// 	if cssURL == "" {
+// 		cssURL = s.AssetsURL + "/css/"
+// 	}
+// 	return NewCSS(cssURL + name)
+// }
+//
+// // JSRender new
+// func (s *SiteServer) JSRender(name string) JS {
+// 	if jsURL == "" {
+// 		jsURL = s.AssetsURL + "/js/"
+// 	}
+// 	return NewJS(jsURL + name)
+// }

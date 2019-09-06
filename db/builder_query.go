@@ -319,7 +319,7 @@ func setQueryFields(q *QueryBuilder, buf *bytebufferpool.ByteBuffer) {
 	if q.field != "" {
 		field = []byte(q.field)
 	} else if q.cls != nil {
-		sm := NewStructConvert(q.cls)
+		sm := NewConvert(q.cls)
 		field = bytes.Join(sm.DBFields(), BCommaSplit)
 	}
 

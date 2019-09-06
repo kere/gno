@@ -101,7 +101,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		return true
 	}
 
-	setHeader(p, ctx, last)
+	setHeaderCache(p, ctx, last)
 	ctx.SetBody(src)
 	return true
 }
@@ -110,7 +110,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 	opt := p.Data().CacheOption
 	if opt.Store == CacheStoreNone {
-		setHeader(p, ctx, "")
+		setHeaderCache(p, ctx, "")
 		return nil
 	}
 
@@ -143,7 +143,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 
 	}
 
-	setHeader(p, ctx, last)
+	setHeaderCache(p, ctx, last)
 	return nil
 }
 
@@ -160,4 +160,23 @@ func gmtNowTime(d time.Time) string {
 	gmt := d.In(lc)
 
 	return gmt.Format(LastModifiedFormat)
+}
+
+func setHeaderCache(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
+	ctx.SetContentTypeBytes(contentTypePage)
+	// set response header
+	// Cache-Control: public, max-age=3600
+	// must-revalidate
+
+	mode := p.Data().CacheOption.HTTPHead
+	switch {
+	case mode == 1:
+		ctx.Response.Header.Set(fasthttp.HeaderETag, fmt.Sprintf("%x", util.MD5(lastModified)))
+		ctx.Response.Header.Set(fasthttp.HeaderLastModified, lastModified)
+	case mode > 1:
+		ctx.Response.Header.Set(fasthttp.HeaderCacheControl, fmt.Sprint(headSValMaxAge, mode))
+		ctx.Response.Header.Set(fasthttp.HeaderLastModified, lastModified)
+	default:
+		ctx.Response.Header.Set(fasthttp.HeaderCacheControl, headSValNoCache)
+	}
 }

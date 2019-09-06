@@ -1,5 +1,10 @@
 package httpd
 
+var (
+	// DefaultTemplateSubfix for render html template
+	DefaultTemplateSubfix = ".htm"
+)
+
 const (
 	//CacheModePage 按照页面名称缓存
 	CacheModePage = 1
@@ -27,11 +32,10 @@ const (
 
 	cacheFileStoreDir = "var/cache/page"
 
-	headSValNoCache       = "no-cache"
-	headSValMaxAge        = "max-age="
-	headSValContent       = "text/html; charset=utf-8"
-	defaultTemplateSubfix = ".htm"
-	sAuthURL              = "url"
+	headSValNoCache = "no-cache"
+	headSValMaxAge  = "max-age="
+	headSValContent = "text/html; charset=utf-8"
+	sAuthURL        = "url"
 
 	// Slash string
 	Slash = "/"

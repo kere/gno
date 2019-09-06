@@ -16,7 +16,7 @@ func isPageOK(site *SiteServer, req *fasthttp.Request) bool {
 	bPath := req.Header.Referer()
 	u, _ := url.Parse(string(bPath))
 
-	pToken2 := buildToken([]byte(u.Path), site.Secret, site.Nonce)
+	pToken2 := buildToken([]byte(u.Path), site.SiteData.Secret, site.SiteData.Nonce)
 
 	l := len(pToken)
 	if l != len(pToken2) {
