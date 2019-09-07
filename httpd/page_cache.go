@@ -51,9 +51,12 @@ func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) []byt
 	return util.IntZipTo62(v64)
 }
 
+// DisablePageCache bool
+var DisablePageCache = true
+
 // TryCache try to get cache
 func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
-	if RunMode == ModeDev {
+	if DisablePageCache {
 		return false
 	}
 

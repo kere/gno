@@ -29,7 +29,7 @@ var (
 )
 
 // renderPage func
-func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
+func renderPage(w io.Writer, pd *PageData, bPath []byte, data interface{}) error {
 	// <html>
 	w.Write(bytesHTMLBegin)
 	w.Write(util.Str2Bytes(pd.SiteData.Lang))
@@ -92,7 +92,7 @@ func renderPage(w io.Writer, pd *PageData, bPath []byte) error {
 	// 	}
 	// } else {
 	for _, r := range pd.Body {
-		if err = r.Render(w); err != nil {
+		if err = r.RenderWithData(w, data); err != nil {
 			return err
 		}
 	}

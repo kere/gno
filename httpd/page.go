@@ -19,7 +19,7 @@ type IPage interface {
 	Data() *PageData
 	SetData(*PageData)
 	Auth(ctx *fasthttp.RequestCtx) error
-	Page(ctx *fasthttp.RequestCtx) error
+	Page(ctx *fasthttp.RequestCtx) (interface{}, error)
 }
 
 // PageData class
@@ -40,7 +40,7 @@ type PageData struct {
 	CSS []IRenderWith
 
 	Top    []IRender
-	Body   []IRender
+	Body   []IRenderWithData
 	Bottom []IRender
 
 	RenderRelease []IRenderRelease
@@ -73,8 +73,8 @@ func (p *P) SetData(pd *PageData) {
 }
 
 // Page do
-func (p *P) Page(ctx *fasthttp.RequestCtx) error {
-	return nil
+func (p *P) Page(ctx *fasthttp.RequestCtx) (interface{}, error) {
+	return nil, nil
 }
 
 // Auth page
@@ -108,7 +108,8 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 		}
 
 		// do page
-		err = p.Page(ctx)
+		var data interface{}
+		data, err = p.Page(ctx)
 
 		if err != nil {
 			doPageErr(pd, ctx, err)
@@ -117,7 +118,7 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 		}
 		// fmt.Println("PageName:", pd.Name, reflect.TypeOf(p))
 
-		err = renderPage(ctx, pd, ctx.URI().PathOriginal())
+		err = renderPage(ctx, pd, ctx.URI().PathOriginal(), data)
 		l := len(pd.RenderRelease)
 		if l > 0 {
 			for i := 0; i < l; i++ {
