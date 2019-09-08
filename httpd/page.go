@@ -2,8 +2,8 @@ package httpd
 
 import (
 	"net/url"
-	"path/filepath"
 
+	"github.com/kere/gno/libs/log"
 	"github.com/valyala/fasthttp"
 )
 
@@ -43,7 +43,7 @@ type PageData struct {
 	Body   []IRenderWithData
 	Bottom []IRender
 
-	RenderRelease []IRenderRelease
+	// RenderRelease []IRenderRelease
 }
 
 // Init page
@@ -61,7 +61,7 @@ type P struct {
 // Data page
 func (p *P) Data() *PageData {
 	if len(p.D.Body) == 0 {
-		p.D.Body = append(p.D.Body, &Template{FileName: filepath.Join(p.D.Dir, p.D.Name+DefaultTemplateSubfix)})
+		p.D.Body = append(p.D.Body, NewSiteTemplate(p.D.Dir, p.D.Name))
 	}
 
 	return &p.D
@@ -116,15 +116,14 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 			// ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 			return
 		}
-		// fmt.Println("PageName:", pd.Name, reflect.TypeOf(p))
 
 		err = renderPage(ctx, pd, ctx.URI().PathOriginal(), data)
-		l := len(pd.RenderRelease)
-		if l > 0 {
-			for i := 0; i < l; i++ {
-				pd.RenderRelease[i].Release()
-			}
-		}
+		// l := len(pd.RenderRelease)
+		// if l > 0 {
+		// 	for i := 0; i < l; i++ {
+		// 		pd.RenderRelease[i].Release()
+		// 	}
+		// }
 
 		if err != nil {
 			doPageErr(pd, ctx, err)
@@ -150,6 +149,7 @@ func (s *SiteServer) RegistPost(rule string, p IPage) {
 }
 
 func doPageErr(pd *PageData, ctx *fasthttp.RequestCtx, err error) {
+	log.App.Error(err)
 	var errorURL string
 	if len(pd.ErrorURL) > 0 {
 		errorURL = pd.ErrorURL
