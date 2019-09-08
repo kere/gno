@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"crypto/md5"
 	"fmt"
 	"hash/crc32"
 	"io/ioutil"
@@ -174,7 +175,7 @@ func setHeaderCache(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
 	mode := p.Data().CacheOption.HTTPHead
 	switch {
 	case mode == 1:
-		ctx.Response.Header.Set(fasthttp.HeaderETag, fmt.Sprintf("%x", util.MD5(lastModified)))
+		ctx.Response.Header.Set(fasthttp.HeaderETag, fmt.Sprintf("%x", md5.Sum(util.Str2Bytes(lastModified))))
 		ctx.Response.Header.Set(fasthttp.HeaderLastModified, lastModified)
 	case mode > 1:
 		ctx.Response.Header.Set(fasthttp.HeaderCacheControl, fmt.Sprint(headSValMaxAge, mode))

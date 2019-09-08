@@ -1,7 +1,6 @@
 package util
 
 import (
-	"crypto/md5"
 	"fmt"
 	"hash/crc32"
 	"hash/crc64"
@@ -14,20 +13,6 @@ var (
 	// BaseChars 基础字符
 	BaseChars = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
-
-//MD5 md5校验
-func MD5(src string) []byte {
-	m := md5.New()
-	m.Write([]byte(src))
-	return m.Sum(nil)
-}
-
-//MD5BytesV md5校验
-func MD5BytesV(src []byte) []byte {
-	m := md5.New()
-	m.Write(src)
-	return m.Sum(nil)
-}
 
 // ECMATable table
 var ECMATable = crc64.MakeTable(crc64.ECMA)
