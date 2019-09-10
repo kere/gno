@@ -129,13 +129,6 @@ func SendAPI(uri string, method string, dat util.MapData) (util.MapData, error) 
 	buf.WriteString(clientAgent)
 	buf.WriteString(ts)
 
-	// u, err := url.Parse(uri)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// buf.WriteString(u.Hostname())
-
-	// fmt.Println("Client:", buf.String())
 	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
 	bytebufferpool.Put(buf)
 

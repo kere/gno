@@ -3,6 +3,8 @@ package httpd
 var (
 	// DefaultTemplateSubfix for render html template
 	DefaultTemplateSubfix = ".htm"
+	// BDote bytes
+	BDote = []byte(".")
 )
 
 const (

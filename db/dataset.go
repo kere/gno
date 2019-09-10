@@ -107,6 +107,9 @@ func DataSetStrf(dataset DataSet) {
 
 	for i := 0; i < l; i++ {
 		for k := 0; k < n; k++ {
+			if cols[arr[k]][i] == nil {
+				continue
+			}
 			cols[arr[k]][i] = util.Bytes2Str((cols[arr[k]][i]).([]byte))
 		}
 	}

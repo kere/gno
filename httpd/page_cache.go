@@ -112,6 +112,9 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 
 // TrySetCache TrySet cache
 func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
+	if DisablePageCache {
+		return nil
+	}
 	opt := p.Data().CacheOption
 	if opt.Store == CacheStoreNone {
 		setHeaderCache(p, ctx, "")
@@ -167,7 +170,6 @@ func gmtNowTime(d time.Time) string {
 }
 
 func setHeaderCache(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
-	ctx.SetContentTypeBytes(contentTypePage)
 	// set response header
 	// Cache-Control: public, max-age=3600
 	// must-revalidate

@@ -17,6 +17,20 @@ var (
 	bytesPool sync.Pool
 )
 
+// EqBytes with 2 []bytes
+func EqBytes(arr1, arr2 []byte) bool {
+	l := len(arr1)
+	if l != len(arr2) {
+		return false
+	}
+	for i := 0; i < l; i++ {
+		if arr1[i] != arr2[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // // ConvertA2B f
 // func ConvertA2B(from, to interface{}) error {
 // 	src, err := json.Marshal(from)

@@ -102,6 +102,7 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 			return
 		}
 
+		ctx.SetContentTypeBytes(contentTypePage)
 		// try cache
 		if TryCache(ctx, p) {
 			return
@@ -118,12 +119,6 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 		}
 
 		err = renderPage(ctx, pd, ctx.URI().PathOriginal(), data)
-		// l := len(pd.RenderRelease)
-		// if l > 0 {
-		// 	for i := 0; i < l; i++ {
-		// 		pd.RenderRelease[i].Release()
-		// 	}
-		// }
 
 		if err != nil {
 			doPageErr(pd, ctx, err)
@@ -171,7 +166,11 @@ func RequireJS(pd *PageData, src []byte) *JS {
 	requireAttr := make([][2]string, 3, 5)
 	requireAttr[0] = [2]string{"defer", ""}
 	requireAttr[1] = [2]string{"async", "true"}
-	requireAttr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name}
+	if RunMode == ModePro {
+		requireAttr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name + ".min"}
+	} else {
+		requireAttr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name}
+	}
 
 	return &JS{Src: src, Attr: requireAttr}
 }

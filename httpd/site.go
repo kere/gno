@@ -64,6 +64,8 @@ type SiteServer struct {
 	Server     *fasthttp.Server
 	ConfigName string
 	C          conf.Configuration
+
+	AllowFilesHandle bool
 }
 
 // Init Server
@@ -140,6 +142,8 @@ func New(name string) *SiteServer {
 	site.SiteData.JSVersion = a.DefaultString("js_version", "")
 	site.SiteData.CSSVersion = a.DefaultString("css_version", "")
 
+	site.AllowFilesHandle = a.DefaultBool("allow_files_handle", true)
+
 	site.Server = &fasthttp.Server{
 		ErrorHandler: site.ErrorHandler,
 		Handler:      site.Router.Handler,
@@ -150,8 +154,11 @@ func New(name string) *SiteServer {
 
 // Start server listen
 func (s *SiteServer) Start() {
-	if RunMode == "dev" {
+	if s.AllowFilesHandle {
 		s.Router.NotFound = fasthttp.FSHandler(WEBROOT, 0)
+	}
+	if !DisablePageCache {
+		os.MkdirAll(cacheFileStoreDir, os.ModeDir)
 	}
 
 	if _, err := os.Stat(cacheFileStoreDir); os.IsNotExist(err) {
@@ -198,24 +205,3 @@ func (s *SiteServer) Start() {
 func (s *SiteServer) ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 
 }
-
-var (
-	cssURL string
-	jsURL  string
-)
-
-// // CSSRender new
-// func (s *SiteServer) CSSRender(name string) CSS {
-// 	if cssURL == "" {
-// 		cssURL = s.AssetsURL + "/css/"
-// 	}
-// 	return NewCSS(cssURL + name)
-// }
-//
-// // JSRender new
-// func (s *SiteServer) JSRender(name string) JS {
-// 	if jsURL == "" {
-// 		jsURL = s.AssetsURL + "/js/"
-// 	}
-// 	return NewJS(jsURL + name)
-// }
