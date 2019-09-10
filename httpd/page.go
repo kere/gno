@@ -97,7 +97,9 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 				loginURL = pd.LoginURL
 			}
 			u, _ := url.Parse(loginURL)
-			u.Query().Add(sAuthURL, string(ctx.RequestURI()))
+			dat := u.Query()
+			dat.Add(sAuthURL, string(ctx.RequestURI()))
+			u.RawQuery = dat.Encode()
 			ctx.Redirect(u.String(), fasthttp.StatusSeeOther)
 			return
 		}
