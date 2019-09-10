@@ -34,6 +34,14 @@ var (
 	quitChan = make(chan os.Signal)
 )
 
+func init() {
+	var err error
+	HomeDir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		panic(err)
+	}
+}
+
 // SiteData class
 type SiteData struct {
 	Lang       string

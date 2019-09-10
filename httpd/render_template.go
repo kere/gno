@@ -21,7 +21,7 @@ type Template struct {
 
 // NewSiteTemplate add site path
 func NewSiteTemplate(folder, name string) *Template {
-	fileName := filepath.Join("app/view/", folder, name+DefaultTemplateSubfix)
+	fileName := filepath.Join(HomeDir, "app/view/", folder, name+DefaultTemplateSubfix)
 	return NewTemplate(fileName)
 }
 
