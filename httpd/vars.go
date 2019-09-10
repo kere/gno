@@ -5,6 +5,8 @@ var (
 	DefaultTemplateSubfix = ".htm"
 	// BDote bytes
 	BDote = []byte(".")
+
+	FaviconRender = NewStrRender(`<link rel="icon" href="/assets/favicon.ico">`)
 )
 
 const (

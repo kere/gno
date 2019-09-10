@@ -82,7 +82,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		last = pe.LastModified
 
 	case CacheStoreFile:
-		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", key))
+		name := filepath.Join(HomeDir, cacheFileStoreDir, fmt.Sprintf("%x", key))
 		file, err := os.OpenFile(name, os.O_RDONLY, os.ModePerm)
 		if os.IsNotExist(err) {
 			return false
