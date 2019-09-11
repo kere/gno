@@ -2,7 +2,6 @@ package page
 
 import (
 	"github.com/kere/gno/httpd"
-	"github.com/kere/gno/libs/util"
 	"github.com/valyala/fasthttp"
 )
 
@@ -14,36 +13,29 @@ type Default struct {
 // NewDefault func
 func NewDefault() *Default {
 	d := &Default{}
-	d.D.Init("Default Page", "Default", "")
+	d.Init("Default Page", "Default", "")
 
 	// requirejs
-	data := make(map[string]string, 0)
-	data["defer"] = ""
-	data["async"] = "true"
 
-	data["data-main"] = httpd.Site.SiteData.AssetsURL + util.PathToURL("/js/", httpd.RunMode+"/page", d.D.Dir, d.D.Name)
-	data["src"] = "/assets/js/require.js"
+	d.PA.CSS = []httpd.IRenderA{httpd.NewCSS("default.css")}
 
-	// css := httpd.NewCSS("https://cdn.jsdelivr.net/npm/element-ui@2.11.1/lib/theme-chalk/index.css")
-	d.D.CSS = []httpd.IRenderWith{httpd.NewCSS("default.css")}
+	d.PA.JS = []httpd.IRenderA{httpd.NewJS("vue.js"), httpd.RequireJS(&d.PA, "/assets/js/require.js", nil)}
 
-	d.D.JS = []httpd.IRenderWith{httpd.NewJSr("vue.js"), httpd.Script("", data)}
+	// d.PA.Head = []httpd.IRender{}
+	d.PA.Top = []httpd.IRender{httpd.NewTemplate("_header.htm")}
 
-	// d.D.Head = []httpd.IRender{}
-	d.D.Top = []httpd.IRender{httpd.NewTemplate("_header.htm")}
+	// d.PA.CacheOption.PageMode = httpd.CacheModePagePath
+	// d.PA.CacheOption.Store = httpd.CacheStoreNone
+	d.PA.CacheOption.Store = httpd.CacheStoreMem
 
-	// d.D.CacheOption.PageMode = httpd.CacheModePagePath
-	// d.D.CacheOption.Store = httpd.CacheStoreNone
-	d.D.CacheOption.Store = httpd.CacheStoreMem
-
-	d.D.Bottom = []httpd.IRender{httpd.NewTemplate("_bottom.htm")}
+	d.PA.Bottom = []httpd.IRender{httpd.NewTemplate("_bottom.htm")}
 	return d
 }
 
 // Page page
-func (d *Default) Page(ctx *fasthttp.RequestCtx) error {
+func (d *Default) Page(ctx *fasthttp.RequestCtx) (*httpd.PageData, error) {
 	// time.Sleep(3 * time.Second)
-	return nil
+	return nil, nil
 }
 
 //

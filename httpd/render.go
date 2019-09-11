@@ -40,17 +40,17 @@ type IRender interface {
 	Render(io.Writer) error
 }
 
-// IRenderWith interface
-type IRenderWith interface {
-	RenderWith(io.Writer, *PageData) error
+// IRenderA with Attr
+type IRenderA interface {
+	RenderA(io.Writer, *PageAttr) error
 }
 
-// IRenderWithData interface
-type IRenderWithData interface {
-	RenderWithData(io.Writer, interface{}) error
+// IRenderD with data
+type IRenderD interface {
+	RenderD(io.Writer, interface{}) error
 }
 
-// IRenderRelease interface
-type IRenderRelease interface {
-	Release()
-}
+// // IRenderAD with Attr and Data
+// type IRenderAD interface {
+// 	RenderD(io.Writer, *PageAttr, *PageData) error
+// }

@@ -20,8 +20,8 @@ func NewCSS(fileName string) *CSS {
 	return &CSS{FileName: fileName}
 }
 
-// RenderWith func
-func (t *CSS) RenderWith(w io.Writer, pd *PageData) error {
+// RenderA func
+func (t *CSS) RenderA(w io.Writer, pd *PageAttr) error {
 	w.Write(bCSSTagBegin)
 
 	filename := t.FileName

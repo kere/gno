@@ -36,13 +36,13 @@ func NewJSSrcB(src []byte, attr [][2]string) *JS {
 	return &JS{Src: src, Attr: attr}
 }
 
-// Render f
+// Render js
 func (t *JS) Render(w io.Writer) error {
-	return t.RenderWith(w, nil)
+	return t.RenderA(w, nil)
 }
 
-// RenderWith f
-func (t *JS) RenderWith(w io.Writer, pd *PageData) error {
+// RenderA with page attr
+func (t *JS) RenderA(w io.Writer, pd *PageAttr) error {
 	w.Write(bJsTagBegin)
 
 	if t.FileName != "" {

@@ -173,6 +173,9 @@ func (dr MapRow) Bytes2String() MapRow {
 	for k, v := range dr {
 		switch v.(type) {
 		case []byte:
+			if v == nil {
+				continue
+			}
 			dr[k] = util.Bytes2Str(v.([]byte))
 		}
 	}

@@ -69,21 +69,11 @@ func (s *SiteServer) RegistOpenAPI(rule string, openapi IOpenAPI) {
 		openapiMap[rule+Slash+m.Name] = v.Method(i).Interface().(func(ctx *fasthttp.RequestCtx, args util.MapData) (interface{}, error))
 
 		s.Router.POST(rule+Slash+m.Name, func(ctx *fasthttp.RequestCtx) {
-			// if s.Pool == 0 {
+			if err := openapi.Auth(ctx); err != nil {
+				doAPIError(ctx, err)
+				return
+			}
 			openAPIHandle(ctx)
-			// 	return
-			// }
-			// done := make(chan struct{})
-			// if err := pool.Invoke(PoolParams{Typ: invokeAPI, Ctx: ctx, Done: done}); err != nil {
-			// 	doAPIError(ctx, errors.New("Throttle limit error"))
-			// }
-			// // <-done
-			// select {
-			// case <-done:
-			// case <-time.After(s.Timeout):
-			// 	ctx.TimeoutError("timeout!")
-			// }
-
 		})
 	}
 }

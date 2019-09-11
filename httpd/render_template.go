@@ -54,20 +54,11 @@ func NewTemplateS(src string) *Template {
 
 // Render template
 func (t *Template) Render(w io.Writer) error {
-	return t.RenderWithData(w, t.Data)
+	return t.tmpl.Execute(w, t.Data)
 }
 
-// RenderWithData template
-func (t *Template) RenderWithData(w io.Writer, data interface{}) error {
-	// if t.tmpl == nil {
-	//
-	// 	if t.Locale != "" && t.loadi18n() == nil {
-	// 		t.tmpl.Funcs(template.FuncMap{"T": t.TransData.T})
-	// 	} else {
-	// 		t.tmpl.Funcs(template.FuncMap{"T": i18n.EmptyTransFunc})
-	// 	}
-	// }
-
+// RenderD template
+func (t *Template) RenderD(w io.Writer, data interface{}) error {
 	return t.tmpl.Execute(w, data)
 }
 

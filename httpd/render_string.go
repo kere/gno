@@ -23,28 +23,10 @@ func (t *StringRender) Render(w io.Writer) error {
 	return nil
 }
 
-// RenderWith func
-func (t *StringRender) RenderWith(w io.Writer, pd *PageData) error {
-	w.Write(util.Str2Bytes(t.Src))
-	return nil
-}
-
 // BufferRender class
 type BufferRender struct {
 	Buf *bytebufferpool.ByteBuffer
 }
-
-// // Render func
-// func (t *BufferRender) Render(w io.Writer) error {
-// 	w.Write(t.Buf.Bytes())
-// 	return nil
-// }
-//
-// // RenderWith func
-// func (t *BufferRender) RenderWith(w io.Writer, pd *PageData) error {
-// 	w.Write(t.Buf.Bytes())
-// 	return nil
-// }
 
 // Release func
 func (t *BufferRender) Release() {

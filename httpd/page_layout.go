@@ -29,10 +29,10 @@ var (
 )
 
 // renderPage func
-func renderPage(w io.Writer, pd *PageData, bPath []byte, data interface{}) error {
+func renderPage(w io.Writer, pa *PageAttr, dat interface{}, bPath []byte) error {
 	// <html>
 	w.Write(bytesHTMLBegin)
-	w.Write(util.Str2Bytes(pd.SiteData.Lang))
+	w.Write(util.Str2Bytes(pa.SiteData.Lang))
 	w.Write(bytesHTMLBegin2)
 
 	// head -------------------------
@@ -40,73 +40,73 @@ func renderPage(w io.Writer, pd *PageData, bPath []byte, data interface{}) error
 	w.Write(metaCharset)
 
 	w.Write(bTitleBegin)
-	w.Write(util.Str2Bytes(pd.Title))
+	// if pageData.Title != "" {
+	// 	w.Write(util.Str2Bytes(pageData.Title))
+	// } else {
+	w.Write(util.Str2Bytes(pa.Title))
+	// }
+
 	w.Write(bTitleEnd)
 
 	w.Write(bRenderS1)
 	w.Write([]byte(RunMode))
 	w.Write(bRenderS2)
 
-	token := buildToken(bPath, pd.SiteData.Secret, pd.SiteData.Nonce)
-
+	token := buildToken(bPath, pa.SiteData.Secret, pa.SiteData.Nonce)
 	w.Write(util.Str2Bytes(token))
 
-	// opt := render.Opt{AssetsURL: pd.AssetsURL, JSVersion: pd.JSVersion, CSSVersion: pd.CSSVersion}
-
 	w.Write(bRenderS3)
-	for _, r := range pd.Head {
+	// Head
+	for _, r := range pa.Head {
 		if err := r.Render(w); err != nil {
 			return err
 		}
 	}
 
-	for _, r := range pd.CSS {
-		if err := r.RenderWith(w, pd); err != nil {
+	// CSS
+	for _, r := range pa.CSS {
+		if err := r.RenderA(w, pa); err != nil {
 			return err
 		}
 	}
-
-	if pd.JSPosition == JSPositionHead {
-		for _, r := range pd.JS {
-			if err := r.RenderWith(w, pd); err != nil {
+	// JS
+	if pa.JSPosition == JSPositionHead {
+		for _, r := range pa.JS {
+			if err := r.RenderA(w, pa); err != nil {
 				return err
 			}
 		}
 	}
+
 	w.Write(bHeadEnd)
+	w.Write(bytesHTMLBodyBegin) // <body>
 
-	// <body>
-	w.Write(bytesHTMLBodyBegin)
-
+	// Top
 	var err error
-	for _, r := range pd.Top {
+	for _, r := range pa.Top {
 		if err = r.Render(w); err != nil {
 			return err
 		}
 	}
 
-	// if len(pd.Body) == 0 {
-	// 	r := NewTemplate(filepath.Join(pd.Dir, pd.Name+defaultTemplateSubfix))
-	// 	if err = r.Render(w); err != nil {
-	// 		return err
-	// 	}
-	// } else {
-	for _, r := range pd.Body {
-		if err = r.RenderWithData(w, data); err != nil {
+	// Body
+	if pa.Body != nil {
+		if err = pa.Body.RenderD(w, dat); err != nil {
 			return err
 		}
 	}
-	// }
 
-	if pd.JSPosition == JSPositionBottom {
-		for _, r := range pd.JS {
-			if err := r.RenderWith(w, pd); err != nil {
+	// Bottom JS
+	if pa.JSPosition == JSPositionBottom {
+		for _, r := range pa.JS {
+			if err := r.RenderA(w, pa); err != nil {
 				return err
 			}
 		}
 	}
 
-	for _, r := range pd.Bottom {
+	// Bottom
+	for _, r := range pa.Bottom {
 		if err = r.Render(w); err != nil {
 			return err
 		}

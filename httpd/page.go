@@ -16,14 +16,26 @@ const (
 
 // IPage interface
 type IPage interface {
-	Data() *PageData
-	SetData(*PageData)
+	Attr() *PageAttr
+	// Data() *PageData
 	Auth(ctx *fasthttp.RequestCtx) error
 	Page(ctx *fasthttp.RequestCtx) (interface{}, error)
 }
 
-// PageData class
-type PageData struct {
+// // PageData every page render data
+// type PageData struct {
+// 	Title string
+// 	Data  interface{}
+// }
+//
+// var pageDataPool = sync.Pool{
+// 	New: func() interface{} {
+// 		return &PageData{}
+// 	},
+// }
+
+// PageAttr static data
+type PageAttr struct {
 	Name, Dir string
 	Title     string
 	// Secret, Nonce string
@@ -34,42 +46,41 @@ type PageData struct {
 	ErrorURL string
 	LoginURL string
 
-	Head []IRender
-
-	JS  []IRenderWith
-	CSS []IRenderWith
-
+	Head   []IRender
+	JS     []IRenderA
+	CSS    []IRenderA
+	Body   IRenderD
 	Top    []IRender
-	Body   []IRenderWithData
 	Bottom []IRender
-
-	// RenderRelease []IRenderRelease
-}
-
-// Init page
-func (d *PageData) Init(title, name, dir string) {
-	d.Title = title
-	d.Name = name
-	d.Dir = dir
 }
 
 // P class
 type P struct {
-	D PageData
+	PA PageAttr
 }
 
-// Data page
-func (p *P) Data() *PageData {
-	if len(p.D.Body) == 0 {
-		p.D.Body = append(p.D.Body, NewSiteTemplate(p.D.Dir, p.D.Name))
-	}
-
-	return &p.D
+// Attr page
+func (p *P) Attr() *PageAttr {
+	return &p.PA
 }
 
-// SetData page
-func (p *P) SetData(pd *PageData) {
-	p.D = *pd
+// // Data page
+// func (p *P) Data() *PageData {
+// 	return pageDataPool.Get().(*PageData)
+// }
+
+// func putData(d *PageData) {
+// 	d.Title = ""
+// 	d.Data = nil
+// 	pageDataPool.Put(d)
+// }
+
+// Init page
+func (p *P) Init(title, name, dir string) {
+	p.PA.Title = title
+	p.PA.Name = name
+	p.PA.Dir = dir
+	p.PA.Body = NewSiteTemplate(p.PA.Dir, p.PA.Name)
 }
 
 // Page do
@@ -85,16 +96,16 @@ func (p *P) Auth(ctx *fasthttp.RequestCtx) error {
 // RegistGet router
 func (s *SiteServer) RegistGet(rule string, p IPage) {
 	s.Router.GET(rule, func(ctx *fasthttp.RequestCtx) {
-		pd := p.Data()
-		pd.SiteData = s.SiteData
+		pa := p.Attr()
+		pa.SiteData = s.SiteData
 		// do auth
 		err := p.Auth(ctx)
 		if err != nil {
 			var loginURL string
 			if len(loginURL) == 0 {
-				loginURL = pd.SiteData.LoginURL
+				loginURL = pa.SiteData.LoginURL
 			} else {
-				loginURL = pd.LoginURL
+				loginURL = pa.LoginURL
 			}
 			u, _ := url.Parse(loginURL)
 			dat := u.Query()
@@ -111,26 +122,23 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 		}
 
 		// do page
-		var data interface{}
-		data, err = p.Page(ctx)
-
+		pdat, err := p.Page(ctx)
 		if err != nil {
-			doPageErr(pd, ctx, err)
-			// ctx.SetStatusCode(fasthttp.StatusInternalServerError)
+			doPageErr(pa, ctx, err)
 			return
 		}
 
-		err = renderPage(ctx, pd, ctx.URI().PathOriginal(), data)
+		err = renderPage(ctx, pa, pdat, ctx.URI().PathOriginal())
 
 		if err != nil {
-			doPageErr(pd, ctx, err)
+			doPageErr(pa, ctx, err)
 			// ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 			return
 		}
 
 		err = TrySetCache(ctx, p, ctx.Response.Body())
 		if err != nil {
-			doPageErr(pd, ctx, err)
+			doPageErr(pa, ctx, err)
 			// ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 			return
 		}
@@ -145,7 +153,7 @@ func (s *SiteServer) RegistPost(rule string, p IPage) {
 	})
 }
 
-func doPageErr(pd *PageData, ctx *fasthttp.RequestCtx, err error) {
+func doPageErr(pd *PageAttr, ctx *fasthttp.RequestCtx, err error) {
 	log.App.Error(err)
 	var errorURL string
 	if len(pd.ErrorURL) > 0 {
@@ -163,8 +171,13 @@ func doPageErr(pd *PageData, ctx *fasthttp.RequestCtx, err error) {
 	ctx.Redirect(errorURL+"?msg="+err.Error(), fasthttp.StatusSeeOther)
 }
 
+// RequireJSWithSrc render
+func RequireJSWithSrc(pd *PageAttr, src []byte) *JS {
+	return RequireJS(pd, "", src)
+}
+
 // RequireJS render
-func RequireJS(pd *PageData, src []byte) *JS {
+func RequireJS(pd *PageAttr, fileName string, src []byte) *JS {
 	requireAttr := make([][2]string, 3, 5)
 	requireAttr[0] = [2]string{"defer", ""}
 	requireAttr[1] = [2]string{"async", "true"}

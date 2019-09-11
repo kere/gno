@@ -36,8 +36,8 @@ func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) []byt
 	var src []byte
 	switch opt.PageMode {
 	case CacheModePage:
-		pdata := p.Data()
-		src = []byte(pdata.Dir + pdata.Name)
+		pa := p.Attr()
+		src = []byte(pa.Dir + pa.Name)
 
 	case CacheModePageURI:
 		src = ctx.URI().RequestURI()
@@ -61,7 +61,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		return false
 	}
 
-	opt := p.Data().CacheOption
+	opt := p.Attr().CacheOption
 	if opt.Store == CacheStoreNone {
 		return false
 	}
@@ -115,7 +115,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 	if DisablePageCache {
 		return nil
 	}
-	opt := p.Data().CacheOption
+	opt := p.Attr().CacheOption
 	if opt.Store == CacheStoreNone {
 		setHeaderCache(p, ctx, "")
 		return nil
@@ -174,7 +174,7 @@ func setHeaderCache(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
 	// Cache-Control: public, max-age=3600
 	// must-revalidate
 
-	mode := p.Data().CacheOption.HTTPHead
+	mode := p.Attr().CacheOption.HTTPHead
 	switch {
 	case mode == 1:
 		ctx.Response.Header.Set(fasthttp.HeaderETag, fmt.Sprintf("%x", md5.Sum(util.Str2Bytes(lastModified))))

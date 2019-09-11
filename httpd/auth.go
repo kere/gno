@@ -16,18 +16,9 @@ func isPageOK(site *SiteServer, req *fasthttp.Request) bool {
 	bPath := req.Header.Referer()
 	u, _ := url.Parse(string(bPath))
 
-	pToken2 := buildToken([]byte(u.Path), site.SiteData.Secret, site.SiteData.Nonce)
+	pToken2 := buildToken(util.Str2Bytes(u.Path), site.SiteData.Secret, site.SiteData.Nonce)
 
-	l := len(pToken)
-	if l != len(pToken2) {
-		return false
-	}
-	for i := 0; i < l; i++ {
-		if pToken[i] != pToken2[i] {
-			return false
-		}
-	}
-	return true
+	return util.Bytes2Str(pToken) == pToken2
 }
 
 func isAPIOK(req *fasthttp.Request, src []byte) bool {
@@ -43,9 +34,6 @@ func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 	ts := req.Header.Peek(APIFieldTS)
 	method := req.Header.Peek(APIFieldMethod)
 
-	// method := req.PostArgs().Peek(APIFieldMethod)
-	// method + ts + src + agent + ts + ptoken + hostname
-
 	buf := bytebufferpool.Get()
 	buf.Write(method)
 	buf.Write(ts)
@@ -60,11 +48,6 @@ func buildAPIToken(req *fasthttp.Request, src, pToken []byte) string {
 		return ""
 	}
 	buf.WriteString(u.Hostname())
-
-	// fmt.Println(buf.String())
-	// req.Header.VisitAll(func(key []byte, value []byte) {
-	// 	fmt.Println(string(key), string(value))
-	// })
 
 	str := fmt.Sprintf(stri16Formart, md5.Sum(buf.Bytes()))
 	bytebufferpool.Put(buf)

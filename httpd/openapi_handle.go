@@ -10,14 +10,16 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+// ErrNoAPI err
+var ErrNoAPI = errors.New("openapi not found")
+
 func openAPIHandle(ctx *fasthttp.RequestCtx) {
-	uri := string(ctx.URI().Path())
+	uri := util.Bytes2Str(ctx.URI().Path())
 
 	itemExec, isok := openapiMap[uri]
 	if !isok {
-		err := errors.New(uri + " openapi not found")
-		Site.Log.Error(err)
-		doAPIError(ctx, err)
+		Site.Log.Error(uri)
+		doAPIError(ctx, ErrNoAPI)
 		return
 	}
 
@@ -35,14 +37,11 @@ func openAPIHandle(ctx *fasthttp.RequestCtx) {
 			}
 		}()
 	}
+	// Auth
 
 	// application/x-www-form-urlencoded;charset=UTF-8
-	// pArgs := ctx.Request.PostArgs()
-	// src := pArgs.Peek(APIFieldSrc)
-
 	// application/json;charset=UTF-8
 	src := ctx.Request.Body()
-	// fmt.Println(string(src))
 
 	var params util.MapData
 	if len(src) > 0 {
