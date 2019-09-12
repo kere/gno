@@ -49,27 +49,43 @@ func PathToURL(items ...string) string {
 	return strings.Replace(s, "\\", "/", -1)
 }
 
-// Bytes2Str bytes convert to string
-func Bytes2Str(b []byte) string {
-	// return *(*string)(unsafe.Pointer(&s))
-	var s string
-	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	pstring.Data = pbytes.Data
-	pstring.Len = pbytes.Len
-	return s
+// Str2Bytes to bytes
+func Str2Bytes(s string) []byte {
+	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	bh := reflect.SliceHeader{
+		Data: sh.Data,
+		Len:  sh.Len,
+		Cap:  sh.Len,
+	}
+	return *(*[]byte)(unsafe.Pointer(&bh))
 }
 
-// Str2Bytes bytes convert to string
-func Str2Bytes(s string) []byte {
-	var b []byte
-	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	pbytes.Data = pstring.Data
-	pbytes.Len = pstring.Len
-	pbytes.Cap = pstring.Len
-	return b
+// Bytes2Str bytes convert to string
+func Bytes2Str(z []byte) string {
+	return *(*string)(unsafe.Pointer(&z))
 }
+
+// // Bytes2Str bytes convert to string
+// func Bytes2Str(b []byte) string {
+// 	// return *(*string)(unsafe.Pointer(&s))
+// 	var s string
+// 	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+// 	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
+// 	pstring.Data = pbytes.Data
+// 	pstring.Len = pbytes.Len
+// 	return s
+// }
+//
+// // Str2Bytes bytes convert to string
+// func Str2Bytes(s string) []byte {
+// 	var b []byte
+// 	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+// 	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
+// 	pbytes.Data = pstring.Data
+// 	pbytes.Len = pstring.Len
+// 	pbytes.Cap = pstring.Len
+// 	return b
+// }
 
 // RandStr 生成任意长度的字符串
 func RandStr(l int) []byte {

@@ -80,7 +80,9 @@ func (p *P) Init(title, name, dir string) {
 	p.PA.Title = title
 	p.PA.Name = name
 	p.PA.Dir = dir
-	p.PA.Body = NewSiteTemplate(p.PA.Dir, p.PA.Name)
+	if p.PA.Body == nil {
+		p.PA.Body = NewSiteTemplate(p.PA.Dir, p.PA.Name)
+	}
 }
 
 // Page do
