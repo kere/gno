@@ -610,14 +610,13 @@ func (dr MapRow) Strings(field string) []string {
 		return val
 
 	case string:
+		// {1,1} postgres array => []byte
 		s := dr[field].(string)
 		if s == "" {
 			return nil
 		}
-
 		var val []string
 		Current().Driver.ParseStringSlice(util.Str2Bytes(s), &val)
-
 		return val
 
 	default:
