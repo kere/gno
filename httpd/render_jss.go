@@ -51,7 +51,7 @@ func (t *JS) RenderA(w io.Writer, pd *PageAttr) error {
 			w.Write(util.Str2Bytes(t.FileName))
 
 		} else {
-			var filename string
+			filename := t.FileName
 			if os.PathSeparator == '\\' {
 				filename = strings.Replace(t.FileName, "\\", "/", -1)
 			}
