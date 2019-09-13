@@ -180,14 +180,14 @@ func RequireJSWithSrc(pd *PageAttr, src []byte) *JS {
 
 // RequireJS render
 func RequireJS(pd *PageAttr, fileName string, src []byte) *JS {
-	requireAttr := make([][2]string, 3, 5)
-	requireAttr[0] = [2]string{"defer", ""}
-	requireAttr[1] = [2]string{"async", "true"}
+	attr := make([][2]string, 3, 5)
+	attr[0] = [2]string{"defer", ""}
+	attr[1] = [2]string{"async", "true"}
 	if RunMode == ModePro {
-		requireAttr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name + ".min"}
+		attr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name + ".min"}
 	} else {
-		requireAttr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name}
+		attr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name}
 	}
 
-	return &JS{Src: src, Attr: requireAttr}
+	return &JS{Src: src, Attr: attr}
 }
