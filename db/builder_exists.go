@@ -51,8 +51,6 @@ const (
 )
 
 func parseExists(e *ExistsBuilder) string {
-	// s := bytes.Buffer{}
-	// buf := bytePool.Get()
 	buf := bytebufferpool.Get()
 	buf.WriteString(sExistsSQL)
 	buf.Write(Current().Driver.QuoteIdentifierB(e.table))
@@ -61,9 +59,8 @@ func parseExists(e *ExistsBuilder) string {
 		buf.Write(bSQLWhere)
 		buf.Write(e.GetDatabase().Driver.Adapt(e.where, 0))
 	}
-	// buf.Write(bSQLLimitOne)
+	buf.Write(bSQLLimitOne)
 	str := buf.String()
-	// bytePool.Put(buf)
 	bytebufferpool.Put(buf)
 
 	return str
