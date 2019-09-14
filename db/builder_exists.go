@@ -45,23 +45,23 @@ func (e *ExistsBuilder) Where(s string, args ...interface{}) *ExistsBuilder {
 	return e
 }
 
-var (
-	bExistsSQL = []byte("SELECT 1 as field FROM ")
+const (
+	sExistsSQL = "SELECT count(1) AS field FROM "
+	countField = "n"
 )
 
 func parseExists(e *ExistsBuilder) string {
 	// s := bytes.Buffer{}
 	// buf := bytePool.Get()
 	buf := bytebufferpool.Get()
-
-	buf.Write(bExistsSQL)
+	buf.WriteString(sExistsSQL)
 	buf.Write(Current().Driver.QuoteIdentifierB(e.table))
 
 	if e.where != "" {
 		buf.Write(bSQLWhere)
 		buf.Write(e.GetDatabase().Driver.Adapt(e.where, 0))
 	}
-	buf.Write(bSQLLimitOne)
+	// buf.Write(bSQLLimitOne)
 	str := buf.String()
 	// bytePool.Put(buf)
 	bytebufferpool.Put(buf)
@@ -82,10 +82,10 @@ func (e *ExistsBuilder) Exists() bool {
 		e.GetDatabase().log.Alert(err).Stack()
 		return false
 	}
-	return len(r) > 0
+	return len(r) == 1 && r[0].Int(countField) > 0
 }
 
 // TxExists trunsaction
 func (e *ExistsBuilder) TxExists(tx *Tx) (bool, error) {
-	return tx.Exists(parseExists(e), e.args...)
+	return tx.Exists(e.table, e.where, e.args...)
 }

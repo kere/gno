@@ -69,12 +69,15 @@ func (t *Tx) QueryOnePrepare(sql string, args ...interface{}) (MapRow, error) {
 }
 
 // Exists db
-func (t *Tx) Exists(sql string, args ...interface{}) (bool, error) {
-	r, err := t.QueryRows(sql, args...)
+func (t *Tx) Exists(table, where string, args ...interface{}) (bool, error) {
+	e := NewExists(table).Where(where)
+	sqlstr := parseExists(e)
+
+	r, err := t.QueryRows(sqlstr, args...)
 	if err != nil {
 		return false, err
 	}
-	return len(r) > 0, nil
+	return len(r) == 1 && r[0].Int(countField) > 0, nil
 }
 
 // Query db tx
