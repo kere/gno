@@ -123,7 +123,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 		pe := v.(pCache)
 		src = pe.Src
 		last = pe.LastModified
-		fmt.Println("mem cache found", key)
+		// fmt.Println("mem cache found", key)
 
 	case CacheStoreFile:
 		key := pageCachedKey(ctx, attr)
@@ -140,7 +140,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 			return false
 		}
 
-		fmt.Println("file cache found", key)
+		// fmt.Println("file cache found", key)
 
 		last = gmtNowTime(stat.ModTime())
 	}
@@ -175,7 +175,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 		key := pageCachedKey(ctx, attr)
 		last = gmtNowTime(time.Now())
 		pageCacheMap.Store(key, pCache{LastModified: last, Src: body})
-		fmt.Println("set mem cache")
+		// fmt.Println("set mem cache")
 
 	case CacheStoreFile:
 		key := pageCachedKey(ctx, attr)
@@ -194,7 +194,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 			return err
 		}
 		last = gmtNowTime(info.ModTime())
-		fmt.Println("set file cache")
+		// fmt.Println("set file cache")
 	}
 
 	setHeaderCache(p, ctx, last)
