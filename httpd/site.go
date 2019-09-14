@@ -75,6 +75,7 @@ type SiteServer struct {
 	C          conf.Configuration
 
 	AllowFilesHandle bool
+	// PageMap          map[string]IPage
 }
 
 // Init Server
@@ -87,6 +88,7 @@ func Init(name string) {
 	a := Site.C.GetConf("site")
 	// RunMode
 	RunMode = a.DefaultString("mode", "dev")
+	DisablePageCache = !a.DefaultBool("enable_page_cache", false)
 
 	// Template Delim
 	TemplateLeftDelim = a.DefaultString("template_left_delim", "")
@@ -114,6 +116,7 @@ func New(name string) *SiteServer {
 		SiteData:   &SiteData{},
 		Listen:     a.DefaultString("listen", ":8080"),
 		Router:     fasthttprouter.New(),
+		// PageMap:    make(map[string]IPage),
 	}
 
 	//  log

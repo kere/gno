@@ -49,26 +49,24 @@ func IntZipTo62(u64 uint64) []byte {
 	return IntZipBaseStr(u64, BaseChars)
 }
 
-// func calculateZip(l, n uint64) (uint64, uint64) {
-// 	return n / l, n % l
-// }
-
 // IntZipBaseStr int 转换压缩成字符串列表内的字符串
 func IntZipBaseStr(num uint64, s []byte) []byte {
 	l := uint64(len(s))
 
-	result := make([]byte, 0, 32)
 	// v, m := calculateZip(l, num)
 	v, m := num/l, num%l
+	result := make([]byte, 0, int(v)+2)
 	result = append(result, s[m])
 
 	for v >= l {
 		v, m = v/l, v%l
-		result = append([]byte{s[m]}, result...)
+		// result = append([]byte{s[m]}, result...)
+		result = append(result, byte(s[m]))
 	}
 
 	if v > 0 {
-		result = append([]byte{s[v]}, result...)
+		// result = append([]byte{s[v]}, result...)
+		result = append(result, byte(s[v]))
 	}
 	return result
 }

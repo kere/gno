@@ -11,13 +11,13 @@ func Test_Func(t *testing.T) {
 	num := uint64(score)
 	v := IntZipTo62(num)
 	str := string(v)
-	if str != "cMerok" {
-		t.Fatal("IntZipTo64", str)
+	if str != "koreMc" {
+		t.Fatal("IntZipTo62", str)
 	}
 
 	v = IntZipBaseStr(num, s)
 	str = string(v)
-	if str != "1'BxHs" {
+	if str != "sHxB'1" {
 		t.Fatal("IntZipBase", str)
 	}
 

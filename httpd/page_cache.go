@@ -6,6 +6,7 @@ import (
 	"hash/crc32"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
@@ -32,12 +33,11 @@ type pCache struct {
 var pageCacheMap = &sync.Map{}
 
 // pageCachedKey key
-func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) []byte {
+func pageCachedKey(ctx *fasthttp.RequestCtx, attr *PageAttr) string {
 	var src []byte
-	switch opt.PageMode {
+	switch attr.CacheOption.PageMode {
 	case CacheModePage:
-		pa := p.Attr()
-		src = []byte(pa.Dir + pa.Name)
+		src = util.Str2Bytes(attr.Dir + attr.Name)
 
 	case CacheModePageURI:
 		src = ctx.URI().RequestURI()
@@ -45,6 +45,11 @@ func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) []byt
 	default:
 		src = ctx.URI().Path()
 	}
+	return util.Bytes2Str(cachedKey(src))
+}
+
+// cachedKey key
+func cachedKey(src []byte) []byte {
 	ieee := crc32.NewIEEE()
 	// io.WriteString(ieee, str)
 	ieee.Write(src)
@@ -55,33 +60,73 @@ func pageCachedKey(opt PageCacheOption, ctx *fasthttp.RequestCtx, p IPage) []byt
 // DisablePageCache bool
 var DisablePageCache = true
 
+// ClearCache clear page cache
+func ClearCache(urlstr []byte, p IPage) {
+	if DisablePageCache {
+		return
+	}
+
+	u, err := url.Parse(util.Bytes2Str(urlstr))
+	if err != nil {
+		panic(err)
+	}
+
+	attr := p.Attr()
+
+	var src []byte
+	switch attr.CacheOption.PageMode {
+	case CacheModePage:
+		src = util.Str2Bytes(attr.Dir + attr.Name)
+	case CacheModePageURI:
+		src = util.Str2Bytes(u.RequestURI())
+	default:
+		src = util.Str2Bytes(u.Path)
+	}
+
+	key := cachedKey(src)
+
+	switch attr.CacheOption.Store {
+	case CacheStoreMem:
+		pageCacheMap.Delete(key)
+
+	case CacheStoreFile:
+		name := filepath.Join(HomeDir, cacheFileStoreDir, fmt.Sprintf("%x", key))
+		_, err := os.Stat(name)
+		if os.IsNotExist(err) {
+			return
+		}
+		os.Remove(name)
+	}
+}
+
 // TryCache try to get cache
 func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	if DisablePageCache {
 		return false
 	}
 
-	opt := p.Attr().CacheOption
-	if opt.Store == CacheStoreNone {
-		return false
-	}
-
-	key := pageCachedKey(opt, ctx, p)
+	attr := p.Attr()
 
 	var src []byte
 	var last string
 
-	switch opt.Store {
+	switch attr.CacheOption.Store {
+	case CacheStoreNone:
+		return false
+
 	case CacheStoreMem:
-		v, isCached := pageCacheMap.Load(string(key))
-		if !isCached {
+		key := pageCachedKey(ctx, attr)
+		v, isFound := pageCacheMap.Load(key)
+		if !isFound {
 			return false
 		}
 		pe := v.(pCache)
 		src = pe.Src
 		last = pe.LastModified
+		fmt.Println("mem cache found", key)
 
 	case CacheStoreFile:
+		key := pageCachedKey(ctx, attr)
 		name := filepath.Join(HomeDir, cacheFileStoreDir, fmt.Sprintf("%x", key))
 		file, err := os.OpenFile(name, os.O_RDONLY, os.ModePerm)
 		if os.IsNotExist(err) {
@@ -94,6 +139,9 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 			log.App.Error(err)
 			return false
 		}
+
+		fmt.Println("file cache found", key)
+
 		last = gmtNowTime(stat.ModTime())
 	}
 
@@ -115,30 +163,30 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 	if DisablePageCache {
 		return nil
 	}
-	opt := p.Attr().CacheOption
-	if opt.Store == CacheStoreNone {
-		setHeaderCache(p, ctx, "")
-		return nil
-	}
-
-	key := pageCachedKey(opt, ctx, p)
+	attr := p.Attr()
 
 	var last string
+	switch attr.CacheOption.Store {
+	case CacheStoreNone:
+		setHeaderCache(p, ctx, "")
+		return nil
 
-	switch opt.Store {
 	case CacheStoreMem:
+		key := pageCachedKey(ctx, attr)
 		last = gmtNowTime(time.Now())
-		pageCacheMap.Store(string(key), pCache{LastModified: last, Src: body})
+		pageCacheMap.Store(key, pCache{LastModified: last, Src: body})
+		fmt.Println("set mem cache")
 
 	case CacheStoreFile:
+		key := pageCachedKey(ctx, attr)
 		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", key))
 		f, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 		_, err = f.Write(body)
 		if err != nil {
-			f.Close()
 			return err
 		}
 		info, err := f.Stat()
@@ -146,16 +194,10 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 			return err
 		}
 		last = gmtNowTime(info.ModTime())
-		f.Close()
-
+		fmt.Println("set file cache")
 	}
 
 	setHeaderCache(p, ctx, last)
-	return nil
-}
-
-// ClearCache Clear cache
-func ClearCache() error {
 	return nil
 }
 
