@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/buaazp/fasthttprouter"
@@ -203,10 +204,18 @@ func (s *SiteServer) Start() {
 		<-quitChan
 	}()
 
-	if err := s.Server.ListenAndServe(s.Listen); err != nil {
-		fmt.Println(err)
-		os.Exit(0)
+	if strings.HasPrefix(s.Listen, "unix:") {
+		if err := s.Server.ListenAndServeUNIX(s.Listen, os.ModePerm); err != nil {
+			fmt.Println(err)
+			os.Exit(0)
+		}
+	} else {
+		if err := s.Server.ListenAndServe(s.Listen); err != nil {
+			fmt.Println(err)
+			os.Exit(0)
+		}
 	}
+
 }
 
 // ErrorHandler do error
