@@ -74,7 +74,7 @@ type SiteServer struct {
 	ConfigName string
 	C          conf.Configuration
 
-	AllowFilesHandle bool
+	EnableFileHandler bool
 	// PageMap          map[string]IPage
 }
 
@@ -154,7 +154,7 @@ func New(name string) *SiteServer {
 	site.SiteData.JSVersion = a.DefaultString("js_version", "")
 	site.SiteData.CSSVersion = a.DefaultString("css_version", "")
 
-	site.AllowFilesHandle = a.DefaultBool("allow_files_handle", true)
+	site.EnableFileHandler = a.DefaultBool("enable_files_handle", true)
 
 	site.Server = &fasthttp.Server{
 		ErrorHandler: site.ErrorHandler,
@@ -166,9 +166,10 @@ func New(name string) *SiteServer {
 
 // Start server listen
 func (s *SiteServer) Start() {
-	if s.AllowFilesHandle {
+	if s.EnableFileHandler {
 		s.Router.NotFound = fasthttp.FSHandler(WEBROOT, 0)
 	}
+
 	if !DisablePageCache {
 		os.MkdirAll(cacheFileStoreDir, os.ModeDir)
 	}
