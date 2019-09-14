@@ -128,7 +128,7 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 	case CacheStoreFile:
 		key := pageCachedKey(ctx, attr)
 		name := filepath.Join(HomeDir, cacheFileStoreDir, fmt.Sprintf("%x", key))
-		file, err := os.OpenFile(name, os.O_RDONLY, os.ModePerm)
+		file, err := os.OpenFile(name, os.O_RDONLY, 0)
 		if os.IsNotExist(err) {
 			return false
 		}
@@ -180,7 +180,7 @@ func TrySetCache(ctx *fasthttp.RequestCtx, p IPage, body []byte) error {
 	case CacheStoreFile:
 		key := pageCachedKey(ctx, attr)
 		name := filepath.Join(cacheFileStoreDir, fmt.Sprintf("%x", key))
-		f, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		f, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC, 0)
 		if err != nil {
 			return err
 		}
