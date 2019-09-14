@@ -205,7 +205,7 @@ func (s *SiteServer) Start() {
 	}()
 
 	if strings.HasPrefix(s.Listen, "unix:") {
-		if err := s.Server.ListenAndServeUNIX(s.Listen, os.ModePerm); err != nil {
+		if err := s.Server.ListenAndServeUNIX(s.Listen[5:], os.ModePerm); err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
