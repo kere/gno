@@ -67,7 +67,7 @@ var (
 	bSQLLimit    = []byte(" LIMIT ")
 	bSQLLimitOne = []byte(" LIMIT 1")
 	bSQLOffset   = []byte(" OFFSET ")
-	bSQLLeftJoin = []byte(" LEFT JOIN ")
+	bSQLLeftJoin = []byte(" as a LEFT JOIN ")
 
 	bInsSQL      = []byte("INSERT INTO ")
 	bInsBracketL = []byte(" (")
@@ -82,11 +82,11 @@ var (
 	// BEqual =
 	BEqual = []byte("=")
 
-	//BCommaSplit ,
-	BCommaSplit = []byte(",")
+	//BComma ,
+	BComma = []byte(",")
 
-	//SCommaSplit ,
-	SCommaSplit = ","
+	//SComma ,
+	SComma = ","
 	// BEmptyString ''
 	BEmptyString = []byte("")
 	//BStarKey *

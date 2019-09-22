@@ -41,12 +41,8 @@ const (
 
 	// Slash string
 	Slash = "/"
+	// Comma string
+	Comma = ","
 
 	stri16Formart = "%x"
-
-	// PageLoadOpen open
-	PageLoadOpen = `<div id="pageLoadMask" style="text-align:center;position:fixed;z-index:1000;top:0;right:0;left:0;bottom:0; background:#FFF;opacity:0.8"><span id="pageLoadText" style="position:relative;top:44%"></span></div><script>var __pLoadWd=window.pageLoadWord||'^o^';var __pLoadTxt = document.getElementById('pageLoadText');__pLoadTxt.innerText=__pLoadWd;var __pLoadTid = setInterval(()=>{ if(__pLoadTxt.innerText.length<20){__pLoadTxt.innerText+=" "+__pLoadWd}else{__pLoadTxt.innerText=__pLoadWd}}, 600);</script>`
-
-	// PageLoadClose close
-	PageLoadClose = `<script>function closePageLoad(){clearInterval(__pLoadTid);document.getElementById('pageLoadMask').style.display='none';}</script>`
 )

@@ -10,7 +10,7 @@ import (
 
 // IDriver interface
 type IDriver interface {
-	Adapt(string, int) []byte
+	Adapt(string, int) string
 	ConnectString() string
 
 	QuoteIdentifier(string) string // indentifier

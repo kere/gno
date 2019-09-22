@@ -3,6 +3,7 @@ package httpd
 import (
 	"html/template"
 	"io"
+	"io/ioutil"
 	"path/filepath"
 
 	"github.com/kere/gno/libs/i18n"
@@ -16,7 +17,8 @@ type Template struct {
 	TransData i18n.TrunsData
 	Locale    string
 
-	tmpl *template.Template
+	rawSrc []byte // static file template
+	tmpl   *template.Template
 }
 
 // NewSiteTemplate add site path
@@ -27,19 +29,7 @@ func NewSiteTemplate(folder, name string) *Template {
 
 // NewTemplate new
 func NewTemplate(fileName string) *Template {
-	tmpl := template.New(filepath.Base(fileName))
-
-	if TemplateLeftDelim != "" {
-		tmpl.Delims(TemplateLeftDelim, TemplateRightDelim)
-	}
-
-	// filename := filepath.Join("app/view/", fileName)
-	var err error
-	tmpl, err = tmpl.ParseFiles(fileName)
-	if err != nil {
-		panic(fileName + "\n" + err.Error())
-	}
-	return &Template{FileName: fileName, tmpl: tmpl}
+	return &Template{FileName: fileName}
 }
 
 // NewTemplateS new
@@ -54,11 +44,46 @@ func NewTemplateS(src string) *Template {
 
 // Render template
 func (t *Template) Render(w io.Writer) error {
-	return t.tmpl.Execute(w, t.Data)
+	return t.RenderD(w, t.Data)
 }
 
 // RenderD template
 func (t *Template) RenderD(w io.Writer, data interface{}) error {
+	if RunMode == ModeDev && len(t.rawSrc) > 0 {
+		t.rawSrc = nil
+	}
+
+	if len(t.rawSrc) > 0 {
+		w.Write(t.rawSrc)
+		return nil
+	}
+
+	// static htm template
+	if t.tmpl == nil && data == nil {
+		var err error
+		t.rawSrc, err = ioutil.ReadFile(t.FileName)
+		if err != nil {
+			return err
+		}
+		w.Write(t.rawSrc)
+		return nil
+	}
+
+	// dynamic htm
+	if t.tmpl == nil {
+		t.tmpl = template.New(filepath.Base(t.FileName))
+
+		if TemplateLeftDelim != "" {
+			t.tmpl.Delims(TemplateLeftDelim, TemplateRightDelim)
+		}
+
+		var err error
+		t.tmpl, err = t.tmpl.ParseFiles(t.FileName)
+		if err != nil {
+			panic(t.FileName + "\n" + err.Error())
+		}
+	}
+
 	return t.tmpl.Execute(w, data)
 }
 

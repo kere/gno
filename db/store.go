@@ -34,7 +34,7 @@ func sqlUpdateParamsByMapRow(row MapRow) ([]byte, []interface{}) {
 		i++
 		seq++
 	}
-	return bytes.Join(keys, BCommaSplit), values
+	return bytes.Join(keys, BComma), values
 }
 
 func sqlInsertParamsByMapRow(row MapRow) ([]byte, []interface{}) {
@@ -50,7 +50,7 @@ func sqlInsertParamsByMapRow(row MapRow) ([]byte, []interface{}) {
 		values[i] = database.Driver.StoreData(k, row[k])
 		i++
 	}
-	return bytes.Join(keys, BCommaSplit), values
+	return bytes.Join(keys, BComma), values
 }
 
 func sqlInsertParams(fields []string, row Row) ([]byte, []interface{}) {
@@ -64,7 +64,7 @@ func sqlInsertParams(fields []string, row Row) ([]byte, []interface{}) {
 		values[i] = database.Driver.StoreData(fields[i], row[i])
 		i++
 	}
-	return bytes.Join(keys, BCommaSplit), values
+	return bytes.Join(keys, BComma), values
 }
 
 func sqlInsertKeysByMapRow(row MapRow) ([]byte, []string) {
@@ -79,7 +79,7 @@ func sqlInsertKeysByMapRow(row MapRow) ([]byte, []string) {
 		bkeys[i] = database.Driver.QuoteIdentifierB(k)
 		i++
 	}
-	return bytes.Join(bkeys, BCommaSplit), keys
+	return bytes.Join(bkeys, BComma), keys
 }
 
 func writeInsertMByMapRow(buf *bytebufferpool.ByteBuffer, keys []string, rows MapRows) []interface{} {

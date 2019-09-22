@@ -147,7 +147,7 @@ func parseInsert(ins *InsertBuilder, row MapRow, hasReturnID bool) (string, []in
 	s.Write(keys)
 	s.Write(bInsBracketR)
 	s.WriteByte('(')
-	s.Write(bytes.Join(stmts, BCommaSplit))
+	s.Write(bytes.Join(stmts, BComma))
 	s.WriteByte(')')
 
 	if hasReturnID {

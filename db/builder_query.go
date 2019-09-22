@@ -187,14 +187,14 @@ func (q *QueryBuilder) Parse() (string, []interface{}) {
 	buf.Write(bSQLFrom)
 	buf.WriteString(q.table)
 
-	if len(q.leftJoin) > 0 {
+	if q.leftJoin != "" {
 		buf.Write(bSQLLeftJoin)
 		buf.WriteString(q.leftJoin)
 	}
 
 	if q.where != "" {
 		buf.Write(bSQLWhere)
-		buf.Write(q.GetDatabase().Driver.Adapt(q.where, 0))
+		buf.WriteString(q.GetDatabase().Driver.Adapt(q.where, 0))
 	}
 	if q.order != "" {
 		buf.Write(bSQLOrder)
@@ -298,6 +298,42 @@ func (q *QueryBuilder) cQueryRows() (MapRows, error) {
 	return datarows, nil
 }
 
+// QueryInt limit=1
+func (q *QueryBuilder) QueryInt(field string) (int, error) {
+	row, err := q.QueryOne()
+	if err != nil {
+		return 0, err
+	}
+	return row.Int(field), nil
+}
+
+// QueryInt64 limit=1
+func (q *QueryBuilder) QueryInt64(field string) (int64, error) {
+	row, err := q.QueryOne()
+	if err != nil {
+		return 0, err
+	}
+	return row.Int64(field), nil
+}
+
+// QueryString limit=1
+func (q *QueryBuilder) QueryString(field string) (string, error) {
+	row, err := q.QueryOne()
+	if err != nil {
+		return "", err
+	}
+	return row.String(field), nil
+}
+
+// QueryFloat limit=1
+func (q *QueryBuilder) QueryFloat(field string) (float64, error) {
+	row, err := q.QueryOne()
+	if err != nil {
+		return 0, err
+	}
+	return row.Float(field), nil
+}
+
 // QueryOne limit=1
 func (q *QueryBuilder) QueryOne() (MapRow, error) {
 	limit := q.limit
@@ -320,7 +356,7 @@ func setQueryFields(q *QueryBuilder, buf *bytebufferpool.ByteBuffer) {
 		field = []byte(q.field)
 	} else if q.cls != nil {
 		sm := NewConvert(q.cls)
-		field = bytes.Join(sm.DBFields(), BCommaSplit)
+		field = bytes.Join(sm.DBFields(), BComma)
 	}
 
 	buf.Write(field)

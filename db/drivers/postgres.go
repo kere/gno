@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kere/gno/libs/util"
 	"github.com/lib/pq"
 	"github.com/valyala/bytebufferpool"
 )
@@ -34,24 +35,27 @@ func (p *Postgres) Name() string {
 }
 
 // Adapt f
-func (p *Postgres) Adapt(sqlstr string, n int) []byte {
-	arr := strings.Split(sqlstr, sQuestionMark)
+func (p *Postgres) Adapt(sqlstr string, n int) string {
+	src := util.Str2Bytes(sqlstr)
+	arr := bytes.Split(src, BQuestionMark)
+	// arr := strings.Split(sqlstr, sQuestionMark)
 	l := len(arr)
 	if l == 0 {
-		return nil
+		return ""
 	}
+	if l == 1 {
+		return sqlstr
+	}
+
 	buf := bytePool.Get()
 	for i := 0; i < l-1; i++ {
-		if arr[i] == "" {
-			continue
-		}
-		buf.WriteString(arr[i])
+		buf.Write(arr[i])
 		buf.WriteByte('$')
 
 		buf.WriteString(fmt.Sprint(i + 1 + n))
 	}
 
-	b := buf.Bytes()
+	b := buf.String()
 	bytePool.Put(buf)
 
 	return b
@@ -98,11 +102,14 @@ func sliceToStore(v interface{}) string {
 	if l == 0 {
 		return emptyArray
 	}
-	arr := make([]string, l)
+	arr := make([]string, 0, l)
 
 	for i := 0; i < l; i++ {
-		v := val.Index(i)
-		arr[i] = fmt.Sprint(v.Interface())
+		v := fmt.Sprint(val.Index(i).Interface())
+		if v == "" {
+			continue
+		}
+		arr = append(arr, v)
 	}
 	return fmt.Sprint("{", strings.Join(arr, ","), "}")
 }

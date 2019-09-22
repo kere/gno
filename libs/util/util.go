@@ -1,10 +1,10 @@
 package util
 
 import (
+	"bytes"
+	"encoding/json"
 	"math/rand"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -16,6 +16,15 @@ var (
 
 	bytesPool sync.Pool
 )
+
+// JSONCopy obj1 to obj2
+func JSONCopy(from, to interface{}) error {
+	src, err := json.Marshal(from)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(src, to)
+}
 
 // EqBytes with 2 []bytes
 func EqBytes(arr1, arr2 []byte) bool {
@@ -40,13 +49,14 @@ func EqBytes(arr1, arr2 []byte) bool {
 // 	return json.Unmarshal(src, to)
 // }
 
-// PathToURL convert path to url
-func PathToURL(items ...string) string {
-	s := filepath.Join(items...)
-	if filepath.Separator == '/' {
-		return s
-	}
-	return strings.Replace(s, "\\", "/", -1)
+var (
+	bSeparator = []byte("\\")
+	bSlash     = []byte("/")
+)
+
+// PathToURLb convert path to url
+func PathToURLb(p []byte) []byte {
+	return bytes.Replace(p, bSeparator, bSlash, -1)
 }
 
 // Str2Bytes to bytes

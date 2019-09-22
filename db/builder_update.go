@@ -41,7 +41,7 @@ func (u *UpdateBuilder) Parse(row MapRow) (string, []interface{}) {
 	buf.Write(keys)
 	if u.where != "" {
 		buf.Write(bSQLWhere)
-		buf.Write(driver.Adapt(u.where, len(values)))
+		buf.WriteString(driver.Adapt(u.where, len(values)))
 		values = append(values, u.args...)
 	}
 	str := buf.String()

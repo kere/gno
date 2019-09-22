@@ -33,6 +33,13 @@ var (
 	bCSSTagBegin = []byte("<link href=\"")
 	bCSSTagEnd   = []byte("\" rel=\"stylesheet\"/>\n")
 	bVerStr      = []byte("?gv=")
+
+	// BJsTagBegin bytes
+	BJsTagBegin = []byte("<script type=\"text/javascript\"")
+	// BJsSrc bytes
+	BJsSrc = []byte(" src=\"")
+	// BJsTagEnd bytes
+	BJsTagEnd = []byte("</script>\n")
 )
 
 // IRender interface

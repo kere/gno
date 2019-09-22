@@ -7,7 +7,7 @@ define(
     // options.timeout,options.url, options.async
     function ajaxFunc(options) {
       // XHR
-      var xhr = new XMLHttpRequest();
+      let xhr = new XMLHttpRequest();
       xhr.open('post', options.url, options.async);
       xhr.timeout = options.timeout * 1000;
 
@@ -15,11 +15,11 @@ define(
       //   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
       xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
-      for (var key in options.headers) {
+      for (let key in options.headers) {
         xhr.setRequestHeader(key, options.headers[key]);
       }
 
-      var promise = new Promise(function(resolve, reject){
+      let promise = new Promise(function(resolve, reject){
         xhr.onload = (e) => {
           if (xhr.status == 200) {
             resolve(xhr.response);
@@ -46,13 +46,63 @@ define(
       return promise;
     }
 
-    var comp  = {
+    let comp  = {
 			url : "/home/openapi/data",
       NewClient : function(path, timeout){
         return new Client(path, timeout);
       },
       NewUpload : function(path){
         return new Upload(path);
+      },
+
+      DataSet: function(dat){
+        this.Fields = dat.fields;
+        this.Columns = dat.columns;
+        this.Len = function(){
+          if(this.Columns.length == 0 ) return 0;
+          return this.Columns[0].length;
+        }
+
+        this.FieldI = function(name){
+          return this.Fields.indexOf(name);
+        }
+
+        this.RowAt = function(index){
+          let l = this.Len(), row = {};
+          for (var k = 0; k < this.Fields.length; k++) {
+            row[this.Fields[k]] = this.Columns[k][index]
+          }
+          return row;
+        }
+      },
+
+      torows : (dat, callback) => {
+        let n = dat.fields.length;
+        if(!dat || !dat.columns || dat.columns.length==0 || n===0 || !dat.columns[0]){
+          return [];
+        }
+
+        let cols = dat.columns;
+        let l = cols[0].length;
+        if(l === 0) return [];
+
+        let rows = new Array(l);
+        let i,k, key, obj, fields = dat.fields;
+
+        for (i = 0; i < l; i++) {
+          obj = {}
+          for (k = 0; k < n; k++) {
+            key = fields[k];
+            if(callback){
+              obj[key] = callback(k, i);
+            }else{
+              obj[key] = cols[k][i];
+            }
+          }
+          rows[i] = obj;
+        }
+
+        return rows;
       },
 
       serverTime : {
@@ -67,16 +117,16 @@ define(
           return (new Date()).getTime() - this.diff;
         },
         utctime : function(){
-          var d = this.now();
+          let d = this.now();
           return d.getTime() - d.getTimezoneOffset();
         }
       },
 
       getUrlVar: function(sParam){
-        var sPageURL = window.location.search.substring(1);
-        var sURLVariables = sPageURL.split('&');
-        for (var i = 0; i < sURLVariables.length; i++) {
-          var sParameterName = sURLVariables[i].split('=');
+        let sPageURL = window.location.search.substring(1);
+        let sURLVariables = sPageURL.split('&');
+        for (let i = 0; i < sURLVariables.length; i++) {
+          let sParameterName = sURLVariables[i].split('=');
           if (sParameterName[0] == sParam)
           {
               return decodeURI(sParameterName[1]);
@@ -86,7 +136,7 @@ define(
       }
     };
 
-    var Client = function(path){
+    let Client = function(path){
       this.path = path || comp.url;
       this.isrun = false;
       this.timeout= 10;
@@ -96,10 +146,10 @@ define(
     }
 
     Client.prototype.trySetDataVer = function(result) {
-      if(typeof(result) != "object" || !result[this.verField]){
+      if(!result || typeof(result) != "object" || !result[this.verField]){
         return;
       }
-      var ver = result[this.verField];
+      let ver = result[this.verField];
       this[this.verField] = ver;
       window[this.verField] = ver;
     }
@@ -108,10 +158,11 @@ define(
     // return Promise()
     Client.prototype.getData = function(method, args, opt) {
       return new Promise((resolve, reject) => {
-        var key = method + (args ? JSON.stringify(args): '');
-        var doit = (resolve, reject) =>{
+        let key = method + (args ? JSON.stringify(args): '');
+
+        let doit = (resolve, reject) =>{
           this.send(method, args, opt).then(result =>{
-            if(result[this.verField]){
+            if(result && result[this.verField]){
               window.localStorage.setItem(key, JSON.stringify(result));
             }
             resolve(result);
@@ -125,17 +176,18 @@ define(
           return;
         }
 
-        var src = window.localStorage.getItem(key);
+        let src = window.localStorage.getItem(key);
         if(!src){
           doit(resolve, reject);
           return;
         }
 
-        var dat = JSON.parse(src);
+        let dat = JSON.parse(src);
         if(!dat){
           doit(resolve, reject);
           return;
         }
+
         opt = opt || {ver: window[this.verField]};
         if(dat[this.verField] != opt.ver){
           doit(resolve, reject);
@@ -171,7 +223,7 @@ define(
         })
       }
 
-      var ts = comp.serverTime.utctime().toString(),
+      let ts = opt.ts ? opt.ts : comp.serverTime.utctime().toString(),
         ptoken = window[this.pfield] || '',
       	// method + ts + src + agent + ts + ptoken + window.location.hostname
         str = method+ts+(args?JSON.stringify(args): '')+navigator.userAgent+ts+ptoken + window.location.hostname;
@@ -218,51 +270,70 @@ define(
             e.removeAttribute("disabled");
           })
         }
+        if(opt.busy){
+          util.$.each(opt.busy, (e) => {
+            util.tool.hideBusy(e);
+          })
+        }
 
         return Promise.reject(err);
       });
 
     }
 
-    var Upload = function(path){
+    let Upload = function(path){
         this.path = path;
         this.pfield = 'accpt';
         this.verField = "_data_version";
     }
 
-    Upload.prototype.upload = function(blob, filename){
-      var xhr = new XMLHttpRequest();
-      var ts = comp.serverTime.utctime().toString(), ptoken = window[this.pfield] || '';
+    Upload.prototype.upload = function(file, opt){
+      let xhr = new XMLHttpRequest();
+      let ts = comp.serverTime.utctime().toString(), ptoken = window[this.pfield] || '';
       xhr.open('POST', this.path, true);
 
-      var str = ts+blob.name +  blob.size + blob.lastModified + blob.type+navigator.userAgent+ts+ptoken + window.location.hostname;
-      console.log(str);
+      let str = ts+file.name +  file.size + file.lastModified + file.type+navigator.userAgent+ts+ptoken + window.location.hostname;
+      // console.log(str);
       // xhr.setRequestHeader("Content-Type", "multipart/form-data");
       xhr.setRequestHeader('Accto', accto(str));
       xhr.setRequestHeader('Accts', ts);
       xhr.setRequestHeader('AccPage', ptoken);
-      var promise = new Promise(function(resolve, reject){
+      let promise = new Promise(function(resolve, reject){
         xhr.onload = function(e) {
-          resolve(e);
+          if (xhr.status < 200 || xhr.status >= 300) {
+            return reject(e);
+          }
+          resolve(e.currentTarget.responseText);
+          if(opt && opt.onSuccess) opt.onSuccess(e.currentTarget.responseText, file);
         };
+
         xhr.onerror = function(e) {
           reject(e);
         };
       });
 
-      var formData = new FormData();
-			formData.append('filename', filename ? filename : "");
-			formData.append('file', blob);
-			formData.append('name', blob.name);
-			formData.append('size', blob.size);
-			formData.append('lastModified', blob.lastModified);
-			formData.append('type', blob.type);
+      if(opt && opt.onProgress) {
+        xhr.upload.onprogress = function(e) {
+          if (e.total > 0) {
+            e.percent = e.loaded / e.total * 100;
+          }
+          opt.onProgress(e, file);
+        };
+      }
+
+      let formData = new FormData();
+			formData.append('filename', (opt && opt.filename) ? opt.filename : "");
+			formData.append('file', file);
+			formData.append('name', file.name);
+			formData.append('size', file.size);
+			formData.append('lastModified', file.lastModified);
+			formData.append('type', file.type);
       xhr.send(formData);
 
       return promise;
     };
 
-    var WS = function(path){
+    let WS = function(path){
         this.path = path;
     }
 
@@ -285,14 +356,14 @@ define(
         this.conn.close();
         this.conn = null;
       }
-      var ths = this;
-      var sign = accto(navigator.userAgent + window.location.host),
+      let ths = this;
+      let sign = accto(navigator.userAgent + window.location.host),
           ws = new WebSocket('ws://'+window.location.host+this.path+"?url="+encodeURI(document.location.pathname)+"&sign="+sign);
 
       ws.onopen = this.onopen;
       ws.onclose = this.onclose;
       ws.onmessage = (e) => {
-        var obj = JSON.parse(e.data);
+        let obj = JSON.parse(e.data);
         if (obj['iserror']){
           ths.error(obj.error, e);
           return;

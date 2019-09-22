@@ -191,5 +191,5 @@ func RequireJS(pd *PageAttr, fileName string, src []byte) *JS {
 		attr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name}
 	}
 
-	return &JS{Src: src, Attr: attr}
+	return &JS{Src: src, Attr: attr, FileName: fileName}
 }

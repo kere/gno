@@ -8,12 +8,6 @@ import (
 	"github.com/kere/gno/libs/util"
 )
 
-var (
-	bJsTagBegin = []byte("<script type=\"text/javascript\"")
-	bJsSrc      = []byte(" src=\"")
-	bJsTagEnd   = []byte("</script>\n")
-)
-
 // JS class
 type JS struct {
 	FileName string
@@ -43,10 +37,10 @@ func (t *JS) Render(w io.Writer) error {
 
 // RenderA with page attr
 func (t *JS) RenderA(w io.Writer, pd *PageAttr) error {
-	w.Write(bJsTagBegin)
+	w.Write(BJsTagBegin)
 
 	if t.FileName != "" {
-		w.Write(bJsSrc)
+		w.Write(BJsSrc)
 		if strings.HasPrefix(t.FileName, "http:") || strings.HasPrefix(t.FileName, "https:") {
 			w.Write(util.Str2Bytes(t.FileName))
 
@@ -84,7 +78,7 @@ func (t *JS) RenderA(w io.Writer, pd *PageAttr) error {
 		w.Write(t.Src)
 	}
 
-	w.Write(bJsTagEnd)
+	w.Write(BJsTagEnd)
 
 	return nil
 }

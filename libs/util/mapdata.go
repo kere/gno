@@ -403,63 +403,63 @@ func (dr MapData) FloatDefault(field string, v float64) float64 {
 	return dr.Float(field)
 }
 
-// MapDatas []MapData
-func (dr MapData) MapDatas(field string) []MapData {
-	switch dr[field].(type) {
-	case []interface{}:
-		data := dr[field].([]interface{})
-		items := make([]MapData, len(data))
-		for i := range data {
-			items[i] = (MapData)(data[i].(map[string]interface{}))
-		}
-		return items
-	case []MapData:
-		return dr[field].([]MapData)
-	default:
-		return nil
-	}
-}
+// // MapDatas []MapData
+// func (dr MapData) MapDatas(field string) []MapData {
+// 	switch dr[field].(type) {
+// 	case []interface{}:
+// 		data := dr[field].([]interface{})
+// 		items := make([]MapData, len(data))
+// 		for i := range data {
+// 			items[i] = (MapData)(data[i].(map[string]interface{}))
+// 		}
+// 		return items
+// 	case []MapData:
+// 		return dr[field].([]MapData)
+// 	default:
+// 		return nil
+// 	}
+// }
+//
+// // MapData mapData
+// func (dr MapData) MapData(field string) MapData {
+// 	switch dr[field].(type) {
+// 	case map[string]interface{}:
+// 		return MapData(dr[field].(map[string]interface{}))
+//
+// 	case []byte, string:
+// 		v := make(map[string]interface{}, 0)
+// 		dr.JSONParse(field, &v)
+// 		return MapData(v)
+//
+// 	default:
+// 		panic("Hstore unknow data type")
+// 	}
+// }
 
-// MapData mapData
-func (dr MapData) MapData(field string) MapData {
-	switch dr[field].(type) {
-	case map[string]interface{}:
-		return MapData(dr[field].(map[string]interface{}))
-
-	case []byte, string:
-		v := make(map[string]interface{}, 0)
-		dr.JSONParse(field, &v)
-		return MapData(v)
-
-	default:
-		panic("Hstore unknow data type")
-	}
-}
-
-// MapDataDefault bool
-func (dr MapData) MapDataDefault(field string, v MapData) MapData {
-	if !dr.IsSet(field) || dr.IsNull(field) {
-		return v
-	}
-	return dr.MapData(field)
-}
+// // MapDataDefault bool
+// func (dr MapData) MapDataDefault(field string, v MapData) MapData {
+// 	if !dr.IsSet(field) || dr.IsNull(field) {
+// 		return v
+// 	}
+// 	return dr.MapData(field)
+// }
 
 // ParseTo json object
 func (dr MapData) ParseTo(field string, to interface{}) error {
-	b, err := json.Marshal(dr[field])
-	if err != nil {
-		return err
-	}
+	switch dr[field].(type) {
+	case []byte:
+		if err := json.Unmarshal(dr.Bytes(field), to); err != nil {
+			return err
+		}
+		return nil
+	default:
+		b, err := json.Marshal(dr[field])
+		if err != nil {
+			return err
+		}
 
-	return json.Unmarshal(b, to)
-}
-
-// JSONParse parse json
-func (dr MapData) JSONParse(field string, v interface{}) error {
-	if err := json.Unmarshal(dr.Bytes(field), v); err != nil {
-		return err
+		return json.Unmarshal(b, to)
 	}
-	return nil
 }
 
 // CopyTo vo

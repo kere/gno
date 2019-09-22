@@ -1,9 +1,5 @@
 package db
 
-import (
-	"database/sql"
-)
-
 // Create f
 func Create(table string, row MapRow) error {
 	ins := InsertBuilder{table: table}
@@ -20,9 +16,13 @@ func TxCreate(tx *Tx, table string, row MapRow) error {
 }
 
 // TxCreateAndReturnID func
-func TxCreateAndReturnID(tx *Tx, table string, row MapRow) (sql.Result, error) {
+func TxCreateAndReturnID(tx *Tx, table string, row MapRow) (int64, error) {
 	ins := InsertBuilder{table: table}
-	return ins.ReturnID().TxInsert(tx, row)
+	r, err := ins.ReturnID().TxInsert(tx, row)
+	if err != nil {
+		return -1, err
+	}
+	return r.LastInsertId()
 }
 
 // CreateIfNotFound insert data if not found

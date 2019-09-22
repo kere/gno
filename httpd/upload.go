@@ -2,6 +2,8 @@ package httpd
 
 import (
 	"crypto/md5"
+	"crypto/sha256"
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"os"
@@ -11,6 +13,9 @@ import (
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 )
+
+// ErrUploadFileExists exists
+var ErrUploadFileExists = errors.New("upload file exists")
 
 // IUpload interface
 type IUpload interface {
@@ -78,7 +83,7 @@ func (s *SiteServer) RegistUpload(rule string, up IUpload) {
 var filepool bytebufferpool.Pool
 
 // DoUpload upload
-func DoUpload(name, storeDir string, fileHeader *multipart.FileHeader) (string, error) {
+func DoUpload(name, storeDir string, fileHeader *multipart.FileHeader, hash string) (string, error) {
 	ext := filepath.Ext(name)
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -94,7 +99,12 @@ func DoUpload(name, storeDir string, fileHeader *multipart.FileHeader) (string, 
 		return "", err
 	}
 
-	token := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+	var token string
+	if hash == "sha256" {
+		token = fmt.Sprintf("%x", sha256.Sum256(buf.Bytes()))
+	} else {
+		token = fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+	}
 
 	_, err = os.Stat(storeDir)
 	if os.IsNotExist(err) {
@@ -103,9 +113,10 @@ func DoUpload(name, storeDir string, fileHeader *multipart.FileHeader) (string, 
 
 	fileName := token + ext
 	newFile := filepath.Join(storeDir, fileName)
-	_, err = os.Stat(newFile)
-	if os.IsExist(err) {
-		return fileName, nil
+
+	stat, _ := os.Stat(newFile)
+	if stat != nil {
+		return fileName, ErrUploadFileExists
 	}
 
 	nf, err := os.OpenFile(newFile, os.O_CREATE|os.O_RDWR, 0666)
