@@ -64,17 +64,6 @@ func (p *P) Attr() *PageAttr {
 	return &p.PA
 }
 
-// // Data page
-// func (p *P) Data() *PageData {
-// 	return pageDataPool.Get().(*PageData)
-// }
-
-// func putData(d *PageData) {
-// 	d.Title = ""
-// 	d.Data = nil
-// 	pageDataPool.Put(d)
-// }
-
 // Init page
 func (p *P) Init(title, name, dir string) {
 	p.PA.Title = title
@@ -176,12 +165,12 @@ func doPageErr(pd *PageAttr, ctx *fasthttp.RequestCtx, err error) {
 }
 
 // RequireJSWithSrc render
-func RequireJSWithSrc(pd *PageAttr, src []byte) *JS {
-	return RequireJS(pd, "", src)
+func RequireJSWithSrc(pd *PageAttr, src []byte) *RequireJS {
+	return NewRequireJS(pd, "", src)
 }
 
-// RequireJS render
-func RequireJS(pd *PageAttr, fileName string, src []byte) *JS {
+// NewRequireJS render
+func NewRequireJS(pd *PageAttr, fileName string, src []byte) *RequireJS {
 	attr := make([][2]string, 3, 5)
 	attr[0] = [2]string{"defer", ""}
 	attr[1] = [2]string{"async", "true"}
@@ -190,6 +179,10 @@ func RequireJS(pd *PageAttr, fileName string, src []byte) *JS {
 	} else {
 		attr[2] = [2]string{"data-main", "/assets/js/" + RunMode + "/page/" + pd.Dir + "/" + pd.Name}
 	}
+	rj := &RequireJS{}
+	rj.Src = src
+	rj.Attr = attr
+	rj.FileName = fileName
 
-	return &JS{Src: src, Attr: attr, FileName: fileName}
+	return rj
 }
