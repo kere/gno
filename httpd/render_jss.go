@@ -137,7 +137,7 @@ func (t *RequireJS) RenderA(w io.Writer, pd *PageAttr) error {
 	if pd.SiteData.JSVersion != "" {
 		w.Write(util.Str2Bytes(delim2))
 		if len(requireJSArg) == 0 {
-			requireJSArg = util.Str2Bytes("requirejs.config({urlArgs:'" + pd.SiteData.JSVersion + "'})")
+			requireJSArg = []byte("requirejs.config({urlArgs:'" + pd.SiteData.JSVersion + "'})")
 		}
 		w.Write(requireJSArg)
 	}
