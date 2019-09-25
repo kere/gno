@@ -12,7 +12,8 @@ var (
 	bTitleBegin = []byte("<title>")
 	bTitleEnd   = []byte("</title>\n")
 
-	metaCharset     = []byte("<meta charset=\"UTF-8\">\n")
+	// <meta http-equiv="content-type" content="txt/html; charset=utf-8"/>
+	metaCharset     = []byte("<meta http-equiv=\"content-type\" content=\"txt/html; charset=utf-8\"/>\n")
 	bytesHTMLBegin  = []byte("<!DOCTYPE HTML>\n<html lang=\"")
 	bytesHTMLBegin2 = []byte("\">\n")
 	bytesHTMLEnd    = []byte("</html>\n")
