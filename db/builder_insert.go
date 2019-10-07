@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/kere/gno/libs/log"
 	"github.com/valyala/bytebufferpool"
 )
 
@@ -218,6 +219,7 @@ func (ins *InsertBuilder) InsertM(rows interface{}) (sql.Result, error) {
 	case DataSet:
 		sqlstr, vals = parseInsertM2(ins, rows.(DataSet))
 	default:
+		log.App.Stack()
 		return nil, ErrType
 	}
 
@@ -257,6 +259,7 @@ func (ins *InsertBuilder) TxInsertM(tx *Tx, rows interface{}) (sql.Result, error
 	case DataSet:
 		sqlstr, vals = parseInsertM2(ins, rows.(DataSet))
 	default:
+		log.App.Stack()
 		return nil, ErrType
 	}
 

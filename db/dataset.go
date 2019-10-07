@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kere/gno/libs/log"
 	"github.com/kere/gno/libs/util"
 )
 
@@ -230,6 +231,7 @@ func (d *DataSet) FloatAt(i int, field string) (float64, error) {
 		}
 		return 0, nil
 	default:
+		log.App.Stack()
 		return 0, ErrType
 	}
 }
@@ -252,6 +254,7 @@ func (d *DataSet) Int64At(i int, field string) (int64, error) {
 		}
 		return 0, nil
 	default:
+		log.App.Stack()
 		return 0, ErrType
 	}
 }
@@ -278,6 +281,7 @@ func (d *DataSet) BoolAt(i int, field string) (bool, error) {
 	case float64:
 		return v.(float64) == 1, nil
 	default:
+		log.App.Stack()
 		return false, ErrType
 	}
 }
@@ -308,6 +312,7 @@ func (d *DataSet) BytesAt(i int, field string) ([]byte, error) {
 	case []byte:
 		return v.([]byte), nil
 	default:
+		log.App.Stack()
 		return nil, ErrType
 	}
 }
@@ -323,6 +328,7 @@ func (d *DataSet) TimeAt(i int, field string) (time.Time, error) {
 	case time.Time:
 		return v.(time.Time), nil
 	default:
+		log.App.Stack()
 		return EmptyTime, ErrType
 	}
 }
@@ -340,6 +346,7 @@ func (d *DataSet) Int64sAt(i int, field string) ([]int64, error) {
 		return Current().Driver.Int64s(v.([]byte))
 
 	default:
+		log.App.Stack()
 		return nil, ErrType
 	}
 }
@@ -357,6 +364,7 @@ func (d *DataSet) IntsAt(i int, field string) ([]int, error) {
 		return Current().Driver.Ints(v.([]byte))
 
 	default:
+		log.App.Stack()
 		return nil, ErrType
 	}
 }
@@ -374,6 +382,7 @@ func (d *DataSet) FloatsAt(i int, field string) ([]float64, error) {
 		return Current().Driver.Floats(v.([]byte))
 
 	default:
+		log.App.Stack()
 		return nil, ErrType
 	}
 }
@@ -390,6 +399,7 @@ func (d *DataSet) StrsAt(i int, field string) ([]string, error) {
 		return Current().Driver.Strings(v.([]byte))
 
 	default:
+		log.App.Stack()
 		return nil, ErrType
 	}
 }
@@ -406,6 +416,7 @@ func (d *DataSet) ParseJSONAt(i int, field string, vo interface{}) error {
 		return json.Unmarshal(v.([]byte), v)
 
 	default:
+		log.App.Stack()
 		return ErrType
 	}
 }
