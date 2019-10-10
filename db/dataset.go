@@ -84,7 +84,7 @@ func PrintDataSet(dat *DataSet) {
 }
 
 // DataSetStrf stringify bytes rows
-func DataSetStrf(dataset DataSet) {
+func DataSetStrf(dataset DataSet, fields ...string) {
 	l := dataset.Len()
 	n := len(dataset.Fields)
 	cols := dataset.Columns
@@ -95,8 +95,13 @@ func DataSetStrf(dataset DataSet) {
 	// get columns of bytes
 	arr := make([]int, 0, n)
 	for k := 0; k < n; k++ {
+		if util.InStrings(dataset.Fields[k], fields) {
+			arr = append(arr, k)
+			continue
+		}
+
 		switch cols[k][0].(type) {
-		case []byte:
+		case []uint8:
 			arr = append(arr, k)
 		}
 	}
