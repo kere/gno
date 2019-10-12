@@ -35,7 +35,21 @@ func Test_Func(t *testing.T) {
 	v = IntZipTo62(num)
 	str = string(v)
 	n = UnIntZip(str, BaseChars)
-	fmt.Println(str)
+	if uint64(n) != num {
+		t.Fatal(str, n)
+	}
+
+	num = 1
+	v = IntZipTo62(num)
+	str = string(v)
+	n = UnIntZip(str, BaseChars)
+	if uint64(n) != num {
+		t.Fatal(str, n)
+	}
+	num = 62
+	v = IntZipTo62(num)
+	str = string(v)
+	n = UnIntZip(str, BaseChars)
 	if uint64(n) != num {
 		t.Fatal(str, n)
 	}

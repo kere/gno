@@ -53,6 +53,9 @@ func IntZipTo62(u64 uint64) []byte {
 // IntZipTo int 转换压缩成字符串列表内的字符串
 func IntZipTo(num uint64, table []byte) []byte {
 	l := uint64(len(table))
+	if num < l {
+		return []byte{table[num]}
+	}
 
 	// v, m := calculateZip(l, num)
 	v, m := num/l, num%l
@@ -73,8 +76,12 @@ func IntZipTo(num uint64, table []byte) []byte {
 // UnIntZip int
 func UnIntZip(s string, table []byte) int64 {
 	l := len(s)
-	if l < 2 {
-		return 0
+	if l == 0 {
+		return -1
+	}
+	if l == 1 {
+		k := bytes.IndexRune(table, rune(s[0]))
+		return int64(k)
 	}
 
 	n := int64(len(table))
