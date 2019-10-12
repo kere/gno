@@ -6,7 +6,6 @@ import (
 )
 
 func Test_Func(t *testing.T) {
-	s := append(BaseChars, []byte("-=[];',./'~!@#$%^&*()_+{}:\"<>?")...)
 	score := int64(11706300000)
 	num := uint64(score)
 	v := IntZipTo62(num)
@@ -14,11 +13,31 @@ func Test_Func(t *testing.T) {
 	if str != "koreMc" {
 		t.Fatal("IntZipTo62", str)
 	}
+	n := UnIntZip(str, BaseChars)
+	if uint64(n) != num {
+		t.Fatal(str, n)
+	}
 
-	v = IntZipBaseStr(num, s)
+	table := make([]byte, len(BaseChars))
+	copy(table, BaseChars)
+	table = append(table, []byte("-=[];',./~!@#$%^&*()_+{}:\"<>?")...)
+	v = IntZipTo(num, table)
 	str = string(v)
-	if str != "sHxB'1" {
+	if str != "vUD[*1" {
 		t.Fatal("IntZipBase", str)
+	}
+	n = UnIntZip(str, table)
+	if uint64(n) != num {
+		t.Fatal(str, n, string(table))
+	}
+
+	num = 3323724002
+	v = IntZipTo62(num)
+	str = string(v)
+	n = UnIntZip(str, BaseChars)
+	fmt.Println(str)
+	if uint64(n) != num {
+		t.Fatal(str, n)
 	}
 
 	num2 := 1.712774821
@@ -54,23 +73,6 @@ func Test_Func(t *testing.T) {
 	val = Round(num2, 4)
 	if val != -1.7128 {
 		t.Fatal("round failed", val)
-	}
-}
-
-func Test_MapData(t *testing.T) {
-	mapData := MapData{}
-	mapData["json"] = `[{"p":3},{"p":5},{"p":10}]`
-
-	var v []map[string]int
-	err := mapData.ParseTo("json", &v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var v1 []MapData
-	err = mapData.ParseTo("json", &v1)
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 

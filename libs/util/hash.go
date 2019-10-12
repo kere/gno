@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"hash/crc32"
 	"hash/crc64"
@@ -46,52 +47,55 @@ func UUIDshort(v interface{}) string {
 
 // IntZipTo62 把数字压缩成字符串，基于62字符列表
 func IntZipTo62(u64 uint64) []byte {
-	return IntZipBaseStr(u64, BaseChars)
+	return IntZipTo(u64, BaseChars)
 }
 
-// IntZipBaseStr int 转换压缩成字符串列表内的字符串
-func IntZipBaseStr(num uint64, s []byte) []byte {
-	l := uint64(len(s))
+// IntZipTo int 转换压缩成字符串列表内的字符串
+func IntZipTo(num uint64, table []byte) []byte {
+	l := uint64(len(table))
 
 	// v, m := calculateZip(l, num)
 	v, m := num/l, num%l
-	result := make([]byte, 0, int(v)+2)
-	result = append(result, s[m])
+	result := make([]byte, 0, 12)
+	result = append(result, table[m])
 
 	for v >= l {
 		v, m = v/l, v%l
-		// result = append([]byte{s[m]}, result...)
-		result = append(result, byte(s[m]))
+		result = append(result, byte(table[m]))
 	}
 
 	if v > 0 {
-		// result = append([]byte{s[v]}, result...)
-		result = append(result, byte(s[v]))
+		result = append(result, byte(table[v]))
 	}
 	return result
 }
 
-// // BaseStrToInt10 压缩字符串回退为10位整数
-// func BaseStrToInt10(str string, s []byte) (uint64, error) {
-// 	l := len(str)
-// 	index := bytes.IndexByte(s, str[l-1])
-// 	if index < 0 {
-// 		return 0, errors.New("parse failed")
-// 	}
-// 	sum := uint64(index)
-// 	base := len(s)
-//
-// 	for i := 1; i < l; i++ {
-// 		index = bytes.IndexByte(s, str[l-i-1])
-// 		if index < 0 {
-// 			return 0, errors.New("parse failed")
-// 		}
-// 		sum += uint64(math.Pow(float64(index*base), float64(i)))
-// 	}
-// 	return sum, nil
-// }
+// UnIntZip int
+func UnIntZip(s string, table []byte) int64 {
+	l := len(s)
+	if l < 2 {
+		return 0
+	}
 
-// // Unzip62 反向计算压缩字符串
-// func Unzip62(str string) (uint64, error) {
-// 	return BaseStrToInt10(str, BaseChars)
-// }
+	n := int64(len(table))
+	k := bytes.IndexRune(table, rune(s[l-1]))
+	if k < 0 {
+		return -1
+	}
+	val := int64(k) * n
+	k = bytes.IndexRune(table, rune(s[l-2]))
+	if k < 0 {
+		return -1
+	}
+	val += int64(k)
+
+	for i := l - 3; i > -1; i-- {
+		k = bytes.IndexRune(table, rune(s[i]))
+		if k < 0 {
+			return -1
+		}
+		val = n*val + int64(k)
+	}
+
+	return val
+}
