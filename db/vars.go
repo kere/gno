@@ -3,7 +3,6 @@ package db
 var (
 	// bytePool bytebufferpool.Pool
 	dbpool *databasePool
-	// dbConf conf.Conf
 )
 
 // 月份 1,01,Jan,January

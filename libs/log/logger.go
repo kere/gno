@@ -160,6 +160,7 @@ func (l *Logger) Emerg(m ...interface{}) {
 	l.Logger.Print(LogEmergStr)
 	l.Logger.Println(m...)
 	l.Write("emergency exit(4)")
+	l.Stack()
 	os.Exit(4)
 }
 
@@ -167,16 +168,19 @@ func (l *Logger) Emerg(m ...interface{}) {
 func (l *Logger) Emergf(format string, m ...interface{}) {
 	l.Logger.Printf(LogEmergStr+" "+format, m...)
 	l.Write("\nemergency exit(4)")
+	l.Stack()
 	os.Exit(4)
 }
 
 // Alert log
 func (l *Logger) Alert(m ...interface{}) *Logger {
+	l.Stack()
 	return l.writelog(LogAlertStr, LogAlert, m...)
 }
 
 // Alertf log
 func (l *Logger) Alertf(format string, m ...interface{}) *Logger {
+	l.Stack()
 	return l.writelogf(LogAlertStr, LogAlert, format, m)
 }
 
