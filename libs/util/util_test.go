@@ -6,54 +6,6 @@ import (
 )
 
 func Test_Func(t *testing.T) {
-	score := int64(11706300000)
-	num := uint64(score)
-	v := IntZipTo62(num)
-	str := string(v)
-	if str != "koreMc" {
-		t.Fatal("IntZipTo62", str)
-	}
-	n := UnIntZip(str, BaseChars)
-	if uint64(n) != num {
-		t.Fatal(str, n)
-	}
-
-	table := make([]byte, len(BaseChars))
-	copy(table, BaseChars)
-	table = append(table, []byte("-=[];',./~!@#$%^&*()_+{}:\"<>?")...)
-	v = IntZipTo(num, table)
-	str = string(v)
-	if str != "vUD[*1" {
-		t.Fatal("IntZipBase", str)
-	}
-	n = UnIntZip(str, table)
-	if uint64(n) != num {
-		t.Fatal(str, n, string(table))
-	}
-
-	num = 3323724002
-	v = IntZipTo62(num)
-	str = string(v)
-	n = UnIntZip(str, BaseChars)
-	if uint64(n) != num {
-		t.Fatal(str, n)
-	}
-
-	num = 1
-	v = IntZipTo62(num)
-	str = string(v)
-	n = UnIntZip(str, BaseChars)
-	if uint64(n) != num {
-		t.Fatal(str, n)
-	}
-	num = 62
-	v = IntZipTo62(num)
-	str = string(v)
-	n = UnIntZip(str, BaseChars)
-	if uint64(n) != num {
-		t.Fatal(str, n)
-	}
-
 	num2 := 1.712774821
 	val := Round(num2, 2)
 	if val != 1.71 {

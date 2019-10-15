@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/panjf2000/ants"
+	"github.com/panjf2000/ants/v2"
 )
 
 // SyncObj class

@@ -2,12 +2,10 @@ package util
 
 import (
 	"bytes"
-	"fmt"
 	"hash/crc32"
 	"hash/crc64"
+	"strconv"
 	"time"
-
-	"github.com/spaolacci/murmur3"
 )
 
 var (
@@ -33,16 +31,12 @@ func CRC32Token(src []byte) []byte {
 	return IntZipTo62(v64)
 }
 
-// Unique 获得一个稀有字符
-func Unique() string {
-	u64 := time.Now().UTC().UnixNano()
-	return UUIDshort(u64)
-}
-
-// UUIDshort 获得一个值的Short UUID
-func UUIDshort(v interface{}) string {
-	v64 := murmur3.Sum64([]byte(fmt.Sprint(v)))
-	return string(IntZipTo62(v64))
+// UUID short uuid
+func UUID() string {
+	n := time.Now().UTC().UnixNano()
+	str := strconv.FormatInt(n, 16)
+	v64 := crc64.Checksum(Str2Bytes(str), ECMATable)
+	return Bytes2Str(IntZipTo62(v64))
 }
 
 // IntZipTo62 把数字压缩成字符串，基于62字符列表
