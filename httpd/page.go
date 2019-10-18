@@ -2,6 +2,8 @@ package httpd
 
 import (
 	"net/url"
+	"reflect"
+	"strings"
 
 	"github.com/kere/gno/libs/log"
 	"github.com/valyala/fasthttp"
@@ -16,10 +18,10 @@ const (
 
 // IPage interface
 type IPage interface {
-	Attr() *PageAttr
 	// Data() *PageData
 	Auth(ctx *fasthttp.RequestCtx) error
 	Page(ctx *fasthttp.RequestCtx) (interface{}, error)
+	Attr() *PageAttr
 }
 
 // // PageData every page render data
@@ -64,13 +66,19 @@ func (p *P) Attr() *PageAttr {
 	return &p.PA
 }
 
-// Init page
-func (p *P) Init(title, name, dir string) {
-	p.PA.Title = title
-	p.PA.Name = name
-	p.PA.Dir = dir
-	if p.PA.Body == nil {
-		p.PA.Body = NewSiteTemplate(p.PA.Dir, p.PA.Name)
+// initPage func
+func initPage(p IPage) {
+	typ := reflect.TypeOf(p)
+	s := strings.TrimPrefix(typ.String(), "*")
+	arr := strings.Split(s, ".")
+	dir := arr[0]
+	name := arr[1]
+
+	pa := p.Attr()
+	pa.Name = name
+	pa.Dir = dir
+	if pa.Body == nil {
+		pa.Body = NewSiteTemplate(dir, name)
 	}
 }
 

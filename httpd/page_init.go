@@ -26,7 +26,10 @@ type PageOption struct {
 }
 
 // PageInit page
-func PageInit(pa *PageAttr, opt PageOption) {
+func PageInit(p IPage, opt PageOption) {
+	initPage(p)
+	pa := p.Attr()
+
 	siteConf := Site.C.GetConf("site")
 
 	// , user-scalable=no
