@@ -86,7 +86,7 @@ func TestSort(t *testing.T) {
 }
 
 func TestSync(t *testing.T) {
-	cpt := NewComputation()
+	cpt := NewComputation(20)
 	arr := make([]int, 100)
 
 	counter := 0
