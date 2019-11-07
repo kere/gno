@@ -32,3 +32,6 @@ debug
 *.png
 *.zip
 *.dat
+
+go.mod
+go.sum
