@@ -36,7 +36,7 @@ func Test_MapSync(t *testing.T) {
 	}
 	wg.Wait()
 	if counterSync != 1 {
-		t.Fatal()
+		t.Fatal(counterSync)
 	}
 }
 

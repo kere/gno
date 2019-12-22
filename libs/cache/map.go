@@ -26,11 +26,9 @@ type ExpiresVal struct {
 
 // Map class
 type Map struct {
-	target ICachedMap
-	Lock   sync.RWMutex
-	// Lock   sync.Mutex
-	Data map[string]ExpiresVal
-	// Data    sync.Map
+	target  ICachedMap
+	Lock    sync.RWMutex
+	Data    map[string]ExpiresVal
 	expires time.Duration
 }
 
