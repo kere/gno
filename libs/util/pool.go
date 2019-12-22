@@ -10,24 +10,31 @@ var (
 	int64sPool sync.Pool
 )
 
-// GetRow from pool
-func GetRow() []float64 {
-	v := rowPool.Get()
-	if v == nil {
-		return make([]float64, 0, 100)
+func parseArgs(args []int) (int, int) {
+	l := len(args)
+	switch {
+	case l == 0:
+		return 0, 0
+	case l == 1:
+		return args[0], args[0]
+	default:
+		return args[0], args[1]
 	}
-	return v.([]float64)
 }
 
-// GetRowN from pool, with 0 value
-func GetRowN(n int) []float64 {
+// GetRow from pool
+func GetRow(args ...int) []float64 {
+	l, capN := parseArgs(args)
 	v := rowPool.Get()
 	if v == nil {
-		return make([]float64, n)
+		if capN < 20 {
+			capN = 20
+		}
+		return make([]float64, l, capN)
 	}
 	row := v.([]float64)
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < l; i++ {
 		row = append(row, 0)
 	}
 	return row
@@ -41,23 +48,18 @@ func PutRow(r []float64) {
 // ---------- float64 ----------
 
 // GetColumn from pool
-func GetColumn() []float64 {
+func GetColumn(args ...int) []float64 {
+	l, capN := parseArgs(args)
 	v := colPool.Get()
 	if v == nil {
-		return make([]float64, 0, 100)
-	}
-	return v.([]float64)
-}
-
-// GetColumnN from pool, with 0 value
-func GetColumnN(n int) []float64 {
-	v := colPool.Get()
-	if v == nil {
-		return make([]float64, n)
+		if capN < 200 {
+			capN = 200
+		}
+		return make([]float64, l, capN)
 	}
 	col := v.([]float64)
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < l; i++ {
 		col = append(col, 0)
 	}
 	return col
@@ -71,23 +73,18 @@ func PutColumn(r []float64) {
 // ---------- int64 ----------
 
 // GetInt64 from pool
-func GetInt64() []int64 {
+func GetInt64(args ...int) []int64 {
+	l, capN := parseArgs(args)
 	v := int64sPool.Get()
 	if v == nil {
-		return make([]int64, 0, 100)
+		if capN < 100 {
+			capN = 100
+		}
+		return make([]int64, l, capN)
 	}
-	return v.([]int64)
-}
 
-// GetInt64N from pool, with 0 value
-func GetInt64N(n int) []int64 {
-	v := int64sPool.Get()
-	if v == nil {
-		return make([]int64, n)
-	}
 	arr := (v.([]int64))
-
-	for i := 0; i < n; i++ {
+	for i := 0; i < l; i++ {
 		arr = append(arr, 0)
 	}
 	return arr
@@ -100,24 +97,19 @@ func PutInt64(r []int64) {
 
 // ---------- int ----------
 
-// GetInt from pool
-func GetInt() []int {
+// GetInt from pool, with 0 value
+func GetInt(args ...int) []int {
+	l, capN := parseArgs(args)
 	v := intsPool.Get()
 	if v == nil {
-		return make([]int, 0, 100)
-	}
-	return v.([]int)
-}
-
-// GetIntN from pool, with 0 value
-func GetIntN(n int) []int {
-	v := intsPool.Get()
-	if v == nil {
-		return make([]int, n)
+		if capN < 100 {
+			capN = 100
+		}
+		return make([]int, l, capN)
 	}
 	arr := v.([]int)
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < l; i++ {
 		arr = append(arr, 0)
 	}
 	return arr
@@ -131,23 +123,18 @@ func PutInt(r []int) {
 // ---------- strings ----------
 
 // GetStrings from pool
-func GetStrings() []string {
+func GetStrings(args ...int) []string {
+	l, capN := parseArgs(args)
 	v := intsPool.Get()
 	if v == nil {
-		return make([]string, 0, 100)
-	}
-	return v.([]string)
-}
-
-// GetStringsN from pool, with 0 value
-func GetStringsN(n int) []string {
-	v := strsPool.Get()
-	if v == nil {
-		return make([]string, n)
+		if capN < 100 {
+			capN = 100
+		}
+		return make([]string, l, capN)
 	}
 	arr := v.([]string)
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < l; i++ {
 		arr = append(arr, "")
 	}
 	return arr

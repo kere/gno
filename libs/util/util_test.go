@@ -125,19 +125,19 @@ func TestPool(t *testing.T) {
 	}
 
 	PutRow(r)
-	r = GetRowN(10)
+	r = GetRow(10)
 	if len(r) != 10 {
 		t.Fatal(r)
 	}
 
 	PutRow(r)
-	r = GetRowN(10)
+	r = GetRow(10)
 	if len(r) != 10 {
 		t.Fatal(r)
 	}
 
 	PutRow(r)
-	r = GetRowN(5)
+	r = GetRow(5)
 	if len(r) != 5 {
 		t.Fatal(r)
 	}

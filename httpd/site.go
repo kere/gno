@@ -164,6 +164,30 @@ func New(name string) *SiteServer {
 	return site
 }
 
+// DefaultAntiDoSLimit set default fasthttp server
+// * Server provides the following anti-DoS limits:
+//
+// * The number of concurrent connections.
+// * The number of concurrent connections per client IP.
+// * The number of requests per connection.
+// * Request read timeout.
+// * Response write timeout.
+// * Maximum request header size.
+// * Maximum request body size.
+// * Maximum request execution time.
+// * Maximum keep-alive connection lifetime.
+// * Early filtering out non-GET requests.
+func DefaultAntiDoSLimit(site *SiteServer) {
+	s := site.Server
+	s.Concurrency = 5000
+	s.IdleTimeout = time.Second * 30
+	s.ReadTimeout = time.Second * 30
+	s.WriteTimeout = time.Second * 30
+	s.MaxConnsPerIP = 1000
+	s.MaxRequestsPerConn = 1000
+	s.ReduceMemoryUsage = false
+}
+
 // Start server listen
 func (s *SiteServer) Start() {
 	if s.EnableFileHandler {
