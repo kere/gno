@@ -17,6 +17,14 @@ func Abs(val int) int {
 	return val
 }
 
+// Abs32 int
+func Abs32(val float32) float32 {
+	if val < 0 {
+		return -1 * val
+	}
+	return val
+}
+
 // Money string
 func Money(val float64) string {
 	val = Round(val, 2)
@@ -34,6 +42,19 @@ func Round(val float64, n int) float64 {
 	}
 
 	return math.Floor(val*v+0.5) / v
+}
+
+// Round32 func
+func Round32(val float32, n int) float32 {
+	v := 1.0
+	if n > 0 {
+		v = math.Pow10(n)
+	}
+	if val < 0 {
+		return float32(math.Ceil(float64(val)*v-0.5) / v)
+	}
+
+	return float32(math.Floor(float64(val)*v+0.5) / v)
 }
 
 // RandInt 随机整数

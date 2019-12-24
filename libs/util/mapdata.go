@@ -395,12 +395,53 @@ func (dr MapData) Float(field string) float64 {
 	}
 }
 
+// Float32 float64
+func (dr MapData) Float32(field string) float32 {
+	switch dr[field].(type) {
+	case []byte:
+		f, err := strconv.ParseFloat(string(dr[field].([]byte)), 32)
+		if err != nil {
+			panic(err)
+		}
+		return float32(f)
+	case string:
+		f, err := strconv.ParseFloat(dr[field].(string), 32)
+		if err != nil {
+			panic(err)
+		}
+		return float32(f)
+
+	case float64:
+		return float32(dr[field].(float64))
+
+	case float32:
+		return dr[field].(float32)
+
+	case int, int64, int32, int16, int8:
+		return float32(dr.Int64(field))
+
+	case uint, uint64, uint32, uint16, uint8:
+		return float32(dr.Uint64(field))
+
+	default:
+		panic("unkonw float type to convert")
+	}
+}
+
 // FloatDefault bool
 func (dr MapData) FloatDefault(field string, v float64) float64 {
 	if !dr.IsSet(field) || dr.IsNull(field) {
 		return v
 	}
 	return dr.Float(field)
+}
+
+// Float32Default bool
+func (dr MapData) Float32Default(field string, v float32) float32 {
+	if !dr.IsSet(field) || dr.IsNull(field) {
+		return v
+	}
+	return dr.Float32(field)
 }
 
 // // MapDatas []MapData

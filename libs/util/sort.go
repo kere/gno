@@ -74,3 +74,23 @@ func IndexOfStrs(arr []string, v string) int {
 	}
 	return -1
 }
+
+// Float32Slice attaches the methods of Interface to []float32, sorting in increasing order
+// (not-a-number values are treated as less than other values).
+type Float32Slice []float32
+
+func (p Float32Slice) Len() int           { return len(p) }
+func (p Float32Slice) Less(i, j int) bool { return p[i] < p[j] || isNaN32(p[i]) && !isNaN32(p[j]) }
+func (p Float32Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// isNaN32 is a copy of math.IsNaN to avoid a dependency on the math package.
+func isNaN32(f float32) bool {
+	return f != f
+}
+
+// Sort is a convenience method.
+func (p Float32Slice) Sort() { sort.Sort(p) }
+
+// Float32s sorts a slice of float32s in increasing order
+// (not-a-number values are treated as less than other values).
+func Float32s(a []float32) { sort.Sort(Float32Slice(a)) }
