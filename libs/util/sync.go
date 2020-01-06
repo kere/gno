@@ -126,13 +126,13 @@ func (c *Computation) Run(l int, execFunc func(i int)) {
 		execFunc(k)
 		wg.Done()
 	})
+	defer p.Release()
 
 	for i := 0; i < l; i++ {
 		wg.Add(1)
 		p.Invoke(i)
 	}
 	wg.Wait()
-	p.Release()
 }
 
 // RunA 并行性计算，返回运算结果
@@ -157,12 +157,12 @@ func (c *Computation) RunA(l int, execFunc func(i int) (interface{}, error), res
 		dat, err := execFunc(k)
 		chanA <- cptResult{k, dat, err}
 	})
+	defer p.Release()
 	go func() {
 		for i := 0; i < l; i++ {
 			p.Invoke(i)
 		}
 	}()
-	defer p.Release()
 
 	var result cptResult
 	for i := 0; i < l; i++ {
@@ -176,39 +176,4 @@ func (c *Computation) RunA(l int, execFunc func(i int) (interface{}, error), res
 		}
 		resultFunc(result.Index, result.Data)
 	}
-	p.Release()
 }
-
-// // RunA 并行性计算
-// // l：循环数量
-// func (c *Computation) RunA(l int, execFunc func(i int) (interface{}, error), resultFunc func(i int, dat interface{})) {
-// 	if l == 0 {
-// 		return
-// 	}
-//
-// 	startTime := time.Now()
-// 	chanA := make(chan cptResult, c.NumProcess)
-// 	go func() {
-// 		for i := 0; i < l; i++ {
-// 			go func(k int) {
-// 				dat, err := execFunc(k)
-// 				chanA <- cptResult{k, dat, err}
-// 			}(i)
-// 		}
-// 	}()
-//
-// 	var result cptResult
-// 	for i := 0; i < l; i++ {
-// 		result = <-chanA
-// 		if result.Error != nil && c.ErrHandler != nil {
-// 			c.ErrHandler(result.Error)
-// 			continue
-// 		}
-// 		if resultFunc == nil {
-// 			continue
-// 		}
-// 		resultFunc(result.Index, result.Data)
-// 	}
-//
-// 	fmt.Println("Finished:", time.Now().Sub(startTime))
-// }

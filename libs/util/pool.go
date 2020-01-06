@@ -52,8 +52,8 @@ func GetColumn(args ...int) []float64 {
 	l, capN := parseArgs(args)
 	v := colPool.Get()
 	if v == nil {
-		if capN < 200 {
-			capN = 200
+		if capN < 100 {
+			capN = 100
 		}
 		return make([]float64, l, capN)
 	}
@@ -77,8 +77,8 @@ func GetInt64(args ...int) []int64 {
 	l, capN := parseArgs(args)
 	v := int64sPool.Get()
 	if v == nil {
-		if capN < 100 {
-			capN = 100
+		if capN < 50 {
+			capN = 50
 		}
 		return make([]int64, l, capN)
 	}
@@ -102,8 +102,8 @@ func GetInt(args ...int) []int {
 	l, capN := parseArgs(args)
 	v := intsPool.Get()
 	if v == nil {
-		if capN < 100 {
-			capN = 100
+		if capN < 50 {
+			capN = 50
 		}
 		return make([]int, l, capN)
 	}
@@ -127,8 +127,8 @@ func GetStrings(args ...int) []string {
 	l, capN := parseArgs(args)
 	v := intsPool.Get()
 	if v == nil {
-		if capN < 100 {
-			capN = 100
+		if capN < 50 {
+			capN = 50
 		}
 		return make([]string, l, capN)
 	}

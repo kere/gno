@@ -2,8 +2,8 @@ package util
 
 import "strconv"
 
-// GetBitStr for bit setup
-func GetBitStr(n int) []byte {
+// GetBytes for bit setup
+func GetBytes(n int) []byte {
 	v := bytesPool.Get()
 	var arr []byte
 	if v == nil {
