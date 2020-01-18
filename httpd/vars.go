@@ -5,6 +5,8 @@ var (
 	DefaultTemplateSubfix = ".htm"
 	// BDote bytes
 	BDote = []byte(".")
+	// BDote bytes
+	BComma = []byte(",")
 )
 
 const (

@@ -15,6 +15,11 @@ type ICachedMap interface {
 	Validate(v interface{}) bool
 	SetExpires(v int)
 	GetExpires() int
+	Get(args ...interface{}) interface{}
+	Set(obj interface{}, args ...interface{})
+	Release(args ...interface{})
+	IsCached(args ...interface{}) bool
+	ClearAll()
 }
 
 // ExpiresVal class
@@ -138,7 +143,6 @@ func (m *Map) Release(args ...interface{}) {
 func (m *Map) IsCached(args ...interface{}) bool {
 	m.Lock.Lock()
 	key := m.buildKey(args...)
-	// _, isok := m.Data.Load(key)
 	_, isok := m.Data[key]
 	m.Lock.Unlock()
 	return isok

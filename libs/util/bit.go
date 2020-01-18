@@ -1,30 +1,41 @@
 package util
 
-import "strconv"
+import (
+	"strconv"
+)
 
 // GetBytes for bit setup
-func GetBytes(n int) []byte {
-	v := bytesPool.Get()
-	var arr []byte
-	if v == nil {
-		arr = make([]byte, 0, n)
-	} else {
-		arr = (v.([]byte))[:0]
-	}
+func GetBytes(args ...int) []byte {
+	l, capN := parseArgs(args)
 
-	for i := 0; i < n; i++ {
-		arr = append(arr, '0')
+	v := bytesPool.Get()
+	if v == nil {
+		if capN < 50 {
+			capN = 50
+		}
+		return make([]byte, l, capN)
 	}
-	return arr
+	row := v.([]byte)
+
+	for i := 0; i < l; i++ {
+		row = append(row, 0)
+	}
+	return row
 }
 
 // PutBytes for bit setup
 func PutBytes(arr []byte) {
-	bytesPool.Put(arr)
+	bytesPool.Put(arr[:0])
 }
 
 // BitStr2Uint uint
 func BitStr2Uint(b []byte) uint64 {
+	l := len(b)
+	for i := 0; i < l; i++ {
+		if b[i] == 0 {
+			b[i] = '0'
+		}
+	}
 	s := Bytes2Str(b)
 	v, err := strconv.ParseUint(s, 2, 64)
 	if err != nil {
