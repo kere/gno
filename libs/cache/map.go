@@ -15,6 +15,7 @@ type ICachedMap interface {
 	Validate(v interface{}) bool
 	SetExpires(v int)
 	GetExpires() int
+	Key(args ...interface{}) string
 	Get(args ...interface{}) interface{}
 	Set(obj interface{}, args ...interface{})
 	Release(args ...interface{})
@@ -55,8 +56,8 @@ func (m *Map) GetExpires() int {
 	return int(m.expires.Seconds())
 }
 
-// buildKey func
-func (m *Map) buildKey(args ...interface{}) string {
+// Key func
+func (m *Map) Key(args ...interface{}) string {
 	return fmt.Sprint(args...)
 }
 
@@ -70,7 +71,7 @@ func (m *Map) Set(obj interface{}, args ...interface{}) {
 	if obj == nil || !m.target.Validate(obj) {
 		return
 	}
-	key := m.buildKey(args...)
+	key := m.Key(args...)
 	ex := time.Now().Add(m.expires)
 	m.Lock.Lock()
 	m.Data[key] = ExpiresVal{Value: obj, Expires: m.expires, ExpiresAt: ex}
@@ -80,7 +81,7 @@ func (m *Map) Set(obj interface{}, args ...interface{}) {
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
 	// 读取数据
-	key := m.buildKey(args...)
+	key := m.Key(args...)
 	m.Lock.RLock()
 	// v, isok := m.Data.Load(key)
 	v, isok := m.Data[key]
@@ -133,7 +134,7 @@ func (m *Map) ClearAll() {
 // Release 释放缓存
 func (m *Map) Release(args ...interface{}) {
 	m.Lock.Lock()
-	key := m.buildKey(args...)
+	key := m.Key(args...)
 	// m.Data.Delete(key)
 	delete(m.Data, key)
 	m.Lock.Unlock()
@@ -142,13 +143,13 @@ func (m *Map) Release(args ...interface{}) {
 // IsCached bool
 func (m *Map) IsCached(args ...interface{}) bool {
 	m.Lock.Lock()
-	key := m.buildKey(args...)
+	key := m.Key(args...)
 	_, isok := m.Data[key]
 	m.Lock.Unlock()
 	return isok
 }
 
-// Print 打印缓存的buildKey
+// Print 打印缓存的 Key
 func (m *Map) Print() {
 	count := 0
 	// m.Data.Range(func(k interface{}, value interface{}) bool {
