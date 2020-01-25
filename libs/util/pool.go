@@ -42,6 +42,9 @@ func GetRow(args ...int) []float64 {
 
 // PutRow to pool
 func PutRow(r []float64) {
+	if cap(r) == 0 {
+		return
+	}
 	rowPool.Put(r[:0])
 }
 
@@ -67,6 +70,9 @@ func GetColumn(args ...int) []float64 {
 
 // PutColumn to pool
 func PutColumn(r []float64) {
+	if cap(r) == 0 {
+		return
+	}
 	colPool.Put(r[:0])
 }
 
@@ -92,6 +98,9 @@ func GetInt64(args ...int) []int64 {
 
 // PutInt64 to pool
 func PutInt64(r []int64) {
+	if cap(r) == 0 {
+		return
+	}
 	int64sPool.Put(r[:0])
 }
 
@@ -117,6 +126,9 @@ func GetInt(args ...int) []int {
 
 // PutInt to pool
 func PutInt(r []int) {
+	if cap(r) == 0 {
+		return
+	}
 	intsPool.Put(r[:0])
 }
 
@@ -142,5 +154,8 @@ func GetStrings(args ...int) []string {
 
 // PutStrings to pool
 func PutStrings(r []string) {
+	if cap(r) == 0 {
+		return
+	}
 	strsPool.Put(r[:0])
 }

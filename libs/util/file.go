@@ -20,3 +20,17 @@ func CopyFile(srcName, dstName string) (written int64, err error) {
 
 	return io.Copy(dst, src)
 }
+
+// // DirItems read dir
+// func DirItems(dir string, f func(os.FileInfo)) error {
+// 	items, err := ioutil.ReadDir(dir)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	l := len(items)
+// 	for i := 0; i < l; i++ {
+// 		f(items[i])
+// 	}
+// 	return nil
+// }
