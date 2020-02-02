@@ -75,28 +75,6 @@ func Bytes2Str(z []byte) string {
 	return *(*string)(unsafe.Pointer(&z))
 }
 
-// // Bytes2Str bytes convert to string
-// func Bytes2Str(b []byte) string {
-// 	// return *(*string)(unsafe.Pointer(&s))
-// 	var s string
-// 	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-// 	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
-// 	pstring.Data = pbytes.Data
-// 	pstring.Len = pbytes.Len
-// 	return s
-// }
-//
-// // Str2Bytes bytes convert to string
-// func Str2Bytes(s string) []byte {
-// 	var b []byte
-// 	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-// 	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
-// 	pbytes.Data = pstring.Data
-// 	pbytes.Len = pstring.Len
-// 	pbytes.Cap = pstring.Len
-// 	return b
-// }
-
 // RandStr 生成任意长度的字符串
 func RandStr(l int) []byte {
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -127,4 +105,15 @@ func Int64sItemCount(arr []int64, val int64) int {
 		}
 	}
 	return count
+}
+
+// IsZeroFloats float64s
+func IsZeroFloats(arr []float64) bool {
+	l := len(arr)
+	for i := 0; i < l; i++ {
+		if arr[i] != 0 {
+			return false
+		}
+	}
+	return true
 }

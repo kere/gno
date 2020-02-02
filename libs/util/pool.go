@@ -26,10 +26,11 @@ func parseArgs(args []int) (int, int) {
 func GetRow(args ...int) []float64 {
 	l, capN := parseArgs(args)
 	v := rowPool.Get()
+	if capN < 20 {
+		capN = 20
+	}
+
 	if v == nil {
-		if capN < 20 {
-			capN = 20
-		}
 		return make([]float64, l, capN)
 	}
 	row := v.([]float64)
@@ -137,7 +138,7 @@ func PutInt(r []int) {
 // GetStrings from pool
 func GetStrings(args ...int) []string {
 	l, capN := parseArgs(args)
-	v := intsPool.Get()
+	v := strsPool.Get()
 	if v == nil {
 		if capN < 50 {
 			capN = 50
