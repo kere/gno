@@ -106,14 +106,3 @@ func Int64sItemCount(arr []int64, val int64) int {
 	}
 	return count
 }
-
-// IsZeroFloats float64s
-func IsZeroFloats(arr []float64) bool {
-	l := len(arr)
-	for i := 0; i < l; i++ {
-		if arr[i] != 0 {
-			return false
-		}
-	}
-	return true
-}

@@ -82,3 +82,14 @@ func ParseFloatDefault(s string, defaultVal float64) float64 {
 
 	return v
 }
+
+// IsZeroFloats float64s
+func IsZeroFloats(arr []float64) bool {
+	l := len(arr)
+	for i := 0; i < l; i++ {
+		if arr[i] != 0 {
+			return false
+		}
+	}
+	return true
+}
