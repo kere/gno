@@ -9,6 +9,38 @@ import (
 	humanize "github.com/dustin/go-humanize"
 )
 
+// Max int
+func Max(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+// Min int
+func Min(a, b int) int {
+	if a > b {
+		return b
+	}
+	return a
+}
+
+// Max64 int64
+func Max64(a, b int64) int64 {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+// Min64 int64
+func Min64(a, b int64) int64 {
+	if a > b {
+		return b
+	}
+	return a
+}
+
 // Abs int
 func Abs(val int) int {
 	if val < 0 {
