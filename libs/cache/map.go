@@ -12,10 +12,11 @@ import (
 type ICachedMap interface {
 	Build(args ...interface{}) (interface{}, error)
 	Init(c ICachedMap, expires int)
-	Validate(v interface{}) bool
 	SetExpires(v int)
 	GetExpires() int
 	Key(args ...interface{}) string
+	IsValueOK(obj interface{}, args ...interface{}) bool
+	IsReload(args ...interface{}) bool
 	Get(args ...interface{}) interface{}
 	Set(obj interface{}, args ...interface{})
 	Release(args ...interface{})
@@ -61,16 +62,26 @@ func (m *Map) Key(args ...interface{}) string {
 	return fmt.Sprint(args...)
 }
 
-// Validate 检查缓存值是否正确，如果正确才保存
-func (m *Map) Validate(v interface{}) bool {
+// IsReload 判断get时，是否缓存依然正常
+func (m *Map) IsReload(args ...interface{}) bool {
+	return true
+}
+
+// IsValueOK 判断value是否正常
+func (m *Map) IsValueOK(obj interface{}, args ...interface{}) bool {
 	return true
 }
 
 // Set func
 func (m *Map) Set(obj interface{}, args ...interface{}) {
-	if obj == nil || !m.target.Validate(obj) {
+	if obj == nil {
 		return
 	}
+	if !m.target.IsValueOK(obj, args...) {
+		m.Release(args...)
+		return
+	}
+
 	key := m.Key(args...)
 	ex := time.Now().Add(m.expires)
 	m.Lock.Lock()
@@ -81,6 +92,9 @@ func (m *Map) Set(obj interface{}, args ...interface{}) {
 // Get func
 func (m *Map) Get(args ...interface{}) interface{} {
 	// 读取数据
+	if m.target.IsReload(args...) {
+		m.Release(args...)
+	}
 	key := m.Key(args...)
 	m.Lock.RLock()
 	// v, isok := m.Data.Load(key)
@@ -110,7 +124,7 @@ func (m *Map) Get(args ...interface{}) interface{} {
 
 	log.App.Debug("[map cache] build", key, "expires:", m.GetExpires())
 
-	if obj == nil || !m.target.Validate(obj) {
+	if obj == nil || !m.target.IsValueOK(obj, args...) {
 		m.Lock.Unlock()
 		return nil
 	}
