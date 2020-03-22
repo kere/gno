@@ -124,20 +124,20 @@ func TestPool(t *testing.T) {
 		r[i] = float64(i + 1)
 	}
 
-	PutRow(r)
-	r = GetRow(10)
+	PutFloats(r)
+	r = GetFloats(10)
 	if len(r) != 10 {
 		t.Fatal(r)
 	}
 
-	PutRow(r)
-	r = GetRow(10)
+	PutFloats(r)
+	r = GetFloats(10)
 	if len(r) != 10 {
 		t.Fatal(r)
 	}
 
-	PutRow(r)
-	r = GetRow(5)
+	PutFloats(r)
+	r = GetFloats(5)
 	if len(r) != 5 {
 		t.Fatal(r)
 	}

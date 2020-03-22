@@ -3,32 +3,57 @@ package util
 import "sync"
 
 var (
-	rowPool    sync.Pool
+	floatsPool sync.Pool
 	colPool    sync.Pool
 	intsPool   sync.Pool
 	strsPool   sync.Pool
 	int64sPool sync.Pool
 )
 
-func parseArgs(args []int) (int, int) {
-	l := len(args)
+func parseArgs(args []int, minCap int) (l int, capN int) {
+	n := len(args)
 	switch {
-	case l == 0:
-		return 0, 0
-	case l == 1:
-		return args[0], args[0]
+	case n == 0:
+		l, capN = 0, 0
+	case n == 1:
+		l, capN = args[0], args[0]
 	default:
-		return args[0], args[1]
+		l, capN = args[0], args[1]
 	}
+	if capN < minCap {
+		capN = minCap
+	}
+	return
 }
 
-// GetRow from pool
-func GetRow(args ...int) []float64 {
-	l, capN := parseArgs(args)
-	v := rowPool.Get()
-	if capN < 20 {
-		capN = 20
+// GetBytes for bit setup
+func GetBytes(args ...int) []byte {
+	l, capN := parseArgs(args, 50)
+
+	v := bytesPool.Get()
+	if v == nil {
+		return make([]byte, l, capN)
 	}
+	row := v.([]byte)
+
+	for i := 0; i < l; i++ {
+		row = append(row, 0)
+	}
+	return row
+}
+
+// PutBytes for bit setup
+func PutBytes(arr []byte) {
+	if cap(arr) == 0 {
+		return
+	}
+	bytesPool.Put(arr[:0])
+}
+
+// GetFloats from pool
+func GetFloats(args ...int) []float64 {
+	l, capN := parseArgs(args, 50)
+	v := floatsPool.Get()
 
 	if v == nil {
 		return make([]float64, l, capN)
@@ -41,52 +66,21 @@ func GetRow(args ...int) []float64 {
 	return row
 }
 
-// PutRow to pool
-func PutRow(r []float64) {
+// PutfloatsPool to pool
+func PutFloats(r []float64) {
 	if cap(r) == 0 {
 		return
 	}
-	rowPool.Put(r[:0])
-}
-
-// ---------- float64 ----------
-
-// GetColumn from pool
-func GetColumn(args ...int) []float64 {
-	l, capN := parseArgs(args)
-	v := colPool.Get()
-	if v == nil {
-		if capN < 100 {
-			capN = 100
-		}
-		return make([]float64, l, capN)
-	}
-	col := v.([]float64)
-
-	for i := 0; i < l; i++ {
-		col = append(col, 0)
-	}
-	return col
-}
-
-// PutColumn to pool
-func PutColumn(r []float64) {
-	if cap(r) == 0 {
-		return
-	}
-	colPool.Put(r[:0])
+	floatsPool.Put(r[:0])
 }
 
 // ---------- int64 ----------
 
 // GetInt64 from pool
 func GetInt64(args ...int) []int64 {
-	l, capN := parseArgs(args)
+	l, capN := parseArgs(args, 50)
 	v := int64sPool.Get()
 	if v == nil {
-		if capN < 50 {
-			capN = 50
-		}
 		return make([]int64, l, capN)
 	}
 
@@ -109,12 +103,9 @@ func PutInt64(r []int64) {
 
 // GetInt from pool, with 0 value
 func GetInt(args ...int) []int {
-	l, capN := parseArgs(args)
+	l, capN := parseArgs(args, 50)
 	v := intsPool.Get()
 	if v == nil {
-		if capN < 50 {
-			capN = 50
-		}
 		return make([]int, l, capN)
 	}
 	arr := v.([]int)
@@ -137,12 +128,9 @@ func PutInt(r []int) {
 
 // GetStrings from pool
 func GetStrings(args ...int) []string {
-	l, capN := parseArgs(args)
+	l, capN := parseArgs(args, 50)
 	v := strsPool.Get()
 	if v == nil {
-		if capN < 50 {
-			capN = 50
-		}
 		return make([]string, l, capN)
 	}
 	arr := v.([]string)

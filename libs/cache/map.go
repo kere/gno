@@ -64,7 +64,7 @@ func (m *Map) Key(args ...interface{}) string {
 
 // IsReload 判断get时，是否缓存依然正常
 func (m *Map) IsReload(args ...interface{}) bool {
-	return true
+	return false
 }
 
 // IsValueOK 判断value是否正常
@@ -122,8 +122,6 @@ func (m *Map) Get(args ...interface{}) interface{} {
 		return nil
 	}
 
-	log.App.Debug("[map cache] build", key, "expires:", m.GetExpires())
-
 	if obj == nil || !m.target.IsValueOK(obj, args...) {
 		m.Lock.Unlock()
 		return nil
@@ -149,7 +147,6 @@ func (m *Map) ClearAll() {
 func (m *Map) Release(args ...interface{}) {
 	m.Lock.Lock()
 	key := m.Key(args...)
-	// m.Data.Delete(key)
 	delete(m.Data, key)
 	m.Lock.Unlock()
 }

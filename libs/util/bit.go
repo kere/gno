@@ -4,30 +4,6 @@ import (
 	"strconv"
 )
 
-// GetBytes for bit setup
-func GetBytes(args ...int) []byte {
-	l, capN := parseArgs(args)
-
-	v := bytesPool.Get()
-	if v == nil {
-		if capN < 50 {
-			capN = 50
-		}
-		return make([]byte, l, capN)
-	}
-	row := v.([]byte)
-
-	for i := 0; i < l; i++ {
-		row = append(row, 0)
-	}
-	return row
-}
-
-// PutBytes for bit setup
-func PutBytes(arr []byte) {
-	bytesPool.Put(arr[:0])
-}
-
 // BitStr2Uint uint
 func BitStr2Uint(b []byte) uint64 {
 	l := len(b)
