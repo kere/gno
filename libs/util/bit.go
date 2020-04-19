@@ -4,8 +4,8 @@ import (
 	"strconv"
 )
 
-// BitStr2Uint uint
-func BitStr2Uint(b []byte) uint64 {
+// MaskBytes2Int int
+func MaskBytes2Int(b []byte) int {
 	l := len(b)
 	for i := 0; i < l; i++ {
 		if b[i] == 0 {
@@ -17,11 +17,11 @@ func BitStr2Uint(b []byte) uint64 {
 	if err != nil {
 		return 0
 	}
-	return v
+	return int(v)
 }
 
-// SetBitStrTrue []byte
-func SetBitStrTrue(b []byte, i int) {
+// SetBytesMask []byte
+func SetBytesMask(b []byte, i int) {
 	l := len(b)
 	if i >= l {
 		return
@@ -30,18 +30,33 @@ func SetBitStrTrue(b []byte, i int) {
 	b[l-i-1] = '1'
 }
 
-// Float2BitStr string
-func Float2BitStr(v float64) string {
-	return strconv.FormatUint(uint64(v), 2)
+// SetIntMask set int mask
+func SetIntMask(v, i int, isTrue bool) int {
+	s := strconv.FormatInt(int64(v), 2)
+	l := len(s)
+	if i >= l {
+		return 0
+	}
+	b := Str2Bytes(s)
+	if isTrue {
+		b[l-1-i] = '1'
+	} else {
+		b[l-1-i] = '0'
+	}
+	v2, err := strconv.ParseUint(s, 2, 64)
+	if err != nil {
+		return 0
+	}
+	return int(v2)
 }
 
-// IsTrueAtBitUint uint
-func IsTrueAtBitUint(u uint64, i int) bool {
-	s := strconv.FormatUint(u, 2)
+// IsMaskTrueAt uint 从右向左
+func IsMaskTrueAt(u int, i int) bool {
+	s := strconv.FormatInt(int64(u), 2)
 	l := len(s)
 	if i >= l {
 		return false
 	}
 	// 反方向排列
-	return s[l-i-1] == '1'
+	return s[l-1-i] == '1'
 }

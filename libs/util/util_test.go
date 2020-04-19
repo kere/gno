@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -106,15 +107,26 @@ func TestSync(t *testing.T) {
 	}
 
 	s := []byte("110010")
-	v := BitStr2Uint(s)
+	v := MaskBytes2Int(s)
 	if v != 50 {
 		t.Fatal(v)
 	}
-	if !IsTrueAtBitUint(v, 1) {
-		t.Fatal(s)
+	if IsMaskTrueAt(v, 0) {
+		t.Fatal(string(s))
 	}
-	if IsTrueAtBitUint(v, 2) {
-		t.Fatal(s)
+	if !IsMaskTrueAt(v, 1) {
+		t.Fatal(string(s))
+	}
+
+	v = SetIntMask(v, 0, true)
+	str := strconv.FormatInt(int64(v), 2)
+	if str != "110011" {
+		t.Fatal(str)
+	}
+	v = SetIntMask(v, 2, true)
+	str = strconv.FormatInt(int64(v), 2)
+	if str != "110111" {
+		t.Fatal(str)
 	}
 
 }
