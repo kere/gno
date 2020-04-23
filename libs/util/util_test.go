@@ -84,6 +84,13 @@ func TestSort(t *testing.T) {
 		fmt.Println(arr)
 		t.Fatal(index)
 	}
+
+	arr = []int64{10, 322, 3, 3, 43, 65, 30, 230, 30, 44, 56, 20, 76, 20, 430, 659}
+	tmp := Int64sUniqueP(arr)
+	if tmp[1] != 10 || tmp[2] != 20 || tmp[3] != 30 {
+		fmt.Println(tmp)
+		t.Fatal("Int64sUniqueP")
+	}
 }
 
 func TestSync(t *testing.T) {

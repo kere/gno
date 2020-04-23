@@ -76,8 +76,8 @@ func PutFloats(r []float64) {
 
 // ---------- int64 ----------
 
-// GetInt64 from pool
-func GetInt64(args ...int) []int64 {
+// GetInt64s from pool
+func GetInt64s(args ...int) []int64 {
 	l, capN := parseArgs(args, 50)
 	v := int64sPool.Get()
 	if v == nil {
@@ -91,18 +91,18 @@ func GetInt64(args ...int) []int64 {
 	return arr
 }
 
-// PutInt64 to pool
-func PutInt64(r []int64) {
-	if cap(r) == 0 {
+// PutInt64s to pool
+func PutInt64s(ints []int64) {
+	if cap(ints) == 0 {
 		return
 	}
-	int64sPool.Put(r[:0])
+	int64sPool.Put(ints[:0])
 }
 
 // ---------- int ----------
 
-// GetInt from pool, with 0 value
-func GetInt(args ...int) []int {
+// GetInts from pool, with 0 value
+func GetInts(args ...int) []int {
 	l, capN := parseArgs(args, 50)
 	v := intsPool.Get()
 	if v == nil {
@@ -117,11 +117,11 @@ func GetInt(args ...int) []int {
 }
 
 // PutInt to pool
-func PutInt(r []int) {
-	if cap(r) == 0 {
+func PutInts(ints []int) {
+	if cap(ints) == 0 {
 		return
 	}
-	intsPool.Put(r[:0])
+	intsPool.Put(ints[:0])
 }
 
 // ---------- strings ----------
@@ -142,9 +142,9 @@ func GetStrings(args ...int) []string {
 }
 
 // PutStrings to pool
-func PutStrings(r []string) {
-	if cap(r) == 0 {
+func PutStrings(strs []string) {
+	if cap(strs) == 0 {
 		return
 	}
-	strsPool.Put(r[:0])
+	strsPool.Put(strs[:0])
 }

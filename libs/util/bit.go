@@ -20,8 +20,8 @@ func MaskBytes2Int(b []byte) int {
 	return int(v)
 }
 
-// SetBytesMask []byte
-func SetBytesMask(b []byte, i int) {
+// SetBytesMaskTrue []byte
+func SetBytesMaskTrue(b []byte, i int) {
 	l := len(b)
 	if i >= l {
 		return
