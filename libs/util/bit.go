@@ -4,6 +4,11 @@ import (
 	"strconv"
 )
 
+// MaskStr int
+func MaskStr(val int) string {
+	return strconv.FormatInt(int64(val), 2)
+}
+
 // MaskBytes2Int int
 func MaskBytes2Int(b []byte) int {
 	l := len(b)

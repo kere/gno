@@ -1,16 +1,23 @@
 package util
 
-import "sync"
-
-var (
-	floatsPool sync.Pool
-	colPool    sync.Pool
-	intsPool   sync.Pool
-	strsPool   sync.Pool
-	int64sPool sync.Pool
+import (
+	"sync"
 )
 
-func parseArgs(args []int, minCap int) (l int, capN int) {
+type poolClas struct {
+	sync.Pool
+	lock sync.Mutex
+}
+
+var (
+	floatsPool = poolClas{}
+	intsPool   = poolClas{}
+	strsPool   = poolClas{}
+	int64sPool = poolClas{}
+	bytesPool  = poolClas{}
+)
+
+func ParsePoolArgs(args []int, minCap int) (l int, capN int) {
 	n := len(args)
 	switch {
 	case n == 0:
@@ -28,8 +35,9 @@ func parseArgs(args []int, minCap int) (l int, capN int) {
 
 // GetBytes for bit setup
 func GetBytes(args ...int) []byte {
-	l, capN := parseArgs(args, 50)
-
+	l, capN := ParsePoolArgs(args, 50)
+	bytesPool.lock.Lock()
+	defer bytesPool.lock.Unlock()
 	v := bytesPool.Get()
 	if v == nil {
 		return make([]byte, l, capN)
@@ -52,7 +60,10 @@ func PutBytes(arr []byte) {
 
 // GetFloats from pool
 func GetFloats(args ...int) []float64 {
-	l, capN := parseArgs(args, 50)
+	l, capN := ParsePoolArgs(args, 50)
+	floatsPool.lock.Lock()
+	defer floatsPool.lock.Unlock()
+
 	v := floatsPool.Get()
 
 	if v == nil {
@@ -78,7 +89,10 @@ func PutFloats(r []float64) {
 
 // GetInt64s from pool
 func GetInt64s(args ...int) []int64 {
-	l, capN := parseArgs(args, 50)
+	l, capN := ParsePoolArgs(args, 50)
+	int64sPool.lock.Lock()
+	defer int64sPool.lock.Unlock()
+
 	v := int64sPool.Get()
 	if v == nil {
 		return make([]int64, l, capN)
@@ -103,7 +117,9 @@ func PutInt64s(ints []int64) {
 
 // GetInts from pool, with 0 value
 func GetInts(args ...int) []int {
-	l, capN := parseArgs(args, 50)
+	l, capN := ParsePoolArgs(args, 50)
+	intsPool.lock.Lock()
+	defer intsPool.lock.Unlock()
 	v := intsPool.Get()
 	if v == nil {
 		return make([]int, l, capN)
@@ -128,7 +144,11 @@ func PutInts(ints []int) {
 
 // GetStrings from pool
 func GetStrings(args ...int) []string {
-	l, capN := parseArgs(args, 50)
+	l, capN := ParsePoolArgs(args, 50)
+
+	strsPool.lock.Lock()
+	defer strsPool.lock.Unlock()
+
 	v := strsPool.Get()
 	if v == nil {
 		return make([]string, l, capN)

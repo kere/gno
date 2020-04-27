@@ -48,25 +48,25 @@ func TestSort(t *testing.T) {
 	arrSort := Int64sOrder(arr)
 	arrSort.Sort()
 
-	index := arrSort.IndexOf(43)
+	index := IndexOfInt64s(43, arrSort)
 	if index != 4 {
 		t.Fatal("index:", index)
 	}
-	index = arrSort.IndexOf(45)
+	index = IndexOfInt64s(45, arrSort)
 	if index != -1 {
 		t.Fatal("index:", index)
 	}
 
 	arr = []int64{3, 10, 20, 30, 43, 44, 45, 56, 65, 76, 230, 322, 430, 659}
 	arrSort = Int64sOrder(arr)
-	index = arrSort.Search(50)
+	index = SearchInt64s(50, arrSort)
 
 	if index != 7 {
 		fmt.Println(arr)
 		t.Fatal(index)
 	}
 
-	index = arrSort.Search(57)
+	index = SearchInt64s(57, arrSort)
 	if index != 8 {
 		fmt.Println(arr)
 		t.Fatal(index)
@@ -74,12 +74,12 @@ func TestSort(t *testing.T) {
 
 	arr = []int64{3, 10, 20, 30, 43, 44, 45, 49, 56, 65, 76, 230, 322, 430, 659}
 	arrSort = Int64sOrder(arr)
-	index = arrSort.Search(50)
+	index = SearchInt64s(50, arrSort)
 	if index != 8 {
 		fmt.Println(arr)
 		t.Fatal(index)
 	}
-	index = arrSort.Search(48)
+	index = SearchInt64s(48, arrSort)
 	if index != 7 {
 		fmt.Println(arr)
 		t.Fatal(index)

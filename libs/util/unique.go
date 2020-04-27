@@ -21,10 +21,11 @@ func Int64sUniqueP(arr []int64) []int64 {
 	if l == 0 {
 		return arr
 	}
-	tmp := Int64sOrder(GetInt64s(l))
+	tmp := GetInt64s(l)
 	defer PutInt64s(tmp)
 	copy(tmp, arr)
-	tmp.Sort()
+	sorted := Int64sOrder(tmp)
+	sorted.Sort()
 
 	// u := make([]int64, len(m))
 	u := GetInt64s(1, l)

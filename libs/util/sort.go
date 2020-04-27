@@ -15,14 +15,14 @@ func (p Int64sOrder) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p Int64sOrder) Sort() { sort.Sort(p) }
 
 // Search searches for x in a sorted slice of ints and returns the index
-func (p Int64sOrder) Search(v int64) int {
-	return sort.Search(len(p), func(i int) bool { return p[i] >= v })
+func SearchInt64s(v int64, arr []int64) int {
+	return sort.Search(len(arr), func(i int) bool { return arr[i] >= v })
 }
 
-// IndexOf find index, if not found, return -1
-func (p Int64sOrder) IndexOf(v int64) int {
-	i := p.Search(v)
-	if p[i] != v {
+// IndexOfInt64s find index, if not found, return -1
+func IndexOfInt64s(v int64, arr []int64) int {
+	i := SearchInt64s(v, arr)
+	if arr[i] != v {
 		return -1
 	}
 	return i
