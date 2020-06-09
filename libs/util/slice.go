@@ -6,27 +6,27 @@ import (
 	"strings"
 )
 
-// CopyStrings copy
-func CopyStrings(arr []string) []string {
-	l := len(arr)
-	if l == 0 {
-		return []string{}
-	}
-	src := make([]string, l)
-	copy(arr, src)
-	return src
-}
-
-// CopyInts copy
-func CopyInts(arr []int) []int {
-	l := len(arr)
-	if l == 0 {
-		return []int{}
-	}
-	src := make([]int, l)
-	copy(arr, src)
-	return src
-}
+// // CopyStrings copy
+// func CopyStrings(arr []string) []string {
+// 	l := len(arr)
+// 	if l == 0 {
+// 		return []string{}
+// 	}
+// 	src := make([]string, l)
+// 	copy(arr, src)
+// 	return src
+// }
+//
+// // CopyInts copy
+// func CopyInts(arr []int) []int {
+// 	l := len(arr)
+// 	if l == 0 {
+// 		return []int{}
+// 	}
+// 	src := make([]int, l)
+// 	copy(arr, src)
+// 	return src
+// }
 
 // SplitStr2Floats split string to []float64
 func SplitStr2Floats(s, sep string) ([]float64, error) {
@@ -60,7 +60,7 @@ func StringsI(val string, arr []string) int {
 // InStrings 是否在数组中出现
 func InStrings(val string, arr []string) bool {
 	l := len(arr)
-	if l < 500 {
+	if l < 300 {
 		for _, v := range arr {
 			if v == val {
 				return true
@@ -69,17 +69,19 @@ func InStrings(val string, arr []string) bool {
 		return false
 	}
 
-	tmp := make([]string, l)
+	// tmp := make([]string, l)
+	tmp := GetStrings(l)
 	copy(tmp, arr)
 	sort.Strings(tmp)
 	index := sort.SearchStrings(tmp, val)
+	PutStrings(tmp)
 	return index != l
 }
 
 // InInts 是否在数组中出现
 func InInts(val int, arr []int) bool {
 	l := len(arr)
-	if l < 500 {
+	if l < 300 {
 		for _, v := range arr {
 			if v == val {
 				return true
@@ -87,17 +89,19 @@ func InInts(val int, arr []int) bool {
 		}
 		return false
 	}
-	tmp := make([]int, l)
+	// tmp := make([]int, l)
+	tmp := GetInts(l)
 	copy(tmp, arr)
 	sort.Ints(tmp)
 	index := sort.SearchInts(tmp, val)
+	PutInts(tmp)
 	return index != l
 }
 
 // InFloats 是否在数组中出现
 func InFloats(val float64, arr []float64) bool {
 	l := len(arr)
-	if l < 500 {
+	if l < 300 {
 		for _, v := range arr {
 			if v == val {
 				return true
@@ -105,10 +109,12 @@ func InFloats(val float64, arr []float64) bool {
 		}
 		return false
 	}
-	tmp := make([]float64, l)
+	// tmp := make([]float64, l)
+	tmp := GetFloats(l)
 	copy(tmp, arr)
 	sort.Float64s(tmp)
 	index := sort.SearchFloat64s(tmp, val)
+	PutFloats(tmp)
 	return index != l
 }
 
@@ -118,8 +124,12 @@ func SameStrings(arr1, arr2 []string) bool {
 	if l != len(arr2) {
 		return false
 	}
-	tmp1 := make([]string, l)
-	tmp2 := make([]string, l)
+	// tmp1 := make([]string, l)
+	// tmp2 := make([]string, l)
+	tmp1 := GetStrings(l)
+	defer PutStrings(tmp1)
+	tmp2 := GetStrings(l)
+	defer PutStrings(tmp2)
 	copy(tmp1, arr1)
 	copy(tmp2, arr2)
 	sort.Strings(tmp1)
@@ -140,8 +150,12 @@ func SameInts(arr1, arr2 []int) bool {
 	if l != len(arr2) {
 		return false
 	}
-	tmp1 := make([]int, l)
-	tmp2 := make([]int, l)
+	// tmp1 := make([]int, l)
+	// tmp2 := make([]int, l)
+	tmp1 := GetInts(l)
+	defer PutInts(tmp1)
+	tmp2 := GetInts(l)
+	defer PutInts(tmp2)
 	copy(tmp1, arr1)
 	copy(tmp2, arr2)
 	sort.Ints(tmp1)

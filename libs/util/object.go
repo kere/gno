@@ -19,11 +19,11 @@ const (
 )
 
 func PrintObj(obj interface{}) {
-	typ := reflect.TypeOf(obj)
 	val := reflect.ValueOf(obj)
 	if val.Type().Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
+	typ := val.Type()
 
 	n := typ.NumField()
 	for i := 0; i < n; i++ {
@@ -32,7 +32,7 @@ func PrintObj(obj interface{}) {
 		if name == "" {
 			name = ftyp.Name
 		}
-		hasPer := strings.HasSuffix(name, "%")
+		hasPer := strings.HasSuffix(name, "%") || strings.HasSuffix(name, "率")
 
 		str := ""
 		fval := val.Field(i)
@@ -73,8 +73,8 @@ func PrintObj(obj interface{}) {
 			str = fmt.Sprintf("%v", fval.Interface())
 		}
 
-		switch ftyp.Tag.Get("pstyle") {
-		case "inline":
+		switch ftyp.Tag.Get("display") {
+		case "cell":
 			fmt.Print(name, ": ", str, "\t\t")
 		default:
 			fmt.Printf("%s: %s\n", name, str)

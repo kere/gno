@@ -113,7 +113,7 @@ func NewComputation(n int) *Computation {
 // Run 并行性计算
 // l：循环数量
 func (c *Computation) Run(l int, execFunc func(i int)) {
-	if c.IsSync {
+	if c.IsSync || c.NumProcess < 2 {
 		for k := 0; k < l; k++ {
 			execFunc(k)
 		}

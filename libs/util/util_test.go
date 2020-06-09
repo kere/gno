@@ -3,7 +3,9 @@ package util
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"testing"
+	"time"
 )
 
 func Test_Func(t *testing.T) {
@@ -104,8 +106,6 @@ func TestSync(t *testing.T) {
 	}, func(i int, dat interface{}) {
 		counter++
 	})
-	// fmt.Println(counter, "===========")
-	// fmt.Println(arr, "===========")
 
 	if counter != 100 {
 		fmt.Println(counter, "===========")
@@ -137,6 +137,46 @@ func TestSync(t *testing.T) {
 	}
 
 }
+
+func TestSync2(t *testing.T) {
+	count := 1000000
+	row := []int{0}
+	now := time.Now()
+	for i := 0; i < count; i++ {
+		row[0] += i
+	}
+	fmt.Println("for:", time.Now().Sub(now).String())
+	fmt.Println(row[0])
+
+	row[0] = 0
+	now = time.Now()
+	cpt := NewComputation(1000)
+	lock := sync.Mutex{}
+	cpt.Run(count, func(i int) {
+		lock.Lock()
+		row[0] += i
+		lock.Unlock()
+	})
+	fmt.Println("pool:", time.Now().Sub(now).String())
+	fmt.Println(row[0])
+
+	row[0] = 0
+	now = time.Now()
+	wg := sync.WaitGroup{}
+	wg.Add(count)
+	for i := 0; i < count; i++ {
+		go func(i int) {
+			lock.Lock()
+			row[0] += i
+			lock.Unlock()
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+	fmt.Println("WaitGroup:", time.Now().Sub(now).String())
+	fmt.Println(row[0])
+}
+
 func TestPool(t *testing.T) {
 	r := make([]float64, 5)
 	for i := 0; i < 5; i++ {

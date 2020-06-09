@@ -1,15 +1,44 @@
-package util
+package myzip
 
 import (
 	"archive/zip"
+	"bytes"
 	"io"
 	"os"
 )
 
-//Zip 压缩文件
+//Zip1To 压缩
+//dest 压缩文件存放地址
+func Zip1To(dest string, name string, body []byte) error {
+	d, err := os.Create(dest)
+	defer d.Close()
+	if err != nil {
+		return err
+	}
+
+	// Create a buffer to write our archive to.
+	buf := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	w := zip.NewWriter(buf)
+
+	f, err := w.Create(name)
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(body)
+	if err != nil {
+		return err
+	}
+
+	// Make sure to check the error on Close.
+	return w.Close()
+}
+
+//ZipFiles 压缩文件
 //files 文件数组，可以是不同dir下的文件或者文件夹
 //dest 压缩文件存放地址
-func Zip(files []*os.File, dest string) error {
+func ZipFiles(files []*os.File, dest string) error {
 	d, _ := os.Create(dest)
 	defer d.Close()
 	w := zip.NewWriter(d)
