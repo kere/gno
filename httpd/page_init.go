@@ -36,10 +36,10 @@ func PageInit(p IPage, opt PageOption) {
 	viewport := NewStrRender(`<meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">`)
 
 	pa.Head = make([]IRender, 1, 5)
-	pa.CSS = make([]IRenderA, 0, 3)
+	pa.CSS = make([]IRenderA, 0, 5)
 	pa.JS = make([]IRenderA, 0, 5)
-	pa.Top = make([]IRender, 0, 2)
-	pa.Bottom = make([]IRender, 0, 4)
+	pa.Top = make([]IRender, 0, 5)
+	pa.Bottom = make([]IRender, 0, 5)
 
 	pa.Head[0] = viewport
 	if !opt.NoPageLoad {

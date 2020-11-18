@@ -94,8 +94,6 @@ func (p *P) Auth(ctx *fasthttp.RequestCtx) error {
 
 // RegistGet router
 func (s *SiteServer) RegistGet(rule string, p IPage) {
-	// s.PageMap[rule] = p
-
 	s.Router.GET(rule, func(ctx *fasthttp.RequestCtx) {
 		pa := p.Attr()
 		pa.SiteData = s.SiteData
