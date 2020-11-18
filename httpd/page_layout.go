@@ -2,7 +2,6 @@ package httpd
 
 import (
 	"io"
-	"os"
 
 	"github.com/kere/gno/libs/util"
 )
@@ -109,7 +108,6 @@ func renderPage(w io.Writer, pa *PageAttr, dat interface{}, bPath []byte) error 
 
 	// Bottom
 	for _, r := range pa.Bottom {
-		r.Render(os.Stdout)
 		if err = r.Render(w); err != nil {
 			return err
 		}
