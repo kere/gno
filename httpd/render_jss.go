@@ -50,10 +50,12 @@ func (t *JS) RenderA(w io.Writer, pd *PageAttr) error {
 			if os.PathSeparator == '\\' {
 				filename = strings.Replace(t.FileName, "\\", "/", -1)
 			}
-			w.Write(util.Str2Bytes(pd.SiteData.AssetsURL))
+			if pd != nil {
+				w.Write(util.Str2Bytes(pd.SiteData.AssetsURL))
+			}
 			w.Write(util.Str2Bytes("/js/"))
 			w.Write(util.Str2Bytes(filename))
-			if pd.SiteData.JSVersion != "" {
+			if pd != nil && pd.SiteData.JSVersion != "" {
 				w.Write(bVerStr)
 				w.Write(util.Str2Bytes(pd.SiteData.JSVersion))
 			}
