@@ -24,18 +24,6 @@ type IPage interface {
 	Attr() *PageAttr
 }
 
-// // PageData every page render data
-// type PageData struct {
-// 	Title string
-// 	Data  interface{}
-// }
-//
-// var pageDataPool = sync.Pool{
-// 	New: func() interface{} {
-// 		return &PageData{}
-// 	},
-// }
-
 // PageAttr static data
 type PageAttr struct {
 	Name, Dir string
@@ -115,8 +103,10 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 		}
 
 		ctx.SetContentTypeBytes(contentTypePage)
+
 		// try cache
 		if TryCache(ctx, p) {
+			tryStaticHTML(ctx, p)
 			return
 		}
 
@@ -134,6 +124,8 @@ func (s *SiteServer) RegistGet(rule string, p IPage) {
 			// ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 			return
 		}
+
+		tryStaticHTML(ctx, p)
 
 		err = TrySetCache(ctx, p, ctx.Response.Body())
 		if err != nil {

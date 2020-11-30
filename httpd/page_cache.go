@@ -19,9 +19,10 @@ import (
 
 // PageCacheOption option
 type PageCacheOption struct {
-	PageMode int // page, path, uri
-	HTTPHead int // 页面缓存模式 0:不缓存  1: etag  >1: 过期模式
-	Store    int // 0: mem 1:file
+	PageMode     int  // page, path, uri
+	HTTPHead     int  // 页面缓存模式 0:不缓存  1: etag  >1: 过期模式
+	Store        int  // 0: none; 1:mem; 2:file
+	IsStaticHTML bool // 是否静态化html
 }
 
 // pCache class
@@ -139,9 +140,6 @@ func TryCache(ctx *fasthttp.RequestCtx, p IPage) bool {
 			log.App.Error(err)
 			return false
 		}
-
-		// fmt.Println("file cache found", key)
-
 		last = gmtNowTime(stat.ModTime())
 	}
 
@@ -227,4 +225,29 @@ func setHeaderCache(p IPage, ctx *fasthttp.RequestCtx, lastModified string) {
 	default:
 		ctx.Response.Header.Set(fasthttp.HeaderCacheControl, headSValNoCache)
 	}
+}
+
+// tryStaticHTML try to static html
+func tryStaticHTML(ctx *fasthttp.RequestCtx, p IPage) error {
+	if !p.Attr().CacheOption.IsStaticHTML {
+		return nil
+	}
+
+	filename := util.Bytes2Str(ctx.RequestURI())
+	l := len(filename)
+	if l < 1 {
+		return nil
+	}
+
+	if filename[l-1] == '/' {
+		filename += "index.html"
+	} else {
+		filename += ".html"
+	}
+
+	file, err := os.OpenFile(filepath.Join(HomeDir, WEBROOT, filename), os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	defer file.Close()
+	file.Write(ctx.Response.Body())
+
+	return err
 }

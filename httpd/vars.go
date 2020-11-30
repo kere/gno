@@ -18,11 +18,11 @@ const (
 	CacheModePageURI = 3
 
 	//CacheStoreMem to store in memory
-	CacheStoreMem = 0
+	CacheStoreMem = 1
 	//CacheStoreFile to store in file
-	CacheStoreFile = 1
+	CacheStoreFile = 2
 	//CacheStoreNone 不缓存页面
-	CacheStoreNone = -1
+	CacheStoreNone = 0
 
 	// pagecacheKeyPrefix = "c:"
 	pageCacheSubfix = ".htm"
