@@ -33,5 +33,4 @@ debug
 *.zip
 *.dat
 
-go.mod
 go.sum

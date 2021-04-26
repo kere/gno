@@ -57,19 +57,20 @@ func PathToURLb(p []byte) []byte {
 }
 
 // Str2Bytes to bytes
-func Str2Bytes(s string) []byte {
+func Str2Bytes(s string) (b []byte) {
+	/* #nosec G103 */
+	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	/* #nosec G103 */
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	bh := reflect.SliceHeader{
-		Data: sh.Data,
-		Len:  sh.Len,
-		Cap:  sh.Len,
-	}
-	return *(*[]byte)(unsafe.Pointer(&bh))
+	bh.Data = sh.Data
+	bh.Len = sh.Len
+	bh.Cap = sh.Len
+	return b
 }
 
 // Bytes2Str bytes convert to string
-func Bytes2Str(z []byte) string {
-	return *(*string)(unsafe.Pointer(&z))
+func Bytes2Str(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
 
 // RandStr 生成任意长度的字符串
