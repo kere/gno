@@ -114,7 +114,7 @@ func NewComputation(n int) *Computation {
 // l：循环数量
 func (c *Computation) Run(l int, execFunc func(i int)) {
 	if c.IsSync || c.NumProcess < 2 {
-		fmt.Println("RunA not in Pool")
+		fmt.Println("Computation RunA not in Pool")
 		for k := 0; k < l; k++ {
 			execFunc(k)
 		}
