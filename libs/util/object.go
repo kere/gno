@@ -30,7 +30,8 @@ func PrintObj(obj interface{}) {
 		ftyp := typ.Field(i)
 		name := ftyp.Tag.Get("name")
 		if name == "" {
-			name = ftyp.Name
+			// name = ftyp.Name
+			continue
 		}
 		hasPer := strings.HasSuffix(name, "%") || strings.HasSuffix(name, "率")
 
@@ -73,23 +74,48 @@ func PrintObj(obj interface{}) {
 			str = fmt.Sprintf("%v", fval.Interface())
 		}
 
-		switch ftyp.Tag.Get("display") {
-		case "cell":
-			fmt.Print(name, ": ", str, "\t\t")
-		default:
-			fmt.Printf("%s: %s\n", name, str)
+		end := ""
+		endArr := strings.Split(ftyp.Tag.Get("end"), " ")
+		for _, e := range endArr {
+			switch e {
+			case "tab":
+				end += "\t"
+			case "tab2":
+				end += "\t\t"
+			case "break":
+				end += "\n"
+			case "line":
+				end += PrintLine
+			case "dotted":
+				end += PrintDotted
+			case "equal":
+				end += PrintEquals
+			}
 		}
-		switch ftyp.Tag.Get("print") {
-		case "break":
-			fmt.Println()
-		case "break2":
-			fmt.Print("\n\n")
-		case "line":
-			fmt.Println(PrintLine)
-		case "dotted":
-			fmt.Println(PrintDotted)
-		case "equal":
-			fmt.Println(PrintEquals)
+		inline := ftyp.Tag.Get("inline")
+		switch inline {
+		case "tab":
+			inline = " \t "
+		case "tab2":
+			inline = "\t\t"
+		case "space":
+			inline = " "
+		case "space2":
+			inline = "  "
+		case "space4":
+			inline = "    "
+		case "comma":
+			inline = " , "
+		case "colon":
+			inline = " : "
+		default:
+			inline = ""
+		}
+
+		if inline != "" {
+			fmt.Print(name, ":", str, inline, end)
+		} else {
+			fmt.Print(name, ":", str, end, "\n")
 		}
 	}
 	fmt.Println()
