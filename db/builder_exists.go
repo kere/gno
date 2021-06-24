@@ -67,6 +67,11 @@ func parseExists(e *ExistsBuilder) string {
 }
 
 // Exists db
+func (e *ExistsBuilder) NotExists() bool {
+	return !e.Exists()
+}
+
+// Exists db
 func (e *ExistsBuilder) Exists() bool {
 	var r MapRows
 	var err error
