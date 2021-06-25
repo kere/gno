@@ -2,14 +2,11 @@ package dba
 
 import (
 	"database/sql"
-	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
-	"github.com/kere/gno/libs/util"
 )
 
 // IDriver interface
@@ -103,24 +100,4 @@ func (d *Database) SetLogLevel(level string) {
 // SetLog db
 func (d *Database) SetLog(l *log.Logger) {
 	d.log = l
-}
-
-// PrintDataSet print
-func PrintDataSet(dat *DataSet) {
-	l := dat.Len()
-	n := len(dat.Columns)
-	fmt.Println(strings.Join(dat.Fields, "\t"))
-	for i := 0; i < l; i++ {
-		for k := 0; k < n; k++ {
-			v := dat.Columns[k][i]
-			switch v.(type) {
-			case []byte:
-				fmt.Print(util.Bytes2Str(v.([]byte)), "\t")
-			default:
-				fmt.Print(dat.Columns[k][i], "\t")
-			}
-		}
-		fmt.Println()
-	}
-	fmt.Println("length:", l)
 }

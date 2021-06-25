@@ -18,8 +18,6 @@ type QueryBuilder struct {
 	order     string
 	limit     int
 	offset    int
-	cache     bool
-	expire    int
 	isPrepare bool
 }
 

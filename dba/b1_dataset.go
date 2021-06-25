@@ -2,7 +2,10 @@ package dba
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
+
+	"github.com/kere/gno/libs/util"
 )
 
 var (
@@ -70,6 +73,7 @@ func (d *DataSet) AddRow(row []interface{}) {
 		d.Columns[i] = append(d.Columns[i], row[i])
 	}
 }
+
 func (d *DataSet) AddRow0(row []interface{}) {
 	count := len(d.Columns)
 	if count != len(row) {
@@ -153,4 +157,28 @@ func ScanToDataSet(rows *sql.Rows, isPool bool) (DataSet, error) {
 	}
 
 	return result, rows.Err()
+}
+
+// PrintDataSet print
+func PrintDataSet(dat *DataSet) {
+	l := dat.Len()
+	fmt.Println("------- length:", l, "-------")
+	n := len(dat.Columns)
+	for i := 0; i < n; i++ {
+		fmt.Print(dat.Fields[i]+":"+dat.Types[i].TypeName, "\t")
+	}
+	fmt.Println()
+	for i := 0; i < l; i++ {
+		for k := 0; k < n; k++ {
+			v := dat.Columns[k][i]
+			switch v.(type) {
+			case []byte:
+				fmt.Print(util.Bytes2Str(v.([]byte)), "\t")
+			default:
+				fmt.Print(dat.Columns[k][i], "\t")
+			}
+		}
+		fmt.Println()
+	}
+	fmt.Println("-- length:", l)
 }

@@ -10,6 +10,7 @@ func init() {
 	config["dbname"] = "astock"
 	config["user"] = "postgres"
 	config["password"] = "123"
+	// config["level"] = "all"
 	Init("app", config)
 	Current().SetLogLevel("all")
 }
@@ -91,7 +92,7 @@ values               FLOAT4[]            null
 	row[3] = []float64{4.1, 4.2, 4.3}
 	dat.AddRow(row)
 	row[0] = "code05"
-	row[1] = 5
+	row[1] = 2
 	row[2] = User{Name: "tom05", Age: 52}
 	row[3] = []float64{5.1, 5.2, 5.3}
 	dat.AddRow(row)
@@ -105,7 +106,49 @@ values               FLOAT4[]            null
 		PrintDataSet(&dat)
 		t.Fatal(err)
 	}
-	if dat.Len() != 5 || dat.Columns[0][4].(string) != "code05" {
+	if dat.Len() != 5 || dat.Columns[0][4].(string) != "code05" || dat.Columns[1][4].(int64) != 2 {
+		PrintDataSet(&dat)
+		t.Fatal()
+	}
+
+	// 4: 测试Update
+	u := NewUpdate(table)
+	row = GetRow(1)
+	row[0] = 5
+	result, err := u.Where("code=$1 and date=$2", "code05", 2).Update([]string{"date"}, row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, _ := result.RowsAffected()
+	if n != 1 {
+		t.Fatal("update failed")
+	}
+
+	dat, _ = q.Query()
+	if dat.Len() != 5 || dat.Columns[0][4].(string) != "code05" || dat.Columns[1][4].(int64) != 5 {
+		PrintDataSet(&dat)
+		t.Fatal()
+	}
+
+	// 5: 测试Exists
+	e := NewExists(table)
+	if e.NotExists("code=$1 and date=$2", "code05", 5) {
+		t.Fatal("exists failed")
+	}
+	// 6: 测试Delete
+	del := NewDelete(table)
+	r, err := del.Delete("code=$1 and date=$2", "code05", 5)
+	n, _ = r.RowsAffected()
+	if n != 1 {
+		t.Fatal("delete failed")
+	}
+	if e.Exists("code=$1 and date=$2", "code05", 5) {
+		t.Fatal("exists failed")
+	}
+
+	// 7: 检查数据
+	dat, _ = q.Query()
+	if dat.Len() != 4 || dat.Columns[0][3].(string) != "code04" || dat.Columns[1][2].(int64) != 3 {
 		PrintDataSet(&dat)
 		t.Fatal()
 	}

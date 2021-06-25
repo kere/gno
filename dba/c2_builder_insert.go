@@ -25,13 +25,13 @@ func (i *insResult) RowsAffected() (int64, error) {
 type InsertBuilder struct {
 	Builder
 	excludeFields []string
-	isExec        bool
+	IsPrepare     bool
 	isReturnID    bool
 }
 
 // NewInsert func
 func NewInsert(t string) InsertBuilder {
-	q := InsertBuilder{isExec: false}
+	q := InsertBuilder{IsPrepare: false}
 	q.table = t
 	return q
 }
@@ -71,7 +71,7 @@ func (ins *InsertBuilder) Insert(fields []string, row []interface{}) (sql.Result
 	for i := 0; i < n; i++ {
 		vals[i] = driver.StoreData(fields[i], row[i])
 	}
-	if ins.isExec {
+	if ins.IsPrepare {
 		return ins.Exec(sqlstr, vals)
 	}
 	return ins.ExecPrepare(sqlstr, vals)
@@ -89,7 +89,7 @@ func (ins *InsertBuilder) Insert0(fields []string, row []interface{}) (sql.Resul
 	for i := 0; i < n; i++ {
 		row[i] = driver.StoreData(fields[i], row[i])
 	}
-	if ins.isExec {
+	if ins.IsPrepare {
 		return ins.Exec(sqlstr, row)
 	}
 	return ins.ExecPrepare(sqlstr, row)
@@ -99,7 +99,7 @@ func (ins *InsertBuilder) Insert0(fields []string, row []interface{}) (sql.Resul
 func (ins *InsertBuilder) InsertM(dat *DataSet) (sql.Result, error) {
 	sqlstr, vals := parseInsertMP(ins, dat)
 	defer PutColumn(vals)
-	if ins.isExec {
+	if ins.IsPrepare {
 		return ins.Exec(sqlstr, vals)
 	}
 	return ins.ExecPrepare(sqlstr, vals)
@@ -110,7 +110,7 @@ func (ins *InsertBuilder) InsertM0(dat *DataSet) (sql.Result, error) {
 	sqlstr, vals := parseInsertMP(ins, dat)
 	PutDataSet(dat)
 	defer PutColumn(vals)
-	if ins.isExec {
+	if ins.IsPrepare {
 		return ins.Exec(sqlstr, vals)
 	}
 	return ins.ExecPrepare(sqlstr, vals)

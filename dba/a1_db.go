@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kere/gno/dba/drivers"
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
 )
@@ -87,7 +86,7 @@ func New(name string, c map[string]string) *Database {
 	var driver IDriver
 	switch driverName {
 	case "postgres", "psql":
-		driver = &drivers.Postgres{DBName: confGet(c, "dbname", "app"),
+		driver = &Postgres{DBName: confGet(c, "dbname", "app"),
 			User:     confGet(c, "user", "postgres"),
 			Password: confGet(c, "password", "123"),
 			Host:     confGet(c, "host", "127.0.0.1"),

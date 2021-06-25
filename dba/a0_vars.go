@@ -54,5 +54,15 @@ var (
 	//BStarKey *
 	BStarKey = []byte("*")
 	//BSpace ' '
-	BSpace = []byte(" ")
+	BSpace         = []byte(" ")
+	BBRACE_LEFT    = []byte("{")
+	BBRACE_RIGHT   = []byte("}")
+	BBRACKET_LEFT  = []byte("[")
+	BBRACKET_RIGHT = []byte("]")
+	// bDollar         = []byte("$")
+	BQuestionMark = []byte("?")
+	BQuote        = []byte("'")
+	BDoubleQuote  = []byte("\"")
+	bZero         = []byte("0")
+	BNaN          = []byte("NaN")
 )

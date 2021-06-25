@@ -1,4 +1,4 @@
-package drivers
+package dba
 
 import (
 	"bytes"
@@ -193,9 +193,9 @@ func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 		return nil
 	}
 
-	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
-	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
-	src = bytes.Replace(src, bNaN, bZero, -1)
+	src = bytes.Replace(src, BBRACE_LEFT, BBRACKET_LEFT, -1)
+	src = bytes.Replace(src, BBRACE_RIGHT, BBRACKET_RIGHT, -1)
+	src = bytes.Replace(src, BNaN, bZero, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return err
@@ -206,9 +206,9 @@ func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 
 // ParseStringSlice db number slice
 func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
-	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
-	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
-	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
+	src = bytes.Replace(src, BBRACE_LEFT, BBRACKET_LEFT, -1)
+	src = bytes.Replace(src, BBRACE_RIGHT, BBRACKET_RIGHT, -1)
+	src = bytes.Replace(src, BQuote, BDoubleQuote, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
@@ -222,9 +222,9 @@ func (p *Postgres) WriteQuoteIdentifier(w io.Writer, s string) {
 	// return pq.QuoteLiteral(literal)
 	// `"` + strings.Replace(name, `"`, `""`, -1) + `"`
 	str := strings.Replace(s, `"`, `""`, -1)
-	w.Write(b_DoubleQuote)
+	w.Write(BDoubleQuote)
 	w.Write(util.Str2Bytes(str))
-	w.Write(b_DoubleQuote)
+	w.Write(BDoubleQuote)
 }
 
 // // QuoteLiteral quotes a 'literal' (e.g. a parameter, often used to pass literal

@@ -1,4 +1,4 @@
-package drivers
+package dba
 
 import (
 	"bytes"
@@ -116,7 +116,6 @@ func (m *Mysql) FlatData(typ reflect.Type, v interface{}) interface{} {
 			return m.toJson(v)
 		}
 	}
-
 }
 
 func (m *Mysql) StringSlice(src []byte) ([]string, error) {
@@ -124,13 +123,13 @@ func (m *Mysql) StringSlice(src []byte) ([]string, error) {
 		return []string{}, nil
 	}
 
-	src = bytes.TrimPrefix(src, b_BRACKET_LEFT)
-	src = bytes.TrimSuffix(src, b_BRACKET_RIGHT)
+	src = bytes.TrimPrefix(src, BBRACKET_LEFT)
+	src = bytes.TrimSuffix(src, BBRACKET_RIGHT)
 	if len(src) == 0 {
 		return []string{}, nil
 	}
 
-	l := bytes.Split(src, b_COMMA)
+	l := bytes.Split(src, BComma)
 	v := make([]string, len(l))
 	for i, _ := range l {
 		v[i] = string(bytes.Trim(l[i], "'"))
@@ -152,7 +151,7 @@ func (m *Mysql) Int64Slice(src []byte) ([]int64, error) {
 }
 
 func (m *Mysql) ParseStringSlice(src []byte, ptr interface{}) error {
-	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
+	src = bytes.Replace(src, BQuote, BDoubleQuote, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
