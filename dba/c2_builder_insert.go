@@ -30,10 +30,10 @@ type InsertBuilder struct {
 }
 
 // NewInsert func
-func NewInsert(t string) InsertBuilder {
-	q := InsertBuilder{IsPrepare: false}
-	q.table = t
-	return q
+func newInsert(t string) InsertBuilder {
+	ins := InsertBuilder{IsPrepare: false}
+	ins.table = t
+	return ins
 }
 
 // ReturnID func
@@ -67,7 +67,7 @@ func (ins *InsertBuilder) Insert(fields []string, row []interface{}) (sql.Result
 	sqlstr := parseInsert(ins, fields, ins.isReturnID)
 	vals := GetRow(n)
 	defer PutRow(vals)
-	driver := ins.GetDatabase().Driver
+	driver := ins.database.Driver
 	for i := 0; i < n; i++ {
 		vals[i] = driver.StoreData(fields[i], row[i])
 	}
@@ -85,7 +85,7 @@ func (ins *InsertBuilder) Insert0(fields []string, row []interface{}) (sql.Resul
 	}
 	sqlstr := parseInsert(ins, fields, ins.isReturnID)
 	defer PutRow(row)
-	driver := ins.GetDatabase().Driver
+	driver := ins.database.Driver
 	for i := 0; i < n; i++ {
 		row[i] = driver.StoreData(fields[i], row[i])
 	}
@@ -124,7 +124,7 @@ func parseInsertMP(ins *InsertBuilder, dataset *DataSet) (string, []interface{})
 	keys := dataset.Fields
 	buf := bytebufferpool.Get()
 
-	driver := ins.GetDatabase().Driver
+	driver := ins.database.Driver
 
 	buf.Write(bInsSQL)
 	driver.WriteQuoteIdentifier(buf, ins.table)
@@ -137,7 +137,7 @@ func parseInsertMP(ins *InsertBuilder, dataset *DataSet) (string, []interface{})
 	}
 	buf.Write(bInsBracketR)
 
-	values := writeInsertMP(buf, dataset)
+	values := writeInsertMP(ins.database, buf, dataset)
 
 	str := buf.String()
 	bytebufferpool.Put(buf)
@@ -154,7 +154,7 @@ func parseInsert(ins *InsertBuilder, fields []string, hasReturnID bool) string {
 	}
 
 	s := bytes.Buffer{}
-	driver := ins.GetDatabase().Driver
+	driver := ins.database.Driver
 	s.Write(bInsSQL)
 	driver.WriteQuoteIdentifier(&s, ins.table)
 	s.Write(bInsBracketL)
@@ -175,12 +175,11 @@ func parseInsert(ins *InsertBuilder, fields []string, hasReturnID bool) string {
 	return s.String()
 }
 
-func writeInsertMP(buf *bytebufferpool.ByteBuffer, dataset *DataSet) []interface{} {
+func writeInsertMP(database *Database, buf *bytebufferpool.ByteBuffer, dataset *DataSet) []interface{} {
 	l := dataset.Len()
 	n := len(dataset.Fields)
 	seq := 1
 
-	database := Current()
 	// values := make([]interface{}, 0, l*n+10)
 	values := GetColumn(0)
 	cols := dataset.Columns

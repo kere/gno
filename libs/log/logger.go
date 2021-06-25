@@ -245,5 +245,23 @@ func (l *Logger) Debugf(format string, m ...interface{}) *Logger {
 
 // Sql log
 func (l *Logger) Sql(dbname, sqlstr string, args []interface{}) *Logger {
-	return l.writelog(LogSQLStr, LogSQL, backetL+dbname+backetR, sqlstr, args)
+	sep := ": "
+	var s strings.Builder
+	s.WriteString(sqlstr)
+	s.WriteByte('\n')
+	n := len(args)
+	for i := 0; i < n; i++ {
+		s.WriteString(fmt.Sprint(i, sep))
+
+		switch args[i].(type) {
+		case []byte:
+			s.Write(args[i].([]byte))
+		default:
+			s.WriteString(fmt.Sprint(args[i]))
+		}
+		s.WriteByte('\n')
+	}
+	s.WriteByte('\n')
+
+	return l.writelog(LogSQLStr, LogSQL, s.String())
 }

@@ -22,7 +22,7 @@ type QueryBuilder struct {
 }
 
 // NewQuery new
-func NewQuery(t string) QueryBuilder {
+func newQuery(t string) QueryBuilder {
 	q := QueryBuilder{isPrepare: true}
 	q.table = t
 	return q

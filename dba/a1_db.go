@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/kere/gno/libs/conf"
 	"github.com/kere/gno/libs/log"
@@ -116,27 +115,6 @@ func New(name string, c map[string]string) *Database {
 	dbpool.SetDatabase(name, d)
 	dbpool.SetCurrent(d)
 	return d
-}
-
-func logSQLErr(sqlstr string, args []interface{}) {
-	sep := ": "
-	var s strings.Builder
-	s.WriteString(sqlstr)
-	s.WriteString(SLineBreak)
-	l := len(args)
-	for i := 0; i < l; i++ {
-		s.WriteString(fmt.Sprint(i, sep))
-
-		switch args[i].(type) {
-		case []byte:
-			s.Write(args[i].([]byte))
-		default:
-			s.WriteString(fmt.Sprint(args[i]))
-		}
-		s.WriteString(SLineBreak)
-	}
-	s.WriteString(SLineBreak)
-	log.App.Error(s.String())
 }
 
 // Get a database instance by name from database pool

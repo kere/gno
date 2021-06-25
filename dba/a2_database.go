@@ -27,13 +27,14 @@ type IDriver interface {
 	ParseStringSlice([]byte, interface{}) error
 }
 
-//Database class
+// Database class
 type Database struct {
 	Name   string
 	Driver IDriver
 	log    *log.Logger
 
-	db              *sql.DB
+	db *sql.DB
+
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime int
@@ -47,6 +48,48 @@ func NewDatabase(name string, driver IDriver, dbConf conf.Conf, lg *log.Logger) 
 	d.ConnMaxLifetime = dbConf.DefaultInt("conn_max_life_time", 30)
 
 	return d
+}
+
+// NewBuilder
+func (d *Database) NewBuilder(table string) Builder {
+	q := Builder{table: table}
+	q.database = d
+	return q
+}
+
+// NewQuery
+func (d *Database) NewQuery(table string) QueryBuilder {
+	q := newQuery(table)
+	q.database = d
+	return q
+}
+
+// NewInsert
+func (d *Database) NewInsert(table string) InsertBuilder {
+	ins := newInsert(table)
+	ins.database = d
+	return ins
+}
+
+// NewUpdate
+func (d *Database) NewUpdate(table string) UpdateBuilder {
+	u := newUpdate(table)
+	u.database = d
+	return u
+}
+
+// NewDelete
+func (d *Database) NewDelete(table string) DeleteBuilder {
+	del := newDelete(table)
+	del.database = d
+	return del
+}
+
+// NewExists
+func (d *Database) NewExists(table string) ExistsBuilder {
+	q := newExists(table)
+	q.database = d
+	return q
 }
 
 // Conn DB

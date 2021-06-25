@@ -18,7 +18,7 @@ type UpdateBuilder struct {
 }
 
 // NewUpdate func
-func NewUpdate(t string) UpdateBuilder {
+func newUpdate(t string) UpdateBuilder {
 	u := UpdateBuilder{IsPrepare: false}
 	u.table = t
 	return u
@@ -34,7 +34,7 @@ func (u *UpdateBuilder) ParseP(fields []string, row []interface{}) (string, []in
 	}
 	values = append(values, row...)
 
-	driver := u.GetDatabase().Driver
+	driver := u.database.Driver
 	buf.Write(bSQLUpdate)
 	driver.WriteQuoteIdentifier(buf, u.table)
 	buf.Write(bSQLSet)

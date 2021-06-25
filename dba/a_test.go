@@ -4,6 +4,10 @@ import (
 	"testing"
 )
 
+var (
+	table = "test01"
+)
+
 func init() {
 	config := make(map[string]string)
 	config["driver"] = "postgres"
@@ -21,7 +25,7 @@ type User struct {
 }
 
 func Test_A(t *testing.T) {
-	b := Builder{}
+	b := Current().NewBuilder(table)
 	sql := `create table if not exists test01 (
 code                 VARCHAR(20)         not null,
 date                 INT4                not null,
@@ -32,14 +36,13 @@ values               FLOAT4[]            null
 	if err != nil {
 		t.Fatal(err)
 	}
-	table := "test01"
 	_, err = b.Exec("truncate table "+table, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 1: 测试读取数据库fields
-	q := NewQuery(table)
+	q := Current().NewQuery(table)
 	dat, err := q.Query()
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +52,7 @@ values               FLOAT4[]            null
 	}
 
 	// 2: 测试单次插入
-	ins := NewInsert(table)
+	ins := Current().NewInsert(table)
 	fields := []string{"code", "date", "a_json", "values"}
 
 	row := GetRow(len(fields))
@@ -112,7 +115,7 @@ values               FLOAT4[]            null
 	}
 
 	// 4: 测试Update
-	u := NewUpdate(table)
+	u := Current().NewUpdate(table)
 	row = GetRow(1)
 	row[0] = 5
 	result, err := u.Where("code=$1 and date=$2", "code05", 2).Update([]string{"date"}, row)
@@ -131,12 +134,12 @@ values               FLOAT4[]            null
 	}
 
 	// 5: 测试Exists
-	e := NewExists(table)
+	e := Current().NewExists(table)
 	if e.NotExists("code=$1 and date=$2", "code05", 5) {
 		t.Fatal("exists failed")
 	}
 	// 6: 测试Delete
-	del := NewDelete(table)
+	del := Current().NewDelete(table)
 	r, err := del.Delete("code=$1 and date=$2", "code05", 5)
 	n, _ = r.RowsAffected()
 	if n != 1 {
@@ -149,6 +152,67 @@ values               FLOAT4[]            null
 	// 7: 检查数据
 	dat, _ = q.Query()
 	if dat.Len() != 4 || dat.Columns[0][3].(string) != "code04" || dat.Columns[1][2].(int64) != 3 {
+		PrintDataSet(&dat)
+		t.Fatal()
+	}
+}
+
+func Test_Tx(t *testing.T) {
+	tx, err := BeginTx()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fields := []string{"code", "date", "a_json", "values"}
+
+	row := GetRow(len(fields))
+	row[0] = "code10"
+	row[1] = 10
+	row[2] = User{Name: "tom", Age: 10}
+	row[3] = []float64{10.1, 10.2, 10.3}
+
+	// 1: Insert row commit
+	ins := tx.NewInsert(table)
+	_, err = ins.Insert(fields, row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = tx.Commit()
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := Current().NewQuery(table)
+	dat, err := q.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dat.Len() != 5 || dat.Columns[0][4].(string) != "code10" || dat.Columns[1][4].(int64) != 10 {
+		PrintDataSet(&dat)
+		t.Fatal()
+	}
+
+	tx, _ = BeginTx()
+	ins = tx.NewInsert(table)
+	// 2: Insert row rollback
+	row[0] = "code11"
+	row[1] = 11
+	row[2] = User{Name: "tom", Age: 11}
+	row[3] = []float64{11.1, 11.2, 11.3}
+	_, err = ins.Insert(fields, row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = tx.Rollback()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q = Current().NewQuery(table)
+	dat, err = q.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dat.Len() != 5 || dat.Columns[0][4].(string) != "code10" || dat.Columns[1][4].(int64) != 10 {
 		PrintDataSet(&dat)
 		t.Fatal()
 	}

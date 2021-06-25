@@ -13,7 +13,7 @@ type ExistsBuilder struct {
 }
 
 // NewExists new
-func NewExists(t string) ExistsBuilder {
+func newExists(t string) ExistsBuilder {
 	e := ExistsBuilder{}
 	e.table = t
 	return e
@@ -28,7 +28,7 @@ func parseExists(e *ExistsBuilder, where string) string {
 	buf := bytebufferpool.Get()
 	buf.WriteString(sExistsSQL)
 
-	driver := e.GetDatabase().Driver
+	driver := e.database.Driver
 	driver.WriteQuoteIdentifier(buf, e.table)
 
 	if where != "" {
@@ -58,7 +58,7 @@ func (e *ExistsBuilder) Exists(where string, args ...interface{}) bool {
 		r, err = e.Exec(parseExists(e, where), args)
 	}
 	if err != nil {
-		e.GetDatabase().log.Alert(err).Stack()
+		e.database.log.Alert(err).Stack()
 		return false
 	}
 	if r == nil {
