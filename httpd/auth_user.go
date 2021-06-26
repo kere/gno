@@ -44,8 +44,10 @@ const (
 	CookieNick = "_nick"
 )
 
-func queryUserByNick(nick string) db.MapRow {
-	row, _ := db.NewQuery(TableUsers).Select("id,iid,nick,token,status").Where("nick=?", nick).QueryOne()
+func queryUserByNick(nick string) db.DBRow {
+	// row, _ := db.NewQuery(TableUsers).Select("id,iid,nick,token,status").Where("nick=?", nick).QueryOne()
+	q := db.Current().NewQuery(TableUsers)
+	row, _ := q.Select("id,iid,nick,token,status").Where("nick=$1", nick).QueryOne()
 	return row
 }
 
@@ -74,7 +76,6 @@ func Auth(ctx *fasthttp.RequestCtx) error {
 	if util.Bytes2Str(arr[1]) != accessToken(arr[0], uiid, dbToken) {
 		return ErrLogin
 	}
-
 	ctx.SetUserValue(FieldUserID, row.Int(FieldID))
 	ctx.SetUserValue(FieldNick, row.String(FieldNick))
 	return nil

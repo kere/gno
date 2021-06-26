@@ -17,12 +17,14 @@ replace (
 require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/fasthttp/websocket v1.4.3
+	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/kere/gno/db v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/cache v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/conf v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/i18n v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/log v0.0.0-00010101000000-000000000000
+	github.com/kere/gno/libs/redis v0.0.0-00010101000000-000000000000 // indirect
 	github.com/kere/gno/libs/util v0.0.0-00010101000000-000000000000
 	github.com/valyala/bytebufferpool v1.0.0
-	github.com/valyala/fasthttp v1.24.0
+	github.com/valyala/fasthttp v1.27.0
 )

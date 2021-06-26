@@ -101,7 +101,7 @@ func Init(name string) {
 
 	if Site.C.IsSet("cache") {
 		cache.Init(Site.C.GetConf("cache"))
-		db.SetCache(cache.CurrentCache())
+		// db.SetCache(cache.CurrentCache())
 	}
 }
 
