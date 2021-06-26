@@ -43,8 +43,8 @@ type Database struct {
 // NewDatabase new
 func NewDatabase(name string, driver IDriver, dbConf conf.Conf, lg *log.Logger) *Database {
 	d := &Database{Name: name, Driver: driver, log: lg}
-	d.MaxOpenConns = dbConf.DefaultInt("max_open_conns", 1000)
-	d.MaxIdleConns = dbConf.DefaultInt("max_idle_conns", 10)
+	d.MaxOpenConns = dbConf.DefaultInt("max_open_conns", 300)
+	d.MaxIdleConns = dbConf.DefaultInt("max_idle_conns", 50)
 	d.ConnMaxLifetime = dbConf.DefaultInt("conn_max_life_time", 30)
 
 	return d
