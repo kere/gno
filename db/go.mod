@@ -15,12 +15,10 @@ replace (
 )
 
 require (
-	github.com/kere/gno/libs/cache v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/conf v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/log v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/myerr v0.0.0-00010101000000-000000000000
-	github.com/kere/gno/libs/redis v0.0.0-00010101000000-000000000000 // indirect
 	github.com/kere/gno/libs/util v0.0.0-00010101000000-000000000000
-	github.com/lib/pq v1.10.1
+	github.com/lib/pq v1.10.2
 	github.com/valyala/bytebufferpool v1.0.0
 )

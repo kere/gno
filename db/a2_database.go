@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"io"
 	"time"
 
 	"github.com/kere/gno/libs/conf"
@@ -10,32 +11,30 @@ import (
 
 // IDriver interface
 type IDriver interface {
-	Adapt(string, int) string
+	Name() string
 	ConnectString() string
 
-	QuoteIdentifier(string) string // indentifier
-	QuoteIdentifierB(string) []byte
-	QuoteLiteral(string) string // store value
+	WriteQuoteIdentifier(io.Writer, string)
 
 	LastInsertID(string, string) string
 	StoreData(key string, val interface{}) interface{}
+
 	Strings([]byte) ([]string, error)
 	Int64s([]byte) ([]int64, error)
 	Floats([]byte) ([]float64, error)
 	Ints([]byte) ([]int, error)
 	ParseNumberSlice([]byte, interface{}) error
 	ParseStringSlice([]byte, interface{}) error
-	// HStore([]byte) (map[string]string, error)
-	Name() string
 }
 
-//Database class
+// Database class
 type Database struct {
 	Name   string
 	Driver IDriver
 	log    *log.Logger
 
-	db              *sql.DB
+	db *sql.DB
+
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime int
@@ -46,13 +45,55 @@ func NewDatabase(name string, driver IDriver, dbConf conf.Conf, lg *log.Logger) 
 	d := &Database{Name: name, Driver: driver, log: lg}
 	d.MaxOpenConns = dbConf.DefaultInt("max_open_conns", 1000)
 	d.MaxIdleConns = dbConf.DefaultInt("max_idle_conns", 10)
-	d.ConnMaxLifetime = dbConf.DefaultInt("conn_max_life_time", 60)
+	d.ConnMaxLifetime = dbConf.DefaultInt("conn_max_life_time", 30)
 
 	return d
 }
 
+// NewBuilder
+func (d *Database) NewBuilder(table string) Builder {
+	q := Builder{table: table}
+	q.database = d
+	return q
+}
+
+// NewQuery
+func (d *Database) NewQuery(table string) QueryBuilder {
+	q := NewQuery(table)
+	q.database = d
+	return q
+}
+
+// NewInsert
+func (d *Database) NewInsert(table string) InsertBuilder {
+	ins := NewInsert(table)
+	ins.database = d
+	return ins
+}
+
+// NewUpdate
+func (d *Database) NewUpdate(table string) UpdateBuilder {
+	u := NewUpdate(table)
+	u.database = d
+	return u
+}
+
+// NewDelete
+func (d *Database) NewDelete(table string) DeleteBuilder {
+	del := NewDelete(table)
+	del.database = d
+	return del
+}
+
+// NewExists
+func (d *Database) NewExists(table string) ExistsBuilder {
+	q := NewExists(table)
+	q.database = d
+	return q
+}
+
 // Conn DB
-func (d *Database) Conn() *sql.DB {
+func (d *Database) DB() *sql.DB {
 	var err error
 	if d.db == nil {
 		d.db, err = d.Connect()
@@ -102,44 +143,4 @@ func (d *Database) SetLogLevel(level string) {
 // SetLog db
 func (d *Database) SetLog(l *log.Logger) {
 	d.log = l
-}
-
-// QueryPrepare db
-func (d *Database) QueryPrepare(sqlstr string, args ...interface{}) (DataSet, error) {
-	d.Log(sqlstr, args)
-	result, _, err := cQuery(0, 1, d.Conn(), sqlstr, args...)
-	return result, err
-}
-
-//Query db
-func (d *Database) Query(sqlstr string, args ...interface{}) (DataSet, error) {
-	d.Log(sqlstr, args)
-	dataset, _, err := cQuery(0, 0, d.Conn(), sqlstr, args...)
-	return dataset, err
-}
-
-// QueryRowsPrepare db
-func (d *Database) QueryRowsPrepare(sqlstr string, args ...interface{}) (MapRows, error) {
-	d.Log(sqlstr, args)
-	_, rows, err := cQuery(1, 1, d.Conn(), sqlstr, args...)
-	return rows, err
-}
-
-//QueryRows db
-func (d *Database) QueryRows(sqlstr string, args ...interface{}) (MapRows, error) {
-	d.Log(sqlstr, args)
-	_, rows, err := cQuery(1, 0, d.Conn(), sqlstr, args...)
-	return rows, err
-}
-
-// ExecPrepare db
-func (d *Database) ExecPrepare(sqlstr string, args ...interface{}) (sql.Result, error) {
-	d.Log(sqlstr, args)
-	return ExecPrepare(d.Conn(), sqlstr, args...)
-}
-
-//Exec db
-func (d *Database) Exec(sqlstr string, args ...interface{}) (sql.Result, error) {
-	d.Log(sqlstr, args)
-	return Exec(d.Conn(), sqlstr, args...)
 }

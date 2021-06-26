@@ -1,9 +1,10 @@
-package drivers
+package db
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -13,10 +14,12 @@ import (
 	"github.com/valyala/bytebufferpool"
 )
 
+const (
+	emptyArray = "{}"
+)
+
 var (
 	bytePool bytebufferpool.Pool
-	brHSTORE = []byte("\"=>\"")
-	brJSON   = []byte("\":\"")
 )
 
 //Postgres class
@@ -34,32 +37,32 @@ func (p *Postgres) Name() string {
 	return DriverPSQL
 }
 
-// Adapt f
-func (p *Postgres) Adapt(sqlstr string, n int) string {
-	src := util.Str2Bytes(sqlstr)
-	arr := bytes.Split(src, BQuestionMark)
-	// arr := strings.Split(sqlstr, sQuestionMark)
-	l := len(arr)
-	if l == 0 {
-		return ""
-	}
-	if l == 1 {
-		return sqlstr
-	}
-
-	buf := bytePool.Get()
-	for i := 0; i < l-1; i++ {
-		buf.Write(arr[i])
-		buf.WriteByte('$')
-
-		buf.WriteString(fmt.Sprint(i + 1 + n))
-	}
-
-	b := buf.String()
-	bytePool.Put(buf)
-
-	return b
-}
+// // Adapt f
+// func (p *Postgres) Adapt(sqlstr string, n int) string {
+// 	src := util.Str2Bytes(sqlstr)
+// 	arr := bytes.Split(src, BQuestionMark)
+// 	// arr := strings.Split(sqlstr, sQuestionMark)
+// 	l := len(arr)
+// 	if l == 0 {
+// 		return ""
+// 	}
+// 	if l == 1 {
+// 		return sqlstr
+// 	}
+//
+// 	buf := bytePool.Get()
+// 	for i := 0; i < l-1; i++ {
+// 		buf.Write(arr[i])
+// 		buf.WriteByte('$')
+//
+// 		buf.WriteString(fmt.Sprint(i + 1 + n))
+// 	}
+//
+// 	b := buf.String()
+// 	bytePool.Put(buf)
+//
+// 	return b
+// }
 
 // ConnectString f
 func (p *Postgres) ConnectString() string {
@@ -89,12 +92,8 @@ func (p *Postgres) ConnectString() string {
 // LastInsertID f
 func (p *Postgres) LastInsertID(table, pkey string) string {
 	// return "select currval(pg_get_serial_sequence('" + table + "','" + pkey + "'))"
-	return fmt.Sprint("select currval(pg_get_serial_sequence('", table, "','", pkey, "')) as count")
+	return fmt.Sprint("SELECT currval(pg_get_serial_sequence('", table, "','", pkey, "')) as count")
 }
-
-var (
-	emptyArray = "{}"
-)
 
 func sliceToStore(v interface{}) string {
 	val := reflect.ValueOf(v)
@@ -114,29 +113,17 @@ func sliceToStore(v interface{}) string {
 	return fmt.Sprint("{", strings.Join(arr, ","), "}")
 }
 
-// func Hstore()string{
-// 		// case map[string]string:
-// 			var valStr string
-// 			hdata := v.(map[string]string)
-// 			arr := make([]string, len(hdata))
-// 			i := 0
-// 			for kk, vv := range hdata {
-// 				valStr = strings.Replace(fmt.Sprint(vv), "\"", "\\\"", -1)
-// 				arr[i] = fmt.Sprint("\"", kk, "\"", "=>", "\"", valStr, "\"")
-// 				i++
-// 			}
-// 			return fmt.Sprint(strings.Join(arr, ","))
-// }
-
 // StoreData for value
 func (p *Postgres) StoreData(key string, v interface{}) interface{} {
 	if v == nil {
 		return nil
 	}
-
-	if len(key) > 5 && key[len(key)-5:] == subfixJSON {
-		b, _ := json.Marshal(v)
-		return b
+	if strings.HasSuffix(key, "_json") {
+		src, err := json.Marshal(v)
+		if err != nil {
+			return BNull
+		}
+		return src
 	}
 
 	typ := reflect.TypeOf(v)
@@ -207,27 +194,15 @@ func (p *Postgres) Ints(src []byte) ([]int, error) {
 	return vals, err
 }
 
-// // HStore db
-// func (p *Postgres) HStore(src []byte) (map[string]string, error) {
-// 	src = bytes.Replace(src, brHSTORE, brJSON, -1)
-// 	src = append(b_BRACE_LEFT, src...)
-// 	v := make(map[string]string)
-//
-// 	if err := json.Unmarshal(append(src, b_BRACE_RIGHT...), &v); err != nil {
-// 		return nil, fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
-// 	}
-// 	return v, nil
-// }
-
 // ParseNumberSlice db number slice
 func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 	if len(src) == 0 {
 		return nil
 	}
 
-	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
-	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
-	src = bytes.Replace(src, bNaN, bZero, -1)
+	src = bytes.Replace(src, BBraceLeft, BBracketLeft, -1)
+	src = bytes.Replace(src, BBraceRight, BBracketRight, -1)
+	src = bytes.Replace(src, BNaN, bZero, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return err
@@ -238,9 +213,9 @@ func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 
 // ParseStringSlice db number slice
 func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
-	src = bytes.Replace(src, b_BRACE_LEFT, b_BRACKET_LEFT, -1)
-	src = bytes.Replace(src, b_BRACE_RIGHT, b_BRACKET_RIGHT, -1)
-	src = bytes.Replace(src, b_Quote, b_DoubleQuote, -1)
+	src = bytes.Replace(src, BBraceLeft, BBracketLeft, -1)
+	src = bytes.Replace(src, BBraceRight, BBracketRight, -1)
+	src = bytes.Replace(src, BQuote, BDoubleQuote, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
@@ -249,27 +224,26 @@ func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
 	return nil
 }
 
-// QuoteIdentifier f
-func (p *Postgres) QuoteIdentifier(str string) string {
-	return pq.QuoteIdentifier(str)
+// WriteQuoteIdentifier f
+func (p *Postgres) WriteQuoteIdentifier(w io.Writer, s string) {
+	// return pq.QuoteLiteral(literal)
+	// `"` + strings.Replace(name, `"`, `""`, -1) + `"`
+	str := strings.Replace(s, `"`, `""`, -1)
+	w.Write(BDoubleQuote)
+	w.Write(util.Str2Bytes(str))
+	w.Write(BDoubleQuote)
 }
 
-// QuoteIdentifierB f
-func (p *Postgres) QuoteIdentifierB(s string) []byte {
-	l := len(s)
-	// when build update params, set: "field"=$1
-	// l+8 : "name"=$1234
-	arr := make([]byte, l+2, l+8)
-	arr[0] = '"'
-	for i := 0; i < l; i++ {
-		arr[i+1] = s[i]
-	}
-	arr[l+1] = '"'
-
-	return arr
-}
-
-// QuoteLiteral f
-func (p *Postgres) QuoteLiteral(literal string) string {
-	return pq.QuoteLiteral(literal)
-}
+// // QuoteLiteral quotes a 'literal' (e.g. a parameter, often used to pass literal
+// // to DDL and other statements that do not accept parameters) to be used as part
+// // of an SQL statement.  For example:
+// //
+// //    exp_date := pq.QuoteLiteral("2023-01-05 15:00:00Z")
+// //    err := db.Exec(fmt.Sprintf("CREATE ROLE my_user VALID UNTIL %s", exp_date))
+// //
+// // Any single quotes in name will be escaped. Any backslashes (i.e. "\") will be
+// // replaced by two backslashes (i.e. "\\") and the C-style escape identifier
+// // that PostgreSQL provides ('E') will be prepended to the string.
+// func (p *Postgres) QuoteLiteral(literal string) string {
+// 	return pq.QuoteLiteral(literal)
+// }
