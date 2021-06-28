@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	rowPool sync.Pool
+	// rowPool sync.Pool
 	colPool sync.Pool
 	lockA   sync.Mutex
 	lockCol sync.Mutex
@@ -47,25 +47,27 @@ func PutDataSet(dat *DataSet) {
 
 // GetRow from pool
 func GetRow(args ...int) []interface{} {
-	l, capN := util.ParsePoolArgs(args, 20)
-	v := rowPool.Get()
-	if v == nil {
-		return make([]interface{}, l, capN)
-	}
-	row := v.([]interface{})
-
-	for i := 0; i < l; i++ {
-		row = append(row, 0)
-	}
-	return row
+	// l, capN := util.ParsePoolArgs(args, 20)
+	// v := rowPool.Get()
+	// if v == nil {
+	// 	return make([]interface{}, l, capN)
+	// }
+	// row := v.([]interface{})
+	//
+	// for i := 0; i < l; i++ {
+	// 	row = append(row, 0)
+	// }
+	// return row
+	return util.GetItems(args...)
 }
 
 // PutRow to pool
 func PutRow(row []interface{}) {
-	if cap(row) == 0 {
-		return
-	}
-	rowPool.Put(row[:0])
+	// if cap(row) == 0 {
+	// 	return
+	// }
+	// rowPool.Put(row[:0])
+	util.PutItems(row)
 }
 
 // GetColumn from pool

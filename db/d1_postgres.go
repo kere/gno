@@ -121,7 +121,7 @@ func (p *Postgres) StoreData(key string, v interface{}) interface{} {
 	if strings.HasSuffix(key, "_json") {
 		src, err := json.Marshal(v)
 		if err != nil {
-			return BNull
+			return util.BNull
 		}
 		return src
 	}
@@ -200,9 +200,9 @@ func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 		return nil
 	}
 
-	src = bytes.Replace(src, BBraceLeft, BBracketLeft, -1)
-	src = bytes.Replace(src, BBraceRight, BBracketRight, -1)
-	src = bytes.Replace(src, BNaN, bZero, -1)
+	src = bytes.Replace(src, util.BBraceLeft, util.BBracketLeft, -1)
+	src = bytes.Replace(src, util.BBraceRight, util.BBracketRight, -1)
+	src = bytes.Replace(src, util.BNaN, util.BZero, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return err
@@ -213,9 +213,9 @@ func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
 
 // ParseStringSlice db number slice
 func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
-	src = bytes.Replace(src, BBraceLeft, BBracketLeft, -1)
-	src = bytes.Replace(src, BBraceRight, BBracketRight, -1)
-	src = bytes.Replace(src, BQuote, BDoubleQuote, -1)
+	src = bytes.Replace(src, util.BBraceLeft, util.BBracketLeft, -1)
+	src = bytes.Replace(src, util.BBraceRight, util.BBracketRight, -1)
+	src = bytes.Replace(src, util.BQuote, util.BDoubleQuote, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
@@ -229,9 +229,9 @@ func (p *Postgres) WriteQuoteIdentifier(w io.Writer, s string) {
 	// return pq.QuoteLiteral(literal)
 	// `"` + strings.Replace(name, `"`, `""`, -1) + `"`
 	str := strings.Replace(s, `"`, `""`, -1)
-	w.Write(BDoubleQuote)
+	w.Write(util.BDoubleQuote)
 	w.Write(util.Str2Bytes(str))
-	w.Write(BDoubleQuote)
+	w.Write(util.BDoubleQuote)
 }
 
 // // QuoteLiteral quotes a 'literal' (e.g. a parameter, often used to pass literal

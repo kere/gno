@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/kere/gno/libs/util"
 	"github.com/valyala/bytebufferpool"
 )
 
@@ -181,7 +182,7 @@ func (q *QueryBuilder) queryOne(isPool bool) (DBRow, error) {
 }
 
 func setQueryFields(q *QueryBuilder, buf *bytebufferpool.ByteBuffer) {
-	fields := BStarKey
+	fields := util.BStarKey
 	if q.fields != "" {
 		fields = []byte(q.fields)
 	}

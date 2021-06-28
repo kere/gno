@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+
+	"github.com/kere/gno/libs/util"
 )
 
 type Mysql struct {
@@ -123,13 +125,13 @@ func (m *Mysql) StringSlice(src []byte) ([]string, error) {
 		return []string{}, nil
 	}
 
-	src = bytes.TrimPrefix(src, BBracketLeft)
-	src = bytes.TrimSuffix(src, BBracketRight)
+	src = bytes.TrimPrefix(src, util.BBracketLeft)
+	src = bytes.TrimSuffix(src, util.BBracketRight)
 	if len(src) == 0 {
 		return []string{}, nil
 	}
 
-	l := bytes.Split(src, BComma)
+	l := bytes.Split(src, util.BComma)
 	v := make([]string, len(l))
 	for i, _ := range l {
 		v[i] = string(bytes.Trim(l[i], "'"))
@@ -151,7 +153,7 @@ func (m *Mysql) Int64Slice(src []byte) ([]int64, error) {
 }
 
 func (m *Mysql) ParseStringSlice(src []byte, ptr interface{}) error {
-	src = bytes.Replace(src, BQuote, BDoubleQuote, -1)
+	src = bytes.Replace(src, util.BQuote, util.BDoubleQuote, -1)
 
 	if err := json.Unmarshal(src, ptr); err != nil {
 		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)

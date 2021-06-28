@@ -158,7 +158,7 @@ func parseInsert(ins *InsertBuilder, fields []string, hasReturnID bool) string {
 	}
 	s.Write(bInsBracketR)
 	s.WriteByte('(')
-	s.Write(bytes.Join(stmts, BComma))
+	s.Write(bytes.Join(stmts, util.BComma))
 	s.WriteByte(')')
 
 	if hasReturnID {
@@ -190,7 +190,7 @@ func writeInsertMP(database *Database, buf *bytebufferpool.ByteBuffer, dataset *
 			if seq == 1 {
 				buf.WriteString("$1")
 			} else {
-				buf.WriteString(fmt.Sprint(SDoller, seq))
+				buf.WriteString(fmt.Sprint(util.SDoller, seq))
 			}
 			if k < n-1 {
 				buf.WriteByte(',')

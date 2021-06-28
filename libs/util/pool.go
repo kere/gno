@@ -10,6 +10,7 @@ type poolClas struct {
 }
 
 var (
+	itemsPool  = poolClas{}
 	floatsPool = poolClas{}
 	intsPool   = poolClas{}
 	strsPool   = poolClas{}
@@ -167,4 +168,31 @@ func PutStrings(strs []string) {
 		return
 	}
 	strsPool.Put(strs[:0])
+}
+
+// GetItems from pool
+func GetItems(args ...int) []interface{} {
+	l, capN := ParsePoolArgs(args, 50)
+	itemsPool.lock.Lock()
+	defer itemsPool.lock.Unlock()
+
+	v := itemsPool.Get()
+
+	if v == nil {
+		return make([]interface{}, l, capN)
+	}
+	row := v.([]interface{})
+
+	for i := 0; i < l; i++ {
+		row = append(row, nil)
+	}
+	return row
+}
+
+// PutItems to pool
+func PutItems(r []interface{}) {
+	if cap(r) == 0 {
+		return
+	}
+	itemsPool.Put(r[:0])
 }

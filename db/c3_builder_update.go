@@ -84,12 +84,12 @@ func (u *UpdateBuilder) ParseP(fields []string, row []interface{}) (string, []in
 
 func writeUpdateItem(w io.Writer, driver IDriver, field string, value interface{}, seq int) int {
 	driver.WriteQuoteIdentifier(w, field)
-	w.Write(BEqual)
+	w.Write(util.BEqual)
 	if value == nil {
-		w.Write(BNull)
+		w.Write(util.BNull)
 		return seq
 	}
-	w.Write(BDoller)
+	w.Write(util.BDoller)
 	w.Write(util.Str2Bytes(fmt.Sprint(seq)))
 	seq++
 	return seq
