@@ -31,17 +31,18 @@ func (d *DataSet) GetRow() []interface{} {
 }
 
 // RowAt
-func (d *DataSet) RowAt(i int) []interface{} {
+func (d *DataSet) RowAt(i int, row []interface{}) {
 	n := d.Len()
 	if n == 0 || i >= n {
-		return nil
+		return
 	}
 	m := len(d.Columns)
-	row := make([]interface{}, m)
+	if m != len(row) {
+		panic("DataSet RowAt: columns.Len() != row.Len()")
+	}
 	for k := 0; k < m; k++ {
 		row[k] = d.Columns[k][i]
 	}
-	return row
 }
 
 // RowAtP
@@ -96,8 +97,8 @@ func (d *DataSet) AddRow0(row []interface{}) {
 	}
 	for i := 0; i < count; i++ {
 		d.Columns[i] = append(d.Columns[i], row[i])
+		row[i] = nil
 	}
-	PutRow(row)
 }
 
 // ColType class
@@ -126,22 +127,28 @@ func NewColType(typ *sql.ColumnType) ColType {
 }
 
 // PrintDataSet print
-func PrintDataSet(dat *DataSet) {
-	l := dat.Len()
+func PrintDataSet(ds *DataSet) {
+	l := ds.Len()
 	fmt.Println("------- length:", l, "-------")
-	n := len(dat.Columns)
-	for i := 0; i < n; i++ {
-		fmt.Print(dat.Fields[i]+":"+dat.Types[i].TypeName, "\t")
+	n := len(ds.Columns)
+	if len(ds.Types) == 0 {
+		for i := 0; i < n; i++ {
+			fmt.Print(ds.Fields[i] + "\t")
+		}
+	} else {
+		for i := 0; i < n; i++ {
+			fmt.Print(ds.Fields[i]+":"+ds.Types[i].TypeName, "\t")
+		}
 	}
 	fmt.Println()
 	for i := 0; i < l; i++ {
 		for k := 0; k < n; k++ {
-			v := dat.Columns[k][i]
+			v := ds.Columns[k][i]
 			switch v.(type) {
 			case []byte:
 				fmt.Print(util.Bytes2Str(v.([]byte)), "\t")
 			default:
-				fmt.Print(dat.Columns[k][i], "\t")
+				fmt.Print(ds.Columns[k][i], "\t")
 			}
 		}
 		fmt.Println()
@@ -270,4 +277,26 @@ func (d *DBRow) BytesAt(i int) []byte {
 		return util.Str2Bytes(d.Values[i].(string))
 	}
 	return util.Str2Bytes(fmt.Sprint(d.Values[i]))
+}
+
+// RangeI
+func (d *DataSet) IRange(a, b int) DataSet {
+	l := d.Len()
+	if l == 0 {
+		return *d
+	}
+
+	if b == -1 || b > l {
+		b = l - 1
+	}
+	if a == -1 || a > b {
+		return EmptyDataSet
+	}
+
+	ds := NewDataSet(d.Fields)
+	n := len(ds.Columns)
+	for i := 0; i < n; i++ {
+		ds.Columns[i] = d.Columns[i][a : b+1]
+	}
+	return ds
 }

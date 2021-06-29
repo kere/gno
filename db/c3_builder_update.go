@@ -48,8 +48,6 @@ func (u *UpdateBuilder) Where(cond string, args ...interface{}) *UpdateBuilder {
 // Update db
 func (u *UpdateBuilder) Update(fields []string, row []interface{}) (sql.Result, error) {
 	sqlstr, vals := u.ParseP(fields, row)
-	defer PutRow(row)
-
 	if u.isPrepare {
 		return u.ExecPrepare(sqlstr, vals)
 	}

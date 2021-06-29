@@ -60,10 +60,11 @@ values               FLOAT4[]            null
 	row[1] = 1
 	row[2] = User{Name: "tom", Age: 22}
 	row[3] = []float64{1.1, 1.2, 1.3}
-	_, err = ins.Insert0(fields, row)
+	_, err = ins.Insert(fields, row)
 	if err != nil {
 		t.Fatal(err)
 	}
+	PutRow(row)
 	dat, _ = q.Query()
 	if dat.Len() != 1 || dat.Columns[0][0].(string) != row[0].(string) {
 		PrintDataSet(&dat)

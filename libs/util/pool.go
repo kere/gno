@@ -143,6 +143,19 @@ func PutInts(ints []int) {
 
 // ---------- strings ----------
 
+// GetStringsWith from pool
+func GetStringsWith(args ...string) []string {
+	count := len(args)
+	if count == 0 {
+		return nil
+	}
+	arr := GetStrings(count)
+	for i := 0; i < count; i++ {
+		arr[i] = args[i]
+	}
+	return arr
+}
+
 // GetStrings from pool
 func GetStrings(args ...int) []string {
 	l, capN := ParsePoolArgs(args, 50)

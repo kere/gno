@@ -30,18 +30,18 @@ func GetDataSet(fields []string, args ...int) DataSet {
 }
 
 // PutDataSet series into pool
-func PutDataSet(dat *DataSet) {
-	if dat == nil || cap(dat.Columns) == 0 {
-		dat.Release()
+func PutDataSet(ds *DataSet) {
+	if ds == nil || cap(ds.Columns) == 0 {
+		ds.Release()
 		return
 	}
 	lockA.Lock()
 
-	n := len(dat.Columns)
+	n := len(ds.Columns)
 	for i := 0; i < n; i++ {
-		PutColumn(dat.Columns[i])
+		PutColumn(ds.Columns[i])
 	}
-	dat.Release()
+	ds.Release()
 	lockA.Unlock()
 }
 

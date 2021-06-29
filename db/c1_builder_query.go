@@ -165,20 +165,22 @@ func (q *QueryBuilder) queryOne(isPool bool) (DBRow, error) {
 	q.limit = 1
 	sqlstr := q.Parse()
 
-	dataset, err := q.cQuery(true, sqlstr, q.args)
-	defer PutDataSet(&dataset)
+	ds, err := q.cQuery(true, sqlstr, q.args)
+	defer PutDataSet(&ds)
 	q.limit = limit
 	if err != nil {
 		return DBRow{}, err
 	}
 
-	if dataset.Len() == 0 {
-		return DBRow{Fields: dataset.Fields}, err
+	if ds.Len() == 0 {
+		return DBRow{Fields: ds.Fields}, err
 	}
 	if isPool {
-		return DBRow{Values: dataset.RowAtP(0), Fields: dataset.Fields}, nil
+		return DBRow{Values: ds.RowAtP(0), Fields: ds.Fields}, nil
 	}
-	return DBRow{Values: dataset.RowAt(0), Fields: dataset.Fields}, nil
+	row := make([]interface{}, len(ds.Fields))
+	ds.RowAt(0, row)
+	return DBRow{Values: row, Fields: ds.Fields}, nil
 }
 
 func setQueryFields(q *QueryBuilder, buf *bytebufferpool.ByteBuffer) {

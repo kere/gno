@@ -70,24 +70,6 @@ func (ins *InsertBuilder) Insert(fields []string, row []interface{}) (sql.Result
 	return ins.ExecPrepare(sqlstr, vals)
 }
 
-// Insert0 do PutRow(row) after all
-func (ins *InsertBuilder) Insert0(fields []string, row []interface{}) (sql.Result, error) {
-	n := len(fields)
-	if n != len(row) {
-		return nil, fmt.Errorf("insert0 %s fields.Len() != row.Len() fields: %s row.Len()=%d", ins.table, fields, len(row))
-	}
-	sqlstr := parseInsert(ins, fields, ins.isReturnID)
-	defer PutRow(row)
-	driver := ins.GetDatabase().Driver
-	for i := 0; i < n; i++ {
-		row[i] = driver.StoreData(fields[i], row[i])
-	}
-	if ins.isPrepare {
-		return ins.Exec(sqlstr, row)
-	}
-	return ins.ExecPrepare(sqlstr, row)
-}
-
 // InsertM func
 func (ins *InsertBuilder) InsertM(dat *DataSet) (sql.Result, error) {
 	sqlstr, vals := parseInsertMP(ins, dat)
@@ -98,15 +80,19 @@ func (ins *InsertBuilder) InsertM(dat *DataSet) (sql.Result, error) {
 	return ins.ExecPrepare(sqlstr, vals)
 }
 
-// InsertM0 do PutDataSet after all
-func (ins *InsertBuilder) InsertM0(dat *DataSet) (sql.Result, error) {
-	sqlstr, vals := parseInsertMP(ins, dat)
-	PutDataSet(dat)
-	defer PutColumn(vals)
-	if ins.isPrepare {
-		return ins.Exec(sqlstr, vals)
+// InsertMN
+func (ins *InsertBuilder) InsertMN(dat *DataSet, n int) error {
+	count := dat.Len()
+	for i := 0; i < count; i++ {
+		b := i + n
+		ds := dat.IRange(i, b)
+		if _, err := ins.InsertM(&ds); err != nil {
+			return err
+		}
+		i = b
 	}
-	return ins.ExecPrepare(sqlstr, vals)
+
+	return nil
 }
 
 func parseInsertMP(ins *InsertBuilder, dataset *DataSet) (string, []interface{}) {
