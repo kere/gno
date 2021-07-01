@@ -10,12 +10,7 @@ import (
 	"time"
 
 	"github.com/kere/gno/libs/util"
-	"github.com/lib/pq"
 	"github.com/valyala/bytebufferpool"
-)
-
-const (
-	emptyArray = "{}"
 )
 
 var (
@@ -99,7 +94,7 @@ func sliceToStore(v interface{}) string {
 	val := reflect.ValueOf(v)
 	l := val.Len()
 	if l == 0 {
-		return emptyArray
+		return "{}"
 	}
 	arr := make([]string, 0, l)
 
@@ -156,72 +151,303 @@ func (p *Postgres) StoreData(key string, v interface{}) interface{} {
 
 // Strings []string
 func (p *Postgres) Strings(src []byte) ([]string, error) {
-	if len(src) == 0 {
-		return nil, nil
-	}
+	return doStrings(src, true)
+}
 
-	arr := pq.StringArray{}
-	return arr, arr.Scan(src)
+// StringsNotSafe []string
+func (p *Postgres) StringsNotSafe(src []byte) ([]string, error) {
+	return doStrings(src, false)
+}
+
+// BytesArr [][]byte
+func (p *Postgres) BytesArr(src []byte) ([][]byte, error) {
+	return doByteArr(src, true)
+}
+
+// BytesArrNotSafe [][]byte
+func (p *Postgres) BytesArrNotSafe(src []byte) ([][]byte, error) {
+	return doByteArr(src, false)
 }
 
 // Int64s arr
 func (p *Postgres) Int64s(src []byte) ([]int64, error) {
-	if len(src) == 0 {
-		return nil, nil
-	}
+	return doInt64s(src, false)
+}
 
-	arr := pq.Int64Array{}
-	return arr, arr.Scan(src)
+// Int64sP arr
+func (p *Postgres) Int64sP(src []byte) ([]int64, error) {
+	return doInt64s(src, true)
 }
 
 // Floats arr
 func (p *Postgres) Floats(src []byte) ([]float64, error) {
-	if len(src) == 0 {
-		return nil, nil
-	}
+	return doFloats(src, false)
+}
 
-	arr := pq.Float64Array{}
-	return arr, arr.Scan(src)
+// FloatsP arr
+func (p *Postgres) FloatsP(src []byte) ([]float64, error) {
+	return doFloats(src, true)
 }
 
 // Ints arr
 func (p *Postgres) Ints(src []byte) ([]int, error) {
-	if len(src) == 0 {
+	return doInts(src, false)
+}
+
+// Ints arr
+func (p *Postgres) IntsP(src []byte) ([]int, error) {
+	return doInts(src, true)
+}
+
+func doInt64s(src []byte, isPool bool) ([]int64, error) {
+	if len(src) < 2 {
 		return nil, nil
 	}
-	var vals []int
-	err := p.ParseNumberSlice(src, &vals)
-	return vals, err
+	b := src
+
+	if bytes.HasPrefix(src, util.BBraceLeft) {
+		b = src[1:]
+	}
+	if bytes.HasSuffix(b, util.BBraceRight) {
+		b = b[:len(b)-1]
+	}
+
+	if isPool {
+		return util.SplitBytes2Int64P(b, util.BComma)
+	}
+	return util.SplitBytes2Int64(b, util.BComma)
+	// var result []int64
+	// if isPool {
+	// 	result = util.GetInt64s()
+	// } else {
+	// 	result = make([]int64, 0, 20)
+	// }
+	//
+	// count := bytes.Count(b, util.BComma)
+	// var v int64
+	// var err error
+	// var index int
+	// for i := 0; i < count; i++ {
+	// 	index = bytes.Index(b, util.BComma)
+	// 	if index == -1 {
+	// 		break
+	// 	}
+	//
+	// 	switch util.BytesNumType(b[:index]) {
+	// 	case 'f':
+	// 		var val float64
+	// 		val, err = strconv.ParseFloat(util.Bytes2Str(b[:index]), 64)
+	// 		v = int64(val)
+	// 	case 'i':
+	// 		v, err = strconv.ParseInt(util.Bytes2Str(b[:index]), 10, 64)
+	// 	default:
+	// 		return result, errors.New("do Ints:can not to parse str to num")
+	// 	}
+	// 	if err != nil {
+	// 		return result, err
+	// 	}
+	// 	result = append(result, v)
+	// 	if index == len(b)-1 {
+	// 		b = nil
+	// 	} else {
+	// 		b = b[index+1:]
+	// 	}
+	// }
+	//
+	// if len(b) > 0 {
+	// 	switch util.BytesNumType(b) {
+	// 	case 'f':
+	// 		var val float64
+	// 		val, err = strconv.ParseFloat(util.Bytes2Str(b), 64)
+	// 		v = int64(val)
+	// 	case 'i':
+	// 		v, err = strconv.ParseInt(util.Bytes2Str(b), 10, 64)
+	// 	default:
+	// 		return result, errors.New("do Ints:can not to parse str to num")
+	// 	}
+	// 	if err != nil {
+	// 		return result, err
+	// 	}
+	// 	result = append(result, v)
+	// }
+	// return result, nil
 }
 
-// ParseNumberSlice db number slice
-func (p *Postgres) ParseNumberSlice(src []byte, ptr interface{}) error {
-	if len(src) == 0 {
-		return nil
+func doInts(src []byte, isPool bool) ([]int, error) {
+	if len(src) < 2 {
+		return nil, nil
+	}
+	b := src
+
+	if bytes.HasPrefix(src, util.BBraceLeft) {
+		b = src[1:]
+	}
+	if bytes.HasSuffix(b, util.BBraceRight) {
+		b = b[:len(b)-1]
 	}
 
-	src = bytes.Replace(src, util.BBraceLeft, util.BBracketLeft, -1)
-	src = bytes.Replace(src, util.BBraceRight, util.BBracketRight, -1)
-	src = bytes.Replace(src, util.BNaN, util.BZero, -1)
-
-	if err := json.Unmarshal(src, ptr); err != nil {
-		return err
+	if isPool {
+		return util.SplitBytes2IntP(b, util.BComma)
 	}
+	return util.SplitBytes2Int(b, util.BComma)
 
-	return nil
+	// var result []int
+	// if isPool {
+	// 	result = util.GetInts()
+	// } else {
+	// 	result = make([]int, 0, 20)
+	// }
+	//
+	// count := bytes.Count(b, util.BComma)
+	// var index int
+	// var v int64
+	// var err error
+	// for i := 0; i < count; i++ {
+	// 	index = bytes.Index(b, util.BComma)
+	// 	if index == -1 {
+	// 		break
+	// 	}
+	//
+	// 	switch util.BytesNumType(b[:index]) {
+	// 	case 'f':
+	// 		var val float64
+	// 		val, err = strconv.ParseFloat(util.Bytes2Str(b[:index]), 64)
+	// 		v = int64(val)
+	// 	case 'i':
+	// 		v, err = strconv.ParseInt(util.Bytes2Str(b[:index]), 10, 64)
+	// 	default:
+	// 		return result, errors.New("do Ints:can not to parse str to num")
+	// 	}
+	// 	if err != nil {
+	// 		return result, err
+	// 	}
+	// 	result = append(result, int(v))
+	//
+	// 	if index == len(b)-1 {
+	// 		b = nil
+	// 	} else {
+	// 		b = b[index+1:]
+	// 	}
+	// }
+	// if len(b) > 0 {
+	// 	switch util.BytesNumType(b) {
+	// 	case 'f':
+	// 		var val float64
+	// 		val, err = strconv.ParseFloat(util.Bytes2Str(b), 64)
+	// 		v = int64(val)
+	// 	case 'i':
+	// 		v, err = strconv.ParseInt(util.Bytes2Str(b), 10, 64)
+	// 	default:
+	// 		return result, errors.New("do Ints:can not to parse str to num")
+	// 	}
+	// 	if err != nil {
+	// 		return result, err
+	// 	}
+	// 	result = append(result, int(v))
+	// }
+	// return result, nil
 }
 
-// ParseStringSlice db number slice
-func (p *Postgres) ParseStringSlice(src []byte, ptr interface{}) error {
-	src = bytes.Replace(src, util.BBraceLeft, util.BBracketLeft, -1)
-	src = bytes.Replace(src, util.BBraceRight, util.BBracketRight, -1)
-	src = bytes.Replace(src, util.BQuote, util.BDoubleQuote, -1)
+func doFloats(src []byte, isPool bool) ([]float64, error) {
+	if len(src) < 2 {
+		return nil, nil
+	}
+	b := src
 
-	if err := json.Unmarshal(src, ptr); err != nil {
-		return fmt.Errorf("json parse error: %s \nsrc=%s", err.Error(), src)
+	if bytes.HasPrefix(src, util.BBraceLeft) {
+		b = src[1:]
+	}
+	if bytes.HasSuffix(b, util.BBraceRight) {
+		b = b[:len(b)-1]
 	}
 
-	return nil
+	if isPool {
+		return util.SplitBytes2FloatsP(b, util.BComma)
+	}
+	return util.SplitBytes2Floats(b, util.BComma)
+	// var result []float64
+	// if isPool {
+	// 	result = util.GetFloats()
+	// } else {
+	// 	result = make([]float64, 0, 20)
+	// }
+	//
+	// count := bytes.Count(b, util.BComma)
+	// var index int
+	// for i := 0; i < count; i++ {
+	// 	index = bytes.Index(b, util.BComma)
+	// 	if index == -1 {
+	// 		break
+	// 	}
+	// 	v, err := strconv.ParseFloat(util.Bytes2Str(b[:index]), 64)
+	// 	if err != nil {
+	// 		return result, err
+	// 	}
+	// 	result = append(result, v)
+	//
+	// 	if index == len(b)-1 {
+	// 		b = nil
+	// 	} else {
+	// 		b = b[index+1:]
+	// 	}
+	// }
+	// if len(b) > 0 {
+	// 	v, err := strconv.ParseFloat(util.Bytes2Str(b), 64)
+	// 	if err != nil {
+	// 		return result, err
+	// 	}
+	// 	result = append(result, v)
+	// }
+	// return result, nil
+}
+func doStrings(src []byte, isSafe bool) ([]string, error) {
+	if len(src) < 2 {
+		return nil, nil
+	}
+	b := src
+
+	if bytes.HasPrefix(src, util.BBraceLeft) {
+		b = src[1:]
+	}
+	if bytes.HasSuffix(b, util.BBraceRight) {
+		b = b[:len(b)-1]
+	}
+
+	if isSafe {
+		arr := util.SplitBytesNotSafe(b, util.BComma)
+		count := len(arr)
+		result := make([]string, count)
+		for i := 0; i < count; i++ {
+			result[i] = string(arr[i])
+		}
+		return result, nil
+	}
+	return util.SplitStrNotSafe(util.Bytes2Str(b), util.SComma), nil
+}
+func doByteArr(src []byte, isSafe bool) ([][]byte, error) {
+	if len(src) < 2 {
+		return nil, nil
+	}
+	b := src
+
+	if bytes.HasPrefix(src, util.BBraceLeft) {
+		b = src[1:]
+	}
+	if bytes.HasSuffix(b, util.BBraceRight) {
+		b = b[:len(b)-1]
+	}
+
+	if isSafe {
+		arr := util.SplitBytesNotSafe(b, util.BComma)
+		count := len(arr)
+		for i := 0; i < count; i++ {
+			row := make([]byte, len(arr[i]))
+			copy(row, arr[i])
+			arr[i] = row
+		}
+		return arr, nil
+	}
+	return util.SplitBytesNotSafe(b, util.BComma), nil
 }
 
 // WriteQuoteIdentifier f

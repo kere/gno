@@ -61,6 +61,11 @@ func GetRow(args ...int) []interface{} {
 	return util.GetItems(args...)
 }
 
+// GetDBRow
+func GetDBRow(fields []string) DBRow {
+	return DBRow{Fields: fields, Values: GetRow(len(fields))}
+}
+
 // PutRow to pool
 func PutRow(row []interface{}) {
 	// if cap(row) == 0 {

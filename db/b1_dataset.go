@@ -1,10 +1,12 @@
 package db
 
 import (
+	"bufio"
 	"database/sql"
 	"fmt"
+	"os"
 	"reflect"
-	"strconv"
+	"strings"
 
 	"github.com/kere/gno/libs/util"
 )
@@ -28,6 +30,11 @@ func NewDataSet(fields []string) DataSet {
 // GetRow
 func (d *DataSet) GetRow() []interface{} {
 	return GetRow(len(d.Fields))
+}
+
+// GetDBRow
+func (d *DataSet) GetDBRow() DBRow {
+	return DBRow{Fields: d.Fields, Values: GetRow(len(d.Fields))}
 }
 
 // RowAt
@@ -57,6 +64,37 @@ func (d *DataSet) RowAtP(i int) []interface{} {
 		row[k] = d.Columns[k][i]
 	}
 	return row
+}
+
+// DBRowAt
+func (d *DataSet) DBRowAt(i int, dbRow DBRow) {
+	n := d.Len()
+	if n == 0 || i >= n {
+		return
+	}
+	m := len(d.Columns)
+	if m != len(dbRow.Values) {
+		panic("DataSet RowAt: columns.Len() != row.Len()")
+	}
+	for k := 0; k < m; k++ {
+		dbRow.Values[k] = d.Columns[k][i]
+	}
+}
+
+// DBRowAtP
+func (d *DataSet) DBRowAtP(i int) DBRow {
+	n := d.Len()
+	if n == 0 || i >= n {
+		return DBRow{}
+	}
+
+	m := len(d.Fields)
+	vals := GetRow(m)
+	r := DBRow{Fields: d.Fields, Values: vals}
+	for k := 0; k < m; k++ {
+		vals[k] = d.Columns[k][i]
+	}
+	return r
 }
 
 // Len
@@ -101,6 +139,17 @@ func (d *DataSet) AddRow0(row []interface{}) {
 	}
 }
 
+// SetRow
+func (d *DataSet) SetRow(i int, row []interface{}) {
+	count := len(d.Columns)
+	if count != len(row) {
+		panic("db.SetRow columns.Len() != row.Len()")
+	}
+	for k := 0; k < count; k++ {
+		d.Columns[k][i] = row[k]
+	}
+}
+
 // ColType class
 type ColType struct {
 	Name     string
@@ -126,18 +175,36 @@ func NewColType(typ *sql.ColumnType) ColType {
 	return d
 }
 
+// PrintRow print
+func PrintRow(r []interface{}) {
+	l := len(r)
+	fmt.Println("-- row length:", l)
+	for i := 0; i < l; i++ {
+		v := r[i]
+		switch v.(type) {
+		case []byte:
+			fmt.Print(util.Bytes2Str(v.([]byte)), util.STab)
+		default:
+			fmt.Print(r[i], util.STab)
+		}
+	}
+	fmt.Println()
+	fmt.Println("-- end")
+}
+
 // PrintDataSet print
 func PrintDataSet(ds *DataSet) {
 	l := ds.Len()
 	fmt.Println("------- length:", l, "-------")
 	n := len(ds.Columns)
+	spl := util.STab
 	if len(ds.Types) == 0 {
 		for i := 0; i < n; i++ {
-			fmt.Print(ds.Fields[i] + "\t")
+			fmt.Print(ds.Fields[i] + spl)
 		}
 	} else {
 		for i := 0; i < n; i++ {
-			fmt.Print(ds.Fields[i]+":"+ds.Types[i].TypeName, "\t")
+			fmt.Print(ds.Fields[i]+":"+ds.Types[i].TypeName, spl)
 		}
 	}
 	fmt.Println()
@@ -146,137 +213,14 @@ func PrintDataSet(ds *DataSet) {
 			v := ds.Columns[k][i]
 			switch v.(type) {
 			case []byte:
-				fmt.Print(util.Bytes2Str(v.([]byte)), "\t")
+				fmt.Print(util.Bytes2Str(v.([]byte)), spl)
 			default:
-				fmt.Print(ds.Columns[k][i], "\t")
+				fmt.Print(ds.Columns[k][i], spl)
 			}
 		}
 		fmt.Println()
 	}
 	fmt.Println("-- length:", l)
-}
-
-// DBRow
-type DBRow struct {
-	Values []interface{}
-	Fields []string
-}
-
-// IsEmpty
-func (d *DBRow) IsEmpty() bool {
-	return len(d.Values) == 0
-}
-
-// Int
-func (d *DBRow) Int(field string) int {
-	v := d.Int64(field)
-	return int(v)
-}
-
-// IntAt
-func (d *DBRow) IntAt(i int) int {
-	v := d.Int64At(i)
-	return int(v)
-}
-
-// Int64At
-func (d *DBRow) Int64(field string) int64 {
-	i := util.StringsI(field, d.Fields)
-	if i < 0 {
-		return 0
-	}
-	return d.Int64At(i)
-}
-
-// Int64
-func (d *DBRow) Int64At(i int) int64 {
-	typ := reflect.TypeOf(d.Values[i])
-	val := reflect.ValueOf(d.Values[i])
-	switch typ.Kind() {
-	case reflect.Int64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
-		return val.Int()
-	case reflect.Slice:
-		return 0
-	case reflect.Float64, reflect.Float32:
-		return int64(val.Float())
-	case reflect.String:
-		v, _ := strconv.ParseInt(val.String(), 10, 64)
-		return v
-	}
-	return 0
-}
-
-// Float32
-func (d *DBRow) Float32(field string) float32 {
-	v := d.Float64(field)
-	return float32(v)
-}
-
-// Float64
-func (d *DBRow) Float64(field string) float64 {
-	i := util.StringsI(field, d.Fields)
-	if i < 0 {
-		return 0
-	}
-	return d.Float64At(i)
-}
-
-// Float64At
-func (d *DBRow) Float64At(i int) float64 {
-	typ := reflect.TypeOf(d.Values[i])
-	val := reflect.ValueOf(d.Values[i])
-	switch typ.Kind() {
-	case reflect.Int64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
-		return float64(val.Int())
-	case reflect.Slice:
-		return 0
-	case reflect.Float64, reflect.Float32:
-		return val.Float()
-	case reflect.String:
-		v, _ := strconv.ParseFloat(val.String(), 64)
-		return v
-	}
-	return 0
-}
-
-// String
-func (d *DBRow) String(field string) string {
-	i := util.StringsI(field, d.Fields)
-	if i < 0 {
-		return ""
-	}
-	return d.StringAt(i)
-}
-
-// StringAt
-func (d *DBRow) StringAt(i int) string {
-	switch d.Values[i].(type) {
-	case []byte:
-		return util.Bytes2Str(d.Values[i].([]byte))
-	case string:
-		return d.Values[i].(string)
-	}
-	return fmt.Sprint(d.Values[i])
-}
-
-// Bytes
-func (d *DBRow) Bytes(field string) []byte {
-	i := util.StringsI(field, d.Fields)
-	if i < 0 {
-		return nil
-	}
-	return d.BytesAt(i)
-}
-
-// BytesAt
-func (d *DBRow) BytesAt(i int) []byte {
-	switch d.Values[i].(type) {
-	case []byte:
-		return d.Values[i].([]byte)
-	case string:
-		return util.Str2Bytes(d.Values[i].(string))
-	}
-	return util.Str2Bytes(fmt.Sprint(d.Values[i]))
 }
 
 // RangeI
@@ -299,4 +243,64 @@ func (d *DataSet) IRange(a, b int) DataSet {
 		ds.Columns[i] = d.Columns[i][a : b+1]
 	}
 	return ds
+}
+
+func LoadCSV(filename string, hasFields bool) (DataSet, error) {
+	ds := DataSet{}
+	var err error
+	ds.Fields, ds.Columns, err = loadCSV(filename, hasFields, false)
+	return ds, err
+}
+
+func LoadCSVP(filename string, hasFields bool) (DataSet, error) {
+	ds := DataSet{}
+	var err error
+	ds.Fields, ds.Columns, err = loadCSV(filename, hasFields, true)
+	return ds, err
+}
+
+func loadCSV(filename string, hasFields, isPool bool) ([]string, [][]interface{}, error) {
+	f, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer f.Close()
+
+	sep := util.BComma
+	scanner := bufio.NewScanner(f)
+	scanner.Scan()
+	fields := strings.Split(scanner.Text(), util.SComma)
+	ll := len(fields)
+	columns := make([][]interface{}, ll)
+	if isPool {
+		for i := 0; i < ll; i++ {
+			columns[i] = GetColumn()
+		}
+	}
+	if !hasFields {
+		src := scanner.Bytes()
+		arr := util.SplitBytesNotSafe(src, sep)
+		for i := 0; i < ll; i++ {
+			fields[i] = fmt.Sprint("val", i+1)
+			columns[i] = append(columns[i], arr[i])
+		}
+	}
+
+	for scanner.Scan() {
+		src := scanner.Bytes()
+		if len(src) == 0 {
+			continue
+		}
+		// arr := bytes.Split(src, sep)
+		arr := util.SplitBytesNotSafe(src, sep)
+		if len(arr) != ll {
+			continue
+		}
+
+		for k := 0; k < ll; k++ {
+			columns[k] = append(columns[k], arr[k])
+		}
+	}
+
+	return fields, columns, nil
 }

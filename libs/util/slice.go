@@ -2,8 +2,6 @@ package util
 
 import (
 	"sort"
-	"strconv"
-	"strings"
 )
 
 // // CopyStrings copy
@@ -27,24 +25,6 @@ import (
 // 	copy(arr, src)
 // 	return src
 // }
-
-// SplitStr2Floats split string to []float64
-func SplitStr2Floats(s, sep string) ([]float64, error) {
-	arr := strings.Split(s, sep)
-	var err error
-	var v float64
-	l := len(arr)
-	result := make([]float64, 0)
-
-	for i := 0; i < l; i++ {
-		v, err = strconv.ParseFloat(arr[i], 64)
-		if err != nil {
-			continue
-		}
-		result = append(result, v)
-	}
-	return result, nil
-}
 
 // StringsI 在数组中出现的index
 func StringsI(val string, arr []string) int {

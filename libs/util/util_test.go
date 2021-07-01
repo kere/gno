@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -42,6 +43,16 @@ func Test_Func(t *testing.T) {
 	val = Round(num2, 4)
 	if val != -1.7128 {
 		t.Fatal("round failed", val)
+	}
+
+	// str := HumanFloatC(3.1415926)
+	str := HumanInt64C(1234567890)
+	if str != "12,3456,7890" {
+		t.Fatal(str)
+	}
+	str = HumanFloatC(12345678.12345)
+	if str != "1234,5678.12345" {
+		t.Fatal(str)
 	}
 }
 
@@ -208,4 +219,153 @@ func TestCamelCase(t *testing.T) {
 	if str != "CreatedAtSome" {
 		t.Fatal(str)
 	}
+}
+func TestNum(t *testing.T) {
+	v := StrNumType("0")
+	if v != 'i' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+0")
+	if v != 'i' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("-0")
+	if v != 'i' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+1230")
+	if v != 'i' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("e")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType(".xyce")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+xyce")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+e")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("-e")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("e+")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("e-0")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("3e+")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("3.14e+")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType(".314.")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType(".314e+")
+	if v != 's' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("3.14e+03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+3.14e+03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("3.14e-03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("-3.14e-03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("314e+03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+314e+03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("314e-03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType(".314")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("314.")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+.314")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType(".314e-03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+	v = StrNumType("+.314e-03")
+	if v != 'f' {
+		t.Fatal(rune(v))
+	}
+}
+
+func TestSplit(t *testing.T) {
+	src := "a,b,c"
+	arr := SplitStrNotSafe(src, SComma)
+	if len(arr) != 3 || arr[0] != "a" || arr[2] != "c" {
+		t.Fatal(strings.Join(arr, "-"))
+	}
+	src = "a,b,c,"
+	arr = SplitStrNotSafe(src, SComma)
+	if len(arr) != 4 || arr[0] != "a" || arr[2] != "c" {
+		t.Fatal(strings.Join(arr, "-"))
+	}
+	src = ",a,b,c"
+	arr = SplitStrNotSafe(src, SComma)
+	if len(arr) != 4 || arr[1] != "a" || arr[3] != "c" {
+		t.Fatal(strings.Join(arr, "-"))
+	}
+	src = ",a,b,c,"
+	arr = SplitStrNotSafe(src, SComma)
+	if len(arr) != 5 || arr[1] != "a" || arr[3] != "c" {
+		t.Fatal(strings.Join(arr, "-"))
+	}
+	src = "a,b,c,,"
+	arr = SplitStrNotSafe(src, SComma)
+	if len(arr) != 5 || arr[0] != "a" || arr[2] != "c" {
+		t.Fatal(strings.Join(arr, "-"))
+	}
+	src = ",,a,b,c"
+	arr = SplitStrNotSafe(src, SComma)
+	if len(arr) != 5 || arr[2] != "a" || arr[4] != "c" {
+		t.Fatal(strings.Join(arr, "-"))
+	}
+	src = ",,a,b,c,,,"
+	arr = SplitStrNotSafe(src, SComma)
+	if len(arr) != 8 || arr[2] != "a" || arr[4] != "c" {
+		t.Fatal(strings.Join(arr, "-"))
+	}
+	fmt.Println(strings.Join(arr, "-"))
 }

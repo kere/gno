@@ -2,6 +2,9 @@ package db
 
 import (
 	"testing"
+
+	"github.com/kere/gno/libs/util"
+	_ "github.com/lib/pq"
 )
 
 var (
@@ -64,12 +67,12 @@ values               FLOAT4[]            null
 	if err != nil {
 		t.Fatal(err)
 	}
-	PutRow(row)
 	dat, _ = q.Query()
 	if dat.Len() != 1 || dat.Columns[0][0].(string) != row[0].(string) {
 		PrintDataSet(&dat)
 		t.Fatal(row)
 	}
+	PutRow(row)
 	row = dat.RowAtP(0)
 
 	if string(row[3].([]byte)) != "{1.1,1.2,1.3}" {
@@ -216,5 +219,56 @@ func Test_Tx(t *testing.T) {
 	if dat.Len() != 5 || dat.Columns[0][4].(string) != "code10" || dat.Columns[1][4].(int64) != 10 {
 		PrintDataSet(&dat)
 		t.Fatal()
+	}
+}
+
+func TestDBRow(t *testing.T) {
+	dbRow := DBRow{Fields: []string{"code", "date", "ints", "floats", "strings"}}
+	dbRow.Values = []interface{}{
+		[]byte("a001"),
+		int64(1190101),
+		[]byte("{1,2,3}"),
+		[]byte("{1.1,2.2,3.3}"),
+		[]byte(`{a,b,c}`),
+	}
+
+	ints, err := dbRow.IntsAt(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ints) != 3 || ints[2] != 3 {
+		t.Fatal(ints)
+	}
+	floats, err := dbRow.FloatsAtP(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(floats) != 3 || floats[2] != 3.3 {
+		t.Fatal(floats)
+	}
+	util.PutFloats(floats)
+	strs, err := dbRow.StringsAt(4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(strs) != 3 || strs[2] != "c" {
+		t.Fatal(strs)
+	}
+
+	dbRow.Values[3] = []byte("{2.2404713e+09,3.8556639e+09,6.096135e+09}")
+	ints, err = dbRow.IntsAt(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ints[0] != 2240471300 {
+		t.Fatal(ints)
+	}
+	dbRow.Values[3] = []byte("{2.9352145e+10,0,2.9352145e+10}")
+	int64s, err := dbRow.Int64sAt(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if int64s[2] != 2.9352145e+10 || int64s[1] != 0 {
+		t.Fatal(int64s)
 	}
 }

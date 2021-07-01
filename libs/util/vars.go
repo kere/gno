@@ -18,6 +18,8 @@ const (
 	STab = "\t"
 	// SDoller $
 	SDoller = "$"
+	// SDot.
+	SDot = "."
 )
 
 var (
@@ -45,6 +47,8 @@ var (
 	BQuestionMark = []byte("?")
 	BQuote        = []byte("'")
 	BDoubleQuote  = []byte("\"")
+	BDot          = []byte(".")
+	BCharE        = []byte("e")
 	BZero         = []byte("0")
 	BNaN          = []byte("NaN")
 	BTab          = []byte("\t")

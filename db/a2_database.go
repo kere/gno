@@ -20,11 +20,16 @@ type IDriver interface {
 	StoreData(key string, val interface{}) interface{}
 
 	Strings([]byte) ([]string, error)
+	StringsNotSafe([]byte) ([]string, error)
+	BytesArr([]byte) ([][]byte, error)
+	BytesArrNotSafe([]byte) ([][]byte, error)
+
 	Int64s([]byte) ([]int64, error)
+	Int64sP([]byte) ([]int64, error)
 	Floats([]byte) ([]float64, error)
+	FloatsP([]byte) ([]float64, error)
 	Ints([]byte) ([]int, error)
-	ParseNumberSlice([]byte, interface{}) error
-	ParseStringSlice([]byte, interface{}) error
+	IntsP([]byte) ([]int, error)
 }
 
 // Database class

@@ -5,8 +5,6 @@ import (
 	"math"
 	"reflect"
 	"strings"
-
-	humanize "github.com/dustin/go-humanize"
 )
 
 const (
@@ -48,9 +46,9 @@ func PrintObj(obj interface{}) {
 				str = "0"
 			} else {
 				if hasPer {
-					str = humanize.Ftoa(v*100) + "%"
+					str = HumanFloatC(v) + "%"
 				} else {
-					str = humanize.Ftoa(v)
+					str = HumanFloatC(v)
 				}
 			}
 		case reflect.Int, reflect.Int64:
