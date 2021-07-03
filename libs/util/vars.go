@@ -37,6 +37,7 @@ var (
 	BEmptyString = []byte("")
 	//BStarKey *
 	BStarKey = []byte("*")
+
 	//BSpace ' '
 	BSpace        = []byte(" ")
 	BBraceLeft    = []byte("{")

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 
+	iconv "github.com/djimenez/iconv-go"
 	"github.com/kere/gno/libs/util"
 )
 
@@ -178,7 +178,7 @@ func NewColType(typ *sql.ColumnType) ColType {
 // PrintRow print
 func PrintRow(r []interface{}) {
 	l := len(r)
-	fmt.Println("-- row length:", l)
+	fmt.Printf("-- %d :", l)
 	for i := 0; i < l; i++ {
 		v := r[i]
 		switch v.(type) {
@@ -189,7 +189,6 @@ func PrintRow(r []interface{}) {
 		}
 	}
 	fmt.Println()
-	fmt.Println("-- end")
 }
 
 // PrintDataSet print
@@ -269,28 +268,58 @@ func loadCSV(filename string, hasFields, isPool bool) ([]string, [][]interface{}
 	sep := util.BComma
 	scanner := bufio.NewScanner(f)
 	scanner.Scan()
-	fields := strings.Split(scanner.Text(), util.SComma)
-	ll := len(fields)
-	columns := make([][]interface{}, ll)
-	if isPool {
-		for i := 0; i < ll; i++ {
-			columns[i] = GetColumn()
-		}
+	src := scanner.Bytes()
+	isGB := util.IsGBK(src)
+	toSrc := make([]byte, 200)
+	var wn int
+
+	if isGB {
+		_, wn, _ = iconv.Convert(src, toSrc, "gb2312", "utf-8")
+		src = toSrc[:wn]
 	}
-	if !hasFields {
-		src := scanner.Bytes()
+
+	var columns [][]interface{}
+	var fields []string
+
+	var ll int
+	if hasFields {
+		// fields = strings.Split(util.Bytes2Str(src), util.SComma)
+		fields = util.SplitStrNotSafe(util.Bytes2Str(src), util.SComma)
+		ll = len(fields)
+		columns = make([][]interface{}, ll)
+		if isPool {
+			for i := 0; i < ll; i++ {
+				columns[i] = GetColumn()
+			}
+		}
+	} else {
 		arr := util.SplitBytesNotSafe(src, sep)
+		// arr := bytes.Split(src, sep)
+		ll = len(arr)
+		fields = make([]string, ll)
+		columns = make([][]interface{}, ll)
 		for i := 0; i < ll; i++ {
+			if isPool {
+				columns[i] = GetColumn()
+			}
 			fields[i] = fmt.Sprint("val", i+1)
 			columns[i] = append(columns[i], arr[i])
 		}
 	}
 
 	for scanner.Scan() {
-		src := scanner.Bytes()
+		src = scanner.Bytes()
 		if len(src) == 0 {
 			continue
 		}
+		if isGB {
+			for i := 0; i < wn; i++ {
+				toSrc[i] = 0
+			}
+			_, wn, _ := iconv.Convert(src, toSrc, "gb2312", "utf-8")
+			src = toSrc[:wn]
+		}
+		// fmt.Println(string(src))
 		// arr := bytes.Split(src, sep)
 		arr := util.SplitBytesNotSafe(src, sep)
 		if len(arr) != ll {

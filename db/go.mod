@@ -15,6 +15,7 @@ replace (
 )
 
 require (
+	github.com/djimenez/iconv-go v0.0.0-20160305225143-8960e66bd3da
 	github.com/kere/gno/libs/conf v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/log v0.0.0-00010101000000-000000000000
 	github.com/kere/gno/libs/myerr v0.0.0-00010101000000-000000000000

@@ -41,22 +41,26 @@ func CamelCase(name string) string {
 }
 
 func IsGBK(data []byte) bool {
-	length := len(data)
+	l := len(data)
 	var i int = 0
-	for i < length {
+	for i < l {
 		if data[i] <= 0x7f {
 			//编码0~127,只有一个字节的编码，兼容ASCII码
 			i++
 			continue
 		} else {
 			//大于127的使用双字节编码，落在gbk编码范围内的字符
-			if data[i] >= 0x81 &&
+			if i < l-1 && data[i] >= 0x81 &&
 				data[i] <= 0xfe &&
 				data[i+1] >= 0x40 &&
 				data[i+1] <= 0xfe &&
 				data[i+1] != 0xf7 {
 				i += 2
-				continue
+				if i < l {
+					continue
+				} else {
+					return false
+				}
 			} else {
 				return false
 			}
