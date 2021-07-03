@@ -2,10 +2,12 @@ package db
 
 import (
 	"bufio"
+	"bytes"
 	"database/sql"
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	iconv "github.com/djimenez/iconv-go"
 	"github.com/kere/gno/libs/util"
@@ -270,9 +272,8 @@ func loadCSV(filename string, hasFields, isPool bool) ([]string, [][]interface{}
 	scanner.Scan()
 	src := scanner.Bytes()
 	isGB := util.IsGBK(src)
-	toSrc := make([]byte, 200)
+	toSrc := make([]byte, len(src)*2)
 	var wn int
-
 	if isGB {
 		_, wn, _ = iconv.Convert(src, toSrc, "gb2312", "utf-8")
 		src = toSrc[:wn]
@@ -283,8 +284,8 @@ func loadCSV(filename string, hasFields, isPool bool) ([]string, [][]interface{}
 
 	var ll int
 	if hasFields {
-		// fields = strings.Split(util.Bytes2Str(src), util.SComma)
-		fields = util.SplitStrNotSafe(util.Bytes2Str(src), util.SComma)
+		fields = strings.Split(string(src), util.SComma)
+		// fields = util.SplitStrNotSafe(util.Bytes2Str(src), util.SComma)
 		ll = len(fields)
 		columns = make([][]interface{}, ll)
 		if isPool {
@@ -303,12 +304,13 @@ func loadCSV(filename string, hasFields, isPool bool) ([]string, [][]interface{}
 				columns[i] = GetColumn()
 			}
 			fields[i] = fmt.Sprint("val", i+1)
-			columns[i] = append(columns[i], arr[i])
+			columns[i] = append(columns[i], string(bytes.TrimSpace(arr[i])))
+			// columns[i] = append(columns[i], bytes.TrimSpace(arr[i]))
 		}
 	}
 
 	for scanner.Scan() {
-		src = scanner.Bytes()
+		src := scanner.Bytes()
 		if len(src) == 0 {
 			continue
 		}
@@ -327,7 +329,7 @@ func loadCSV(filename string, hasFields, isPool bool) ([]string, [][]interface{}
 		}
 
 		for k := 0; k < ll; k++ {
-			columns[k] = append(columns[k], arr[k])
+			columns[k] = append(columns[k], string(bytes.TrimSpace(arr[k])))
 		}
 	}
 
