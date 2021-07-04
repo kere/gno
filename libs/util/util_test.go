@@ -99,7 +99,7 @@ func TestSort(t *testing.T) {
 	}
 
 	arr = []int64{10, 322, 3, 3, 43, 65, 30, 230, 30, 44, 56, 20, 76, 20, 430, 659}
-	tmp := Int64sUniqueP(arr)
+	tmp := Int64sUnique(arr, false)
 	if tmp[1] != 10 || tmp[2] != 20 || tmp[3] != 30 {
 		fmt.Println(tmp)
 		t.Fatal("Int64sUniqueP")
@@ -369,3 +369,11 @@ func TestSplit(t *testing.T) {
 	}
 	fmt.Println(strings.Join(arr, "-"))
 }
+
+// func TestEach(t *testing.T) {
+// 	arr := []int{0}
+// 	EachPartByN(len(arr), 3, func(a int, b int) bool {
+// 		fmt.Println(arr[a:b])
+// 		return true
+// 	})
+// }

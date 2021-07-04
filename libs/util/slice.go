@@ -4,28 +4,6 @@ import (
 	"sort"
 )
 
-// // CopyStrings copy
-// func CopyStrings(arr []string) []string {
-// 	l := len(arr)
-// 	if l == 0 {
-// 		return []string{}
-// 	}
-// 	src := make([]string, l)
-// 	copy(arr, src)
-// 	return src
-// }
-//
-// // CopyInts copy
-// func CopyInts(arr []int) []int {
-// 	l := len(arr)
-// 	if l == 0 {
-// 		return []int{}
-// 	}
-// 	src := make([]int, l)
-// 	copy(arr, src)
-// 	return src
-// }
-
 // StringsI 在数组中出现的index
 func StringsI(val string, arr []string) int {
 	l := len(arr)
@@ -156,7 +134,7 @@ func RangeFloats(arr []float64, a, b int) []float64 {
 	if a < 0 {
 		a = 0
 	}
-	if b == 0 || b > l {
+	if b == 0 || b > l-1 {
 		b = l - 1
 	}
 	return arr[a : b+1]
@@ -168,8 +146,29 @@ func RangeInts(arr []int, a, b int) []int {
 	if a < 0 {
 		a = 0
 	}
-	if b == 0 || b > l {
+	if b == 0 || b > l-1 {
 		b = l - 1
 	}
 	return arr[a : b+1]
+}
+
+// EachPage
+func EachPage(count, pageSize int, f func(pageN, a, b int) bool) int {
+	var b, pageN int
+	for i := 0; i < count; i++ {
+		b = i + pageSize
+		if b > count {
+			b = count
+		}
+		pageN++
+		if !f(pageN, i, b) {
+			return -1
+		}
+		if b == count {
+			return pageN
+		}
+		i = b - 1
+	}
+
+	return -1
 }

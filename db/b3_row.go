@@ -64,8 +64,14 @@ func (d *DBRow) Int64At(i int) int64 {
 	case reflect.Float64, reflect.Float32:
 		return int64(val.Float())
 	case reflect.String:
-		v, _ := strconv.ParseInt(val.String(), 10, 64)
-		return v
+		switch util.BytesNumType(util.Str2Bytes(val.String())) {
+		case 'f':
+			v, _ := strconv.ParseFloat(val.String(), 64)
+			return int64(v)
+		case 'i':
+			v, _ := strconv.ParseInt(val.String(), 10, 64)
+			return v
+		}
 	}
 	return 0
 }

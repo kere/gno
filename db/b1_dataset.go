@@ -30,7 +30,7 @@ func NewDataSet(fields []string) DataSet {
 }
 
 // GetRow
-func (d *DataSet) GetRow() []interface{} {
+func (d *DataSet) GetRowP() []interface{} {
 	return GetRow(len(d.Fields))
 }
 
@@ -231,7 +231,7 @@ func (d *DataSet) IRange(a, b int) DataSet {
 		return *d
 	}
 
-	if b == -1 || b > l {
+	if b == -1 || b > l-1 {
 		b = l - 1
 	}
 	if a == -1 || a > b {
@@ -244,6 +244,22 @@ func (d *DataSet) IRange(a, b int) DataSet {
 		ds.Columns[i] = d.Columns[i][a : b+1]
 	}
 	return ds
+}
+
+// EachPage
+func (d *DataSet) EachPage(pageSize int, f func(page int, ds DataSet) bool) int {
+	count := d.Len()
+	ll := len(d.Columns)
+	cols := make([][]interface{}, ll)
+	n := util.EachPage(count, pageSize, func(pageN int, a int, b int) bool {
+		ds := DataSet{Fields: d.Fields, Columns: cols}
+		for i := 0; i < ll; i++ {
+			cols[i] = d.Columns[i][a:b]
+		}
+		ds.Columns = cols
+		return f(pageN, ds)
+	})
+	return n
 }
 
 func LoadCSV(filename string, hasFields bool) (DataSet, error) {

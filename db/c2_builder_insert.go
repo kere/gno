@@ -82,17 +82,15 @@ func (ins *InsertBuilder) InsertM(dat *DataSet) (sql.Result, error) {
 
 // InsertMN
 func (ins *InsertBuilder) InsertMN(dat *DataSet, n int) error {
-	count := dat.Len()
-	for i := 0; i < count; i++ {
-		b := i + n
-		ds := dat.IRange(i, b)
-		if _, err := ins.InsertM(&ds); err != nil {
-			return err
+	var err error
+	dat.EachPage(n, func(page int, ds DataSet) bool {
+		_, err = ins.InsertM(&ds)
+		if err != nil {
+			return false
 		}
-		i = b
-	}
-
-	return nil
+		return true
+	})
+	return err
 }
 
 func parseInsertMP(ins *InsertBuilder, dataset *DataSet) (string, []interface{}) {

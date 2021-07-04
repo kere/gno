@@ -272,3 +272,94 @@ func TestDBRow(t *testing.T) {
 		t.Fatal(int64s)
 	}
 }
+func TestPage(t *testing.T) {
+	count := 3
+	// 0,1,2
+	ds := GetDataSet([]string{"val"}, count)
+	for i := 0; i < count; i++ {
+		ds.Columns[0][i] = i
+	}
+	n := ds.EachPage(3, func(page int, ds1 DataSet) bool {
+		if page != 1 {
+			PrintDataSet(&ds1)
+			t.Fatal()
+			return false
+		}
+		return true
+	})
+	if n != 1 {
+		t.Fatal()
+	}
+
+	// 0,1,2,3
+	row := ds.GetRowP()
+	row[0] = 3
+	ds.AddRow(row)
+	n = ds.EachPage(3, func(page int, ds1 DataSet) bool {
+		if page == 1 {
+			if ds1.Len() != 3 {
+				t.Fatal()
+				return false
+			}
+		} else {
+			if ds1.Len() != 1 {
+				PrintDataSet(&ds1)
+				t.Fatal()
+				return false
+			}
+		}
+		return true
+	})
+	if n != 2 {
+		t.Fatal(n)
+	}
+
+	// 0,1,2,3,4
+	row[0] = 4
+	ds.AddRow(row)
+	n = ds.EachPage(3, func(page int, ds1 DataSet) bool {
+		if page == 2 && ds1.Len() != 2 {
+			PrintDataSet(&ds1)
+			t.Fatal()
+		}
+		return true
+	})
+	if n != 2 {
+		t.Fatal(n)
+	}
+
+	// 0,1,2,3,4,5
+	row[0] = 5
+	ds.AddRow(row)
+	n = ds.EachPage(3, func(page int, ds1 DataSet) bool {
+		if page == 2 && ds1.Len() != 3 {
+			PrintDataSet(&ds1)
+			t.Fatal()
+		}
+		return true
+	})
+	if n != 2 {
+		t.Fatal(n)
+	}
+
+	// 0,1,2,3,4,5,6
+	row[0] = 6
+	ds.AddRow(row)
+	n = ds.EachPage(3, func(page int, ds1 DataSet) bool {
+		if page == 2 && ds1.Len() != 3 {
+			PrintDataSet(&ds1)
+			t.Fatal()
+		}
+		if page == 3 && ds1.Len() != 1 {
+			PrintDataSet(&ds1)
+			t.Fatal()
+		}
+		return true
+	})
+	if n != 3 {
+		t.Fatal(n)
+	}
+
+	PutDataSet(&ds)
+	PutRow(row)
+}

@@ -15,14 +15,19 @@ func IID32(str ...string) int64 {
 	return int64(ieee.Sum32())
 }
 
-// Int64sUniqueP 获取稀有的整数序列
-func Int64sUniqueP(arr []int64) []int64 {
+// Int64sUnique 获取稀有的整数序列
+func Int64sUnique(arr []int64, isPool bool) []int64 {
 	l := len(arr)
 	if l == 0 {
 		return arr
 	}
-	tmp := GetInt64s(l)
-	defer PutInt64s(tmp)
+	var tmp []int64
+	if isPool {
+		tmp = GetInt64s(l)
+		defer PutInt64s(tmp)
+	} else {
+		tmp = make([]int64, l)
+	}
 	copy(tmp, arr)
 	sorted := Int64sOrder(tmp)
 	sorted.Sort()
@@ -42,14 +47,19 @@ func Int64sUniqueP(arr []int64) []int64 {
 	return u
 }
 
-// IntsUniqueP 获取稀有的整数序列
-func IntsUniqueP(arr []int) []int {
+// IntsUnique 获取稀有的整数序列
+func IntsUnique(arr []int, isPool bool) []int {
 	l := len(arr)
 	if l == 0 {
 		return arr
 	}
-	tmp := GetInts(l)
-	defer PutInts(tmp)
+	var tmp []int
+	if isPool {
+		tmp = GetInts(l)
+		defer PutInts(tmp)
+	} else {
+		tmp = make([]int, l)
+	}
 
 	copy(tmp, arr)
 	sort.Ints(tmp)
@@ -69,14 +79,19 @@ func IntsUniqueP(arr []int) []int {
 	return u
 }
 
-// StringsUniqueP 获取稀有的字符串序列
-func StringsUniqueP(arr []string) []string {
+// StringsUnique 获取稀有的字符串序列
+func StringsUnique(arr []string, isPool bool) []string {
 	l := len(arr)
 	if l == 0 {
 		return arr
 	}
-	tmp := GetStrings(l)
-	defer PutStrings(tmp)
+	var tmp []string
+	if isPool {
+		tmp = GetStrings(l)
+		defer PutStrings(tmp)
+	} else {
+		tmp = make([]string, l)
+	}
 
 	copy(tmp, arr)
 	sort.Strings(tmp)
@@ -94,4 +109,21 @@ func StringsUniqueP(arr []string) []string {
 		u = append(u, v)
 	}
 	return u
+}
+
+// StringsMergUniq 合并多个数字，获取稀有的字符串序列
+func StringsMergUniq(isPool bool, arr ...[]string) []string {
+	count := len(arr)
+	if count == 0 {
+		return nil
+	}
+	tmp := GetStrings(len(arr[0]))
+	defer PutStrings(tmp)
+	copy(tmp, arr[0])
+
+	for i := 1; i < count; i++ {
+		tmp = append(tmp, arr[i]...)
+	}
+
+	return StringsUnique(tmp, isPool)
 }
