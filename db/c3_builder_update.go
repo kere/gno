@@ -98,6 +98,7 @@ func writeUpdate(w io.Writer, driver IDriver, fields []string, values []interfac
 	seq := 1 + count
 	seq = writeUpdateItem(w, driver, fields[0], values[0], seq)
 	for i := 1; i < n; i++ {
+		w.Write(util.BComma)
 		seq = writeUpdateItem(w, driver, fields[i], values[i], seq)
 	}
 

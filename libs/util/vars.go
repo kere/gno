@@ -3,6 +3,7 @@ package util
 const (
 	// SEmptyString ''
 	SEmptyString = ""
+	SSpace      = " "
 	// SQuot ''
 	SQuot = "'"
 	// SDoubleQuot ''
