@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -37,6 +38,15 @@ func PrintObj(obj interface{}) {
 		fval := val.Field(i)
 		switch ftyp.Type.Kind() {
 		case reflect.Float64:
+			deci := 2
+			decimal := ftyp.Tag.Get("decimal")
+			if decimal != "" {
+				v, _ := strconv.ParseInt(decimal, 10, 64)
+				if v > 0 {
+					deci = int(v)
+				}
+			}
+
 			v := fval.Float()
 			if math.IsInf(v, 0) {
 				str = "~"
@@ -46,9 +56,9 @@ func PrintObj(obj interface{}) {
 				str = "0"
 			} else {
 				if hasPer {
-					str = HumanFloatC(v) + "%"
+					str = HumanFloatC(v*100, deci) + "%"
 				} else {
-					str = HumanFloatC(v)
+					str = HumanFloatC(v, deci)
 				}
 			}
 		case reflect.Int, reflect.Int64:
@@ -106,14 +116,17 @@ func PrintObj(obj interface{}) {
 			inline = " , "
 		case "colon":
 			inline = " : "
+		case "minus":
+			inline = " - "
 		default:
 			inline = ""
 		}
 
-		if inline != "" {
-			fmt.Print(name, ":", str, inline, end)
+		suffix := ftyp.Tag.Get("suffix")
+		if inline == "" {
+			fmt.Print(name, ":", str+suffix, end, "\n")
 		} else {
-			fmt.Print(name, ":", str, end, "\n")
+			fmt.Print(name, ":", str+suffix, inline, end)
 		}
 	}
 	fmt.Println()

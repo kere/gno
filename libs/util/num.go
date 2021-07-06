@@ -229,15 +229,15 @@ func HumanFloatC(v float64, args ...int) string {
 		prec = args[0]
 	}
 	var str string
-	str = strconv.FormatFloat(v, 'f', prec, 64)
-
+	str = strconv.FormatFloat(v, 'f', -1, 64)
 	index := strings.IndexByte(str, '.')
 	if index == -1 {
-		b := recopStepN(Str2Bytes(str), 4, ',')
+		b := recopStepN(Str2Bytes(str), 4, '`')
 		return Bytes2Str(b)
 	}
+	str = strconv.FormatFloat(v, 'f', prec, 64)
 	// 整数部分
-	src := recopStepN(Str2Bytes(str[:index]), 4, ',')
+	src := recopStepN(Str2Bytes(str[:index]), 4, '`')
 	count := len(str)
 	for i := index; i < count; i++ {
 		src = append(src, str[i])
