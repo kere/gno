@@ -245,6 +245,21 @@ func HumanFloatC(v float64, args ...int) string {
 	return Bytes2Str(src)
 }
 
+// HumanFloat 显示数字
+func HumanFloat(v float64, args ...int) string {
+	prec := -1
+	if len(args) != 0 {
+		prec = args[0]
+	}
+	var str string
+	str = strconv.FormatFloat(v, 'f', -1, 64)
+	index := strings.IndexByte(str, '.')
+	if index == -1 {
+		return str
+	}
+	return strconv.FormatFloat(v, 'f', prec, 64)
+}
+
 // recopStepN 用中国4进位方式，显示数字
 func recopStepN(src []byte, stepN int, sep byte) []byte {
 	k := 0

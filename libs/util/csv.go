@@ -28,10 +28,12 @@ func WriteCsvRow(w io.Writer, row []interface{}, decimal int) error {
 			str := strconv.FormatInt(row[i].(int64), 10)
 			w.Write(Str2Bytes(str))
 		case float32:
-			str := strconv.FormatFloat(float64(row[i].(float32)), 'f', decimal, 64)
+			// str := strconv.FormatFloat(float64(row[i].(float32)), 'f', decimal, 64)
+			str := HumanFloat(float64(row[i].(float32)), decimal)
 			w.Write(Str2Bytes(str))
 		case float64:
-			str := strconv.FormatFloat(row[i].(float64), 'f', decimal, 64)
+			// str := strconv.FormatFloat(row[i].(float64), 'f', decimal, 64)
+			str := HumanFloat(row[i].(float64), decimal)
 			w.Write(Str2Bytes(str))
 		default:
 			w.Write(Str2Bytes(fmt.Sprint(row[i])))
