@@ -2,4 +2,4 @@ module github.com/kere/gno/libs/util
 
 go 1.22.4
 
-require github.com/panjf2000/ants/v2
+require github.com/panjf2000/ants/v2 v2.10.0
